@@ -1,0 +1,54 @@
+package app
+
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+
+	"minik8s/pkg/apiserver/config"
+	"minik8s/pkg/etcd"
+)
+
+type ApiServer struct {
+	router   *gin.Engine
+	etcdWrap *etcd.EtcdWrap
+	port     int32
+}
+
+// 在进行测试/实际运行时，第1步调用此函数。
+func CreateApiServerInstance(c *config.ServerConfig) (*ApiServer, error) {
+	router := gin.Default()
+	router.SetTrustedProxies(c.TrustedProxy)
+
+	wrap, err := etcd.CreateEtcdInstance(c.EtcdEndpoints, c.EtcdTimeout)
+	if err != nil {
+		fmt.Printf("create etcd instance failed, err:%v\n", err)
+		return nil, err
+	}
+
+	return &ApiServer{
+		router:   router,
+		etcdWrap: wrap,
+		port:     c.Port,
+	}, nil
+}
+
+// 建议放在其他的包内，使项目结构更整齐
+func serverHelloWorld(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "hello world from apiserver!",
+	})
+}
+
+// 将所有的接口在此函数内进行绑定
+func (s *ApiServer) Bind() {
+	s.router.GET("/hello", serverHelloWorld)
+}
+
+// 在进行测试/实际运行时，第2步调用此函数。默认端口为8080
+func (s *ApiServer) Run() error {
+	s.Bind()
+	err := s.router.Run(fmt.Sprintf(":%d", s.port))
+	return err
+}
