@@ -4,24 +4,20 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 )
 
 var producerDummy *MsgProducer = nil
 var consumerDummy *MsgConsumer = nil
-var cnt = 0
 
-func sampleHandler(msg *MsgDummy) {
+func SampleHandler(msg *MsgDummy) {
 	fmt.Printf("Received %s, hello.\n", msg.Val)
-	cnt++
-	if cnt == 10 {
-		consumerDummy.consumer.Close()
-	}
 }
 
 func TestMain(m *testing.M) {
-	producerDummy = NewProducer("testMsg")
-	consumerDummy = NewConsumer("testMsg", "default")
-	go consumerDummy.Consume(sampleHandler)
+	producerDummy = NewProducer()
+	consumerDummy, _ = NewConsumer("testMsg", "default")
+	consumerDummy.Consume([]string{"testMsg"}, SampleHandler)
 	m.Run()
 }
 
@@ -32,10 +28,11 @@ func TestSend(t *testing.T) {
 			Key:  "default",
 			Val:  "world" + strconv.Itoa(i),
 		}
-
-		producerDummy.Produce(msg)
+		producerDummy.Produce("testMsg", msg)
 		fmt.Printf("Send message %d\n", i)
 	}
 
-	producerDummy.producer.Close()
+	for {
+		time.Sleep(1 * time.Second)
+	}
 }

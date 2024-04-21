@@ -5,6 +5,7 @@ import (
 	"minik8s/pkg/apiserver/config"
 	"minik8s/pkg/scheduler"
 	"testing"
+	"time"
 )
 
 var apiServerDummy *app.ApiServer = nil
@@ -22,5 +23,9 @@ func TestMain(m *testing.M) {
 func TestSendMsg(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		apiServerDummy.MsgToScheduler()
+	}
+
+	for {
+		time.Sleep(1 * time.Second)
 	}
 }

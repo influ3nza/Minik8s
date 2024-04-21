@@ -14,7 +14,7 @@ var apiServerDummy *ApiServer = nil
 func TestMain(m *testing.M) {
 	server, err := CreateApiServerInstance(config.DefaultServerConfig())
 	if err != nil {
-		fmt.Errorf("[ERR/server_test/main] Failed to create apiserver instance.\n")
+		_ = fmt.Errorf("[ERR/server_test/main] Failed to create apiserver instance.\n")
 		return
 	}
 

@@ -24,8 +24,8 @@ func (s *Scheduler) GetNodes() {
 }
 
 func CreateSchedulerInstance() (*Scheduler, error) {
-	consumer := message.NewConsumer("scheduler", "default")
-	producer := message.NewProducer("apiserver")
+	consumer, _ := message.NewConsumer("scheduler", "default")
+	producer := message.NewProducer()
 
 	c := DefaultSchedulerConfig()
 	scheduler := &Scheduler{
@@ -40,5 +40,5 @@ func CreateSchedulerInstance() (*Scheduler, error) {
 }
 
 func (s *Scheduler) Run() {
-	go s.consumer.Consume(s.MsgHandler)
+	go s.consumer.Consume([]string{"scheduler"}, s.MsgHandler)
 }

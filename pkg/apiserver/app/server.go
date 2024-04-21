@@ -15,7 +15,7 @@ type ApiServer struct {
 	router   *gin.Engine
 	etcdWrap *etcd.EtcdWrap
 	port     int32
-	producer []*message.MsgProducer
+	producer *message.MsgProducer
 }
 
 // 在进行测试/实际运行时，第1步调用此函数。
@@ -29,13 +29,13 @@ func CreateApiServerInstance(c *config.ServerConfig) (*ApiServer, error) {
 		return nil, err
 	}
 
-	producerSche := message.NewProducer("scheduler")
+	producer := message.NewProducer()
 
 	return &ApiServer{
 		router:   router,
 		etcdWrap: wrap,
 		port:     c.Port,
-		producer: []*message.MsgProducer{producerSche},
+		producer: producer,
 	}, nil
 }
 
@@ -52,7 +52,7 @@ func (s *ApiServer) MsgToScheduler() {
 		Key:  "1",
 		Val:  "hello",
 	}
-	s.producer[0].Produce(dummy)
+	s.producer.Produce("scheduler", dummy)
 }
 
 // 将所有的接口在此函数内进行绑定
