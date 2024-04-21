@@ -63,3 +63,21 @@ func (w *EtcdWrap) DelAll() error {
 	_, err := w.client.Delete(context.TODO(), "", etcd.WithPrefix())
 	return err
 }
+
+func (w *EtcdWrap) GetByPrefix(key string) ([]EtcdKV, error) {
+	resp, err := w.client.Get(context.TODO(), key, etcd.WithPrefix())
+	if err != nil {
+		return []EtcdKV{}, err
+	}
+
+	var pack []EtcdKV
+	for id, kv := range resp.Kvs {
+		pack = append(pack, EtcdKV{
+			Version: resp.Kvs[id].Version,
+			Key:     string(kv.Key),
+			Value:   string(kv.Value),
+		})
+	}
+
+	return pack, nil
+}
