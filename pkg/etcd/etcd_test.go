@@ -11,7 +11,7 @@ var etcdClientDummy *EtcdWrap = nil
 func TestMain(m *testing.M) {
 	wrap, err := CreateEtcdInstance([]string{"localhost:2379"}, 5*time.Second)
 	if err != nil {
-		fmt.Errorf("[ERR/etcd_test/main] Failed to create etcd instance.\n")
+		_ = fmt.Errorf("[ERR/etcd_test/main] Failed to create etcd instance.\n")
 		return
 	}
 	etcdClientDummy = wrap
