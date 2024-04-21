@@ -47,7 +47,7 @@ func TestGet(t *testing.T) {
 		t.Errorf("[ERR/etcd_test/Get] Failed to get a word\n")
 		return
 	}
-	if kv.Value != "this is word 1" {
+	if kv[0].Value != "this is word 1" {
 		t.Errorf("[ERR/etcd_test/Get] Failed to get the correct word\n")
 		return
 	}
@@ -57,7 +57,7 @@ func TestGet(t *testing.T) {
 		t.Errorf("[ERR/etcd_test/Get] Failed to get words\n")
 		return
 	}
-	if kv.Version != -1 {
+	if kv[0].Version != -1 {
 		t.Errorf("[ERR/etcd_test/Get] Fetched word should be null\n")
 		return
 	}
@@ -77,7 +77,7 @@ func TestDel(t *testing.T) {
 		t.Errorf("[ERR/etcd_test/Del] Failed to get a word\n")
 		return
 	}
-	if kv.Version != 1 {
+	if kv[0].Version != 1 {
 		t.Errorf("[ERR/etcd_test/Del] Fetched word should be null\n")
 		return
 	}

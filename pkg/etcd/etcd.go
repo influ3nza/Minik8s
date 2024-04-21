@@ -40,18 +40,23 @@ func (w *EtcdWrap) Put(key string, val []byte) error {
 	return err
 }
 
-func (w *EtcdWrap) Get(key string) (EtcdKV, error) {
+func (w *EtcdWrap) Get(key string) ([]EtcdKV, error) {
 	resp, err := w.client.Get(context.TODO(), key)
 
-	if err != nil || len(resp.Kvs) == 0 {
-		return EtcdKV{Version: -1}, err
+	if err != nil {
+		return []EtcdKV{}, err
 	}
 
-	ev := resp.Kvs[0]
-	return EtcdKV{
-		Version: ev.Version,
-		Key:     string(ev.Key),
-		Value:   string(ev.Value)}, nil
+	var pack []EtcdKV
+	for id, kv := range resp.Kvs {
+		pack = append(pack, EtcdKV{
+			Version: resp.Kvs[id].Version,
+			Key:     string(kv.Key),
+			Value:   string(kv.Value),
+		})
+	}
+
+	return pack, nil
 }
 
 func (w *EtcdWrap) Del(key string) error {

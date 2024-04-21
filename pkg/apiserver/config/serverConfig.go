@@ -4,6 +4,11 @@ import (
 	"time"
 )
 
+const (
+	API_get_nodes string = "/nodes"
+	API_get_node  string = "/nodes/:name"
+)
+
 type ServerConfig struct {
 	Port          int32
 	TrustedProxy  []string

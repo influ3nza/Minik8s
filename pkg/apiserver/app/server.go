@@ -13,7 +13,7 @@ import (
 
 type ApiServer struct {
 	router   *gin.Engine
-	etcdWrap *etcd.EtcdWrap
+	EtcdWrap *etcd.EtcdWrap
 	port     int32
 	producer *message.MsgProducer
 }
@@ -33,7 +33,7 @@ func CreateApiServerInstance(c *config.ServerConfig) (*ApiServer, error) {
 
 	return &ApiServer{
 		router:   router,
-		etcdWrap: wrap,
+		EtcdWrap: wrap,
 		port:     c.Port,
 		producer: producer,
 	}, nil
@@ -58,6 +58,8 @@ func (s *ApiServer) MsgToScheduler() {
 // 将所有的接口在此函数内进行绑定
 func (s *ApiServer) Bind() {
 	s.router.GET("/hello", serverHelloWorld)
+	s.router.GET(config.API_get_nodes, s.GetNodes)
+	s.router.GET(config.API_get_node, s.GetNode)
 }
 
 // 在进行测试/实际运行时，第2步调用此函数。默认端口为8080

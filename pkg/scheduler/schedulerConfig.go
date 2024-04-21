@@ -17,7 +17,7 @@ type SchedulerConfig struct {
 func DefaultSchedulerConfig() SchedulerConfig {
 	return SchedulerConfig{
 		policy:     Poll,
-		apiAddress: "127.0.0.1",
+		apiAddress: "http://127.0.0.1",
 		apiPort:    "50000",
 	}
 }
