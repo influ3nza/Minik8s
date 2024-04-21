@@ -1,17 +1,18 @@
 package image_manage
 
 import (
+	"SE3356/pkg/api_obj/obj_inner"
 	"SE3356/pkg/kubelet/util"
 	"context"
 	"github.com/containerd/containerd"
 )
 
-func GetImageFromLocal(client *containerd.Client, name string, ctx context.Context) containerd.Image {
+func GetImageFromLocal(client *containerd.Client, name string, ctx context.Context) (containerd.Image, error) {
 	img, err := client.GetImage(ctx, name)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	return img
+	return img, nil
 }
 
 func ListImages(client *containerd.Client, ctx context.Context, filters ...string) []containerd.Image {
@@ -22,13 +23,12 @@ func ListImages(client *containerd.Client, ctx context.Context, filters ...strin
 	return imgs
 }
 
-func FetchImage(client *containerd.Client, imgName string, ctx context.Context) containerd.Image {
+func FetchImage(client *containerd.Client, imgName string, ctx context.Context) (containerd.Image, error) {
 	pull, err := client.Pull(ctx, imgName, containerd.WithPullUnpack)
 	if err != nil {
-		println(err)
-		return nil
+		return nil, err
 	}
-	return pull
+	return pull, nil
 }
 
 func DeleteImage(namespace string, imgName string) (string, error) {
@@ -38,4 +38,29 @@ func DeleteImage(namespace string, imgName string) (string, error) {
 		return "", err
 	}
 	return res, err
+}
+
+func GetImage(client *containerd.Client, image *obj_inner.Image, ctx context.Context) (containerd.Image, error) {
+	ParseImage(image)
+	if image.ImgPullPolicy == "Always" {
+		res, err := FetchImage(client, image.Img, ctx)
+		if err != nil {
+			return nil, err
+		}
+		return res, nil
+	} else if image.ImgPullPolicy == "IfNotPresent" {
+		res, _ := GetImageFromLocal(client, image.Img, ctx)
+		if res == nil {
+			fetch_res, err := FetchImage(client, image.Img, ctx)
+			if err != nil {
+				return nil, err
+			} else {
+				return fetch_res, nil
+			}
+		} else {
+			return res, nil
+		}
+	} else {
+		return nil, nil
+	}
 }

@@ -21,13 +21,13 @@ type PodSpec struct {
 }
 
 type Container struct {
-	Name         string                           `json:"name" yaml:"name"`
-	Image        obj_inner.Image                  `json:"image" yaml:"image"`
-	EntryPoint   obj_inner.EntryPoint             `json:"entryPoint" yaml:"entryPoint"`
-	Ports        []obj_inner.ContainerPort        `json:"ports" yaml:"ports"`
-	Env          []obj_inner.EnvVar               `json:"env" yaml:"env"`
-	VolumeMounts []obj_inner.VolumeMount          `json:"volumeMounts" yaml:"volumeMounts"`
-	Resources    []obj_inner.ResourceRequirements `json:"resources" yaml:"resources"`
+	Name         string                         `json:"name" yaml:"name"`
+	Image        obj_inner.Image                `json:"image" yaml:"image"`
+	EntryPoint   obj_inner.EntryPoint           `json:"entryPoint" yaml:"entryPoint"`
+	Ports        []obj_inner.ContainerPort      `json:"ports" yaml:"ports"`
+	Env          []obj_inner.EnvVar             `json:"env" yaml:"env"`
+	VolumeMounts []obj_inner.VolumeMount        `json:"volumeMounts" yaml:"volumeMounts"`
+	Resources    obj_inner.ResourceRequirements `json:"resources" yaml:"resources"`
 }
 
 type PodStatus struct {
