@@ -25,8 +25,7 @@ func NewConsumer(topic, groupId string) *MsgConsumer {
 	}
 }
 
-func (mc *MsgConsumer) consume(callback func(*MsgDummy)) {
-
+func (mc *MsgConsumer) Consume(callback func(*MsgDummy)) {
 	for {
 		msg, err := mc.consumer.ReadMessage(context.Background())
 		if err != nil {

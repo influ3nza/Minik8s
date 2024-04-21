@@ -13,7 +13,7 @@ type ServerConfig struct {
 
 func DefaultServerConfig() *ServerConfig {
 	return &ServerConfig{
-		Port:          8080,
+		Port:          50000,
 		TrustedProxy:  []string{"127.0.0.1"},
 		EtcdEndpoints: []string{"localhost:2379"},
 		EtcdTimeout:   5 * time.Second,

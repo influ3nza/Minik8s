@@ -28,7 +28,7 @@ func NewProducer(topic string) *MsgProducer {
 	}
 }
 
-func (mp *MsgProducer) produce(msg *MsgDummy) {
+func (mp *MsgProducer) Produce(msg *MsgDummy) {
 	dummy, err := json.Marshal(msg)
 	if err != nil {
 		fmt.Println("[ERROR/message/producer] Failed to marshal message")
@@ -40,6 +40,6 @@ func (mp *MsgProducer) produce(msg *MsgDummy) {
 
 		// https://stackoverflow.com/questions/35788697/leader-not-available-kafka-in-console-producer
 		// 首次创建的topic发送消息时，第一次一定会失败并显示以上报错。
-		err = mp.producer.WriteMessages(context.Background(), kafka.Message{Value: dummy})
+		_ = mp.producer.WriteMessages(context.Background(), kafka.Message{Value: dummy})
 	}
 }

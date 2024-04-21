@@ -19,12 +19,12 @@ func TestMain(m *testing.M) {
 	}
 
 	apiServerDummy = server
-	apiServerDummy.Run()
+	go apiServerDummy.Run()
 	m.Run()
 }
 
 func TestGet(t *testing.T) {
-	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8080/hello", nil)
+	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:50000/hello", nil)
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 

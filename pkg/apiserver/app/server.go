@@ -8,12 +8,14 @@ import (
 
 	"minik8s/pkg/apiserver/config"
 	"minik8s/pkg/etcd"
+	"minik8s/pkg/message"
 )
 
 type ApiServer struct {
 	router   *gin.Engine
 	etcdWrap *etcd.EtcdWrap
 	port     int32
+	producer []*message.MsgProducer
 }
 
 // 在进行测试/实际运行时，第1步调用此函数。
@@ -27,10 +29,13 @@ func CreateApiServerInstance(c *config.ServerConfig) (*ApiServer, error) {
 		return nil, err
 	}
 
+	producerSche := message.NewProducer("scheduler")
+
 	return &ApiServer{
 		router:   router,
 		etcdWrap: wrap,
 		port:     c.Port,
+		producer: []*message.MsgProducer{producerSche},
 	}, nil
 }
 
@@ -39,6 +44,15 @@ func serverHelloWorld(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "hello world from apiserver!",
 	})
+}
+
+func (s *ApiServer) MsgToScheduler() {
+	dummy := &message.MsgDummy{
+		Type: "default",
+		Key:  "1",
+		Val:  "hello",
+	}
+	s.producer[0].Produce(dummy)
 }
 
 // 将所有的接口在此函数内进行绑定
