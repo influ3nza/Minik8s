@@ -8,7 +8,10 @@ metaData:
   uuid: 1f3a54a3-c1b9-4e47-b063-2a6d84fde222
 spec:
   containers:
-    - image: docker.io/library/redis
+    - image: 
+        imgName: docker.io/library/redis
       name: testContainer-1
-    - image: docker.io/library/nginx
+    - image: 
+        imgName: docker.io/library/nginx
       name: testContainer-2
+  nodeName: testContainer1
