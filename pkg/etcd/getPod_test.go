@@ -7,7 +7,6 @@ import (
 
 func TestAddPod(t *testing.T) {
 	filePath := "./testfile/Pod-1.yaml"
-	print("test hello")
 	etcdWrap, err := CreateEtcdInstance([]string{"http://localhost:50000"}, 5*time.Second)
 
 	if err != nil {
