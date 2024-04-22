@@ -5,8 +5,9 @@ import (
 )
 
 const (
-	API_get_nodes string = "/nodes"
-	API_get_node  string = "/nodes/:name"
+	API_get_nodes  string = "/nodes"
+	API_get_node   string = "/nodes/:name"
+	API_update_pod string = "/pods/update"
 )
 
 type ServerConfig struct {

@@ -126,6 +126,10 @@ func (s *ApiServer) AddNode(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "[msgHandler/addNode] Add node success",
+		"data": "[msgHandler/addNode] Add node success",
 	})
+}
+
+func (s *ApiServer) UpdatePod(c *gin.Context) {
+	//TODO:
 }
