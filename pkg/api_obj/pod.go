@@ -1,7 +1,8 @@
 package api_obj
 
 import (
-	"SE3356/pkg/api_obj/obj_inner"
+	"my-Minik8s/pkg/api_obj/obj_inner"
+
 	"github.com/containerd/containerd"
 )
 
