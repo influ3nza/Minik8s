@@ -26,7 +26,7 @@ func NewProducer() *MsgProducer {
 		for {
 			select {
 			case success := <-producer.Successes():
-				fmt.Printf("Produced message to topic %s, partition %d, offset %d\n",
+				fmt.Printf("[SUCCESS/message/producer] Produced message to topic %s, partition %d, offset %d\n",
 					success.Topic, success.Partition, success.Offset)
 			case err := <-producer.Errors():
 				fmt.Printf("Failed to produce message: %v\n", err)

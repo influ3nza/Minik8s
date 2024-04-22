@@ -3,13 +3,14 @@ package scheduler
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/apiserver/config"
-
 	"minik8s/pkg/message"
+	"minik8s/pkg/network"
 )
+
+var pollIndex int32 = 0
 
 type Scheduler struct {
 	consumer   *(message.MsgConsumer)
@@ -20,44 +21,60 @@ type Scheduler struct {
 }
 
 func (s *Scheduler) MsgHandler(_ *message.MsgDummy) {
-	fmt.Printf("[Scheduler] Received message from apiserver!\n")
-	s.ExecSchedule()
+	fmt.Printf("[scheduler/MsgHandler] Received message from apiserver!\n")
+
+	podDummy := api_obj.Pod{}
+
+	s.ExecSchedule(podDummy)
 }
 
-func (s *Scheduler) ExecSchedule() {
+func (s *Scheduler) ExecSchedule(pod api_obj.Pod) {
 	pack, err := s.GetNodes()
 
-	for _, kv := range pack {
-		fmt.Printf("Get node %s, %s\n", kv.UUID, kv.Val)
+	if err != nil {
+		fmt.Printf("[ERR/scheduler/ExecSchedule] Failed to get nodes, %s", err)
+		return
 	}
 
-	if err != nil {
-		_ = fmt.Errorf("[SCHEDULER/execSchedule] Fail to get all nodes")
-	} else {
-		fmt.Printf("[SCHEDULER/execSchedule] Reached here.\n")
+	avail_pack := []api_obj.Node{}
+	//遍历node列表，进行可用性筛选（predicate）
+	for _, n := range pack {
+		if n.GetCondition() == api_obj.Ready {
+			avail_pack = append(avail_pack, n)
+		}
 	}
-	//TODO:本函数传入pod对象，接下来筛选存活node以及分配最合适的node
+
+	node_chosen := s.DecideNode(pod, avail_pack)
+	if node_chosen == "" {
+		fmt.Printf("[ERR/scheduler/ExecSchedule] No suitable node to distribute")
+		return
+	}
+
+	pod.Spec.NodeName = node_chosen
+	//向apiserver提交更新请求
+	//向消息队列发送创建pod消息->kubelet
 }
 
-func (s *Scheduler) GetNodes() ([]api_obj.NodeDummy, error) {
+func (s *Scheduler) DecideNode(pod api_obj.Pod, avail_pack []api_obj.Node) string {
+	//指定，数量为0，返回""
+}
+
+func (s *Scheduler) GetNodes() ([]api_obj.Node, error) {
 	//向apiServer发送http请求
 	uri := s.apiAddress + ":" + s.apiPort + config.API_get_nodes
+	var pack []api_obj.Node
 
-	resp, err := http.Get(uri)
+	dataStr, err := network.GetRequest(uri)
 	if err != nil {
-		return nil, err
+		fmt.Printf("[ERR/scheduler/GetNodes] GET request failed, %s", err)
+		return pack, err
 	}
 
-	defer resp.Body.Close()
-
-	var result map[string]interface{}
-	decoder := json.NewDecoder(resp.Body)
-	_ = decoder.Decode(&result)
-	data := result["data"]
-	dataStr := fmt.Sprint(data)
-
-	var pack []api_obj.NodeDummy
-	_ = json.Unmarshal([]byte(dataStr), &pack)
+	err = json.Unmarshal([]byte(dataStr), &pack)
+	if err != nil {
+		fmt.Printf("[scheduler/GetNodes] Failed to unmarshall data, %s", err)
+		return []api_obj.Node{}, err
+	}
 
 	return pack, nil
 }

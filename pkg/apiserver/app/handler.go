@@ -1,11 +1,13 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
+	"minik8s/pkg/api_obj"
 	"minik8s/pkg/apiserver/config"
 )
 
@@ -67,4 +69,63 @@ func (s *ApiServer) GetNode(c *gin.Context) {
 		})
 		return
 	}
+}
+
+func (s *ApiServer) AddNode(c *gin.Context) {
+	fmt.Printf("[apiserver/AddNode] Try to add a node")
+
+	var node api_obj.Node
+
+	//TODO: post请求 要加JSON请求标头
+	err := c.ShouldBind(&node)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[apiserver/AddNode] Failed to parse node, " + err.Error(),
+		})
+
+		return
+	}
+
+	//检查node各项参数
+	//name是否重复
+	node_name := node.GetName()
+	res, err := s.EtcdWrap.Get(config.ETCD_node_prefix + node_name)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[msgHandler/addNode] Get node failed, " + err.Error(),
+		})
+		return
+	}
+
+	if len(res) != 0 {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[msgHandler/addNode] Node name already exists, " + err.Error(),
+		})
+		return
+	}
+
+	//初始化
+	node.NodeMetadata.UUID = "default UUID"
+	node.NodeStatus = api_obj.NodeStatus{}
+
+	//parse， 此时的node已经是结构体了
+	node_json, err := json.Marshal(node)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[msgHandler/addNode] Failed to marshal data, " + err.Error(),
+		})
+		return
+	}
+
+	err = s.EtcdWrap.Put(config.ETCD_node_prefix+node_name, node_json)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[msgHandler/addNode] Failed to write in etcd, " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "[msgHandler/addNode] Add node success",
+	})
 }
