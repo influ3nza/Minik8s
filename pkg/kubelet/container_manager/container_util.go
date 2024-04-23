@@ -90,11 +90,11 @@ func convertEnv(container *api_obj.Container) []string {
 	return envs
 }
 
-func convertMounts(podSpec *api_obj.PodSpec, container *api_obj.Container) ([]VolumeMap, error) {
-	var mounts = []VolumeMap{}
+func convertMounts(volumes []obj_inner.Volume, container *api_obj.Container) ([]VolumeMap, error) {
+	var mounts []VolumeMap
 	if container.VolumeMounts != nil {
 		for _, volumeMount := range container.VolumeMounts {
-			for _, volume := range podSpec.Volumes {
+			for _, volume := range volumes {
 				if volumeMount.Name == volume.Name {
 					mounts = append(mounts, VolumeMap{
 						Host_:      volume.Path,

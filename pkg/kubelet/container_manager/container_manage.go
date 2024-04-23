@@ -2,6 +2,7 @@ package container_manager
 
 import (
 	"SE3356/pkg/api_obj"
+	"SE3356/pkg/api_obj/obj_inner"
 	"SE3356/pkg/kubelet/image_manage"
 	"SE3356/pkg/kubelet/util"
 	"context"
@@ -31,7 +32,7 @@ func ListContainers(client *containerd.Client, ctx context.Context, filter ...st
 // 返回值：
 //
 //	container : containerd.Container
-func CreateK8sContainer(ctx context.Context, client *containerd.Client, container *api_obj.Container, pod *api_obj.Pod, linuxNamespace string) (containerd.Container, error) {
+func CreateK8sContainer(ctx context.Context, client *containerd.Client, container *api_obj.Container, metaName string, podVolumes []obj_inner.Volume, linuxNamespace string) (containerd.Container, error) {
 	// 解析image，配置容器image选项
 	image, err := image_manage.GetImage(client, &container.Image, ctx)
 	if err != nil {
@@ -40,7 +41,7 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 	createOpts := []oci.SpecOpts{oci.WithImageConfig(image)}
 
 	// 配置hostname，不允许用户设置，使用default --> pod.MetaData.Name
-	createOpts = append(createOpts, oci.WithHostname(pod.MetaData.Name))
+	createOpts = append(createOpts, oci.WithHostname(metaName))
 
 	//配置容器资源
 	limitOpts, err := ParseResources(container.Resources)
@@ -72,7 +73,7 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 
 	// 配置容器Mount todo source&dest
 	if container.VolumeMounts != nil {
-		mounts, e := convertMounts(&pod.Spec, container)
+		mounts, e := convertMounts(podVolumes, container)
 		if e != nil {
 			fmt.Println("At CreateK8sContainer line 80 ", e.Error())
 			return nil, e
@@ -83,7 +84,7 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 			for _, mount := range mounts {
 				ociMounts[i] = specs.Mount{
 					Destination: mount.Container_,
-					Source:      mount.Host_ + mount.Subdir_,
+					Source:      mount.Host_ + "/" + mount.Subdir_,
 					Type:        "bind",
 					Options:     []string{"bind"},
 				}
@@ -93,25 +94,27 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 	}
 
 	// 配置容器namespace pid net ipc uts
-	var linuxNamespaces = map[string]string{
-		"pid":     linuxNamespace + "pid",
-		"network": linuxNamespace + "net",
-		"ipc":     linuxNamespace + "ipc",
-		"uts":     linuxNamespace + "uts",
-	}
-	var ociLinuxNsOpt []oci.SpecOpts
-	for nameSpaceType, nameSpace := range linuxNamespaces {
-		linuxNsSpace := specs.LinuxNamespace{
-			Type: specs.LinuxNamespaceType(nameSpaceType),
-			Path: nameSpace,
+	if linuxNamespace != "" {
+		var linuxNamespaces = map[string]string{
+			"pid":     linuxNamespace + "pid",
+			"network": linuxNamespace + "net",
+			"ipc":     linuxNamespace + "ipc",
+			"uts":     linuxNamespace + "uts",
 		}
-		ociLinuxNsOpt = append(ociLinuxNsOpt, oci.WithLinuxNamespace(linuxNsSpace))
+		var ociLinuxNsOpt []oci.SpecOpts
+		for nameSpaceType, nameSpace := range linuxNamespaces {
+			linuxNsSpace := specs.LinuxNamespace{
+				Type: specs.LinuxNamespaceType(nameSpaceType),
+				Path: nameSpace,
+			}
+			ociLinuxNsOpt = append(ociLinuxNsOpt, oci.WithLinuxNamespace(linuxNsSpace))
+		}
+		createOpts = append(createOpts, ociLinuxNsOpt...)
 	}
-	createOpts = append(createOpts, ociLinuxNsOpt...)
 
 	// 配置容器labels，包含"podName" ： podname/ "ports" : serialize(container.ports)
 	podLabel := map[string]string{
-		"podName": pod.MetaData.Name,
+		"podName": metaName,
 	}
 	var portLabel = map[string]string{}
 	if len(container.Ports) > 0 {
