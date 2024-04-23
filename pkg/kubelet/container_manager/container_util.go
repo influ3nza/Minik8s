@@ -1,7 +1,9 @@
 package container_manager
 
 import (
+	"SE3356/pkg/api_obj"
 	"SE3356/pkg/api_obj/obj_inner"
+	"errors"
 	"fmt"
 	"github.com/containerd/containerd/oci"
 	"github.com/docker/go-units"
@@ -75,4 +77,35 @@ func ParseResources(requirements obj_inner.ResourceRequirements) ([]oci.SpecOpts
 		opts = append(opts, oci.WithMemoryLimit(limMem))
 	}
 	return opts, nil
+}
+
+func convertEnv(container *api_obj.Container) []string {
+	var envs = []string{}
+	if container.Env != nil && len(container.Env) > 0 {
+		for _, env := range container.Env {
+			str := env.Name + "=" + env.Value
+			envs = append(envs, str)
+		}
+	}
+	return envs
+}
+
+func convertMounts(podSpec *api_obj.PodSpec, container *api_obj.Container) ([]VolumeMap, error) {
+	var mounts = []VolumeMap{}
+	if container.VolumeMounts != nil {
+		for _, volumeMount := range container.VolumeMounts {
+			for _, volume := range podSpec.Volumes {
+				if volumeMount.Name == volume.Name {
+					mounts = append(mounts, VolumeMap{
+						Host_:      volume.Path,
+						Container_: volumeMount.MountPath,
+						Subdir_:    volumeMount.SubPath,
+						Type_:      volume.Type,
+					})
+				}
+			}
+		}
+		return mounts, nil
+	}
+	return nil, errors.New("Convert Mounts Error")
 }
