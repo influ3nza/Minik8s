@@ -1,4 +1,4 @@
-module SE3356
+module minik8s
 
 go 1.22
 
