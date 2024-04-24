@@ -17,6 +17,12 @@ func Exec(namespace string, args ...string) (string, error) {
 	return string(res), err
 }
 
+func Mkdir(path string) (string, error) {
+	res, err := exec.Command("mkdir", "-p", path).CombinedOutput()
+	fmt.Println("At Mkdir line 22", string(res), err)
+	return string(res), err
+}
+
 func PrintCmd(namespace string, args ...string) string {
 	str := []string{"-n", namespace}
 	str = append(str, args...)
@@ -35,6 +41,15 @@ func RunContainer(namespace string, name string) (string, error) {
 	return res, nil
 	//res := PrintCmd(namespace, cmd...)
 	//return res, nil
+}
+
+func GetContainerInfo(namespace string, info string, containerId string) (string, err) {
+	cmd := []string{"inspect", "-f", fmt.Sprintf("{{%s}}", info), containerId}
+	res, err := Exec(namespace, cmd...)
+	if err != nil {
+		return "", err
+	}
+	return res, nil
 }
 
 func RmForce(namespace string, name string) (string, error) {

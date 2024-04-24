@@ -1,4 +1,4 @@
-package image_manage
+package image_manager
 
 import (
 	"context"

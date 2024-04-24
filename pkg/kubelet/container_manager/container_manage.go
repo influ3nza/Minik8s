@@ -10,8 +10,9 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
-	"minik8s/pkg/kubelet/image_manage"
+	"minik8s/pkg/kubelet/image_manager"
 	"minik8s/pkg/kubelet/util"
+	"os"
 )
 
 func ListContainers(client *containerd.Client, ctx context.Context, filter ...string) ([]containerd.Container, error) {
@@ -37,7 +38,7 @@ func ListContainers(client *containerd.Client, ctx context.Context, filter ...st
 //	container : containerd.Container
 func CreateK8sContainer(ctx context.Context, client *containerd.Client, container *api_obj.Container, metaName string, podVolumes []obj_inner.Volume, linuxNamespace string) (containerd.Container, error) {
 	// 解析image，配置容器image选项
-	image, err := image_manage.GetImage(client, &container.Image, ctx)
+	image, err := image_manager.GetImage(client, &container.Image, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -88,10 +89,20 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 			i := 0
 			for _, mount := range mounts {
 				ociMounts[i] = specs.Mount{
-					Destination: mount.Host_ + "/" + mount.Subdir_,
-					Source:      mount.Container_,
+					Destination: mount.Container_,
+					Source:      mount.Host_ + "/" + mount.Subdir_,
 					Type:        "bind",
 					Options:     []string{"bind"},
+				}
+			}
+			for _, Mounts := range ociMounts {
+				fmt.Println(Mounts.Destination, Mounts.Source)
+				_, err := os.Stat(Mounts.Source)
+				if os.IsNotExist(err) {
+					_, err := util.Mkdir(Mounts.Source)
+					if err != nil {
+						return nil, err
+					}
 				}
 			}
 			createOpts = append(createOpts, oci.WithMounts(ociMounts))
@@ -196,8 +207,8 @@ func StopAndRmContainer(pod *api_obj.Pod, container containerd.Container, ifForc
 	return nil
 }
 
-func CreatePauseContainer(namespace string) error {
-	res, err := util.RunContainer(namespace, "pause")
+func CreatePauseContainer(namespace string, name string) error {
+	res, err := util.RunContainer(namespace, name)
 	if err != nil {
 		return err
 	}

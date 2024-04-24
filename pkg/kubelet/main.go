@@ -56,7 +56,7 @@ func main() {
 		{
 			Name: "testMount",
 			Type: "",
-			Path: "/home",
+			Path: "/testOOO",
 		},
 	}
 	var container = api_obj.Container{
@@ -86,7 +86,7 @@ func main() {
 		},
 		VolumeMounts: []obj_inner.VolumeMount{
 			{
-				MountPath: "/home",
+				MountPath: "/var/lib",
 				SubPath:   "config",
 				Name:      "testMount",
 				ReadOnly:  false,

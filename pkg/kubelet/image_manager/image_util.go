@@ -1,4 +1,4 @@
-package image_manage
+package image_manager
 
 import (
 	"minik8s/pkg/api_obj/obj_inner"
