@@ -1,8 +1,8 @@
 package api_obj
 
 import (
-	"SE3356/pkg/api_obj/obj_inner"
 	"github.com/containerd/containerd"
+	"minik8s/pkg/api_obj/obj_inner"
 )
 
 type Pod struct {
@@ -10,6 +10,7 @@ type Pod struct {
 	Kind       string               `json:"kind" yaml:"kind"`
 	MetaData   obj_inner.ObjectMeta `json:"metaData" yaml:"metaData"`
 	Spec       PodSpec              `json:"spec" yaml:"spec"`
+	PodStatus  PodStatus
 }
 
 type PodSpec struct {
@@ -21,13 +22,13 @@ type PodSpec struct {
 }
 
 type Container struct {
-	Name         string                           `json:"name" yaml:"name"`
-	Image        obj_inner.Image                  `json:"image" yaml:"image"`
-	EntryPoint   obj_inner.EntryPoint             `json:"entryPoint" yaml:"entryPoint"`
-	Ports        []obj_inner.ContainerPort        `json:"ports" yaml:"ports"`
-	Env          []obj_inner.EnvVar               `json:"env" yaml:"env"`
-	VolumeMounts []obj_inner.VolumeMount          `json:"volumeMounts" yaml:"volumeMounts"`
-	Resources    []obj_inner.ResourceRequirements `json:"resources" yaml:"resources"`
+	Name         string                         `json:"name" yaml:"name"`
+	Image        obj_inner.Image                `json:"image" yaml:"image"`
+	EntryPoint   obj_inner.EntryPoint           `json:"entryPoint" yaml:"entryPoint"`
+	Ports        []obj_inner.ContainerPort      `json:"ports" yaml:"ports"`
+	Env          []obj_inner.EnvVar             `json:"env" yaml:"env"`
+	VolumeMounts []obj_inner.VolumeMount        `json:"volumeMounts" yaml:"volumeMounts"`
+	Resources    obj_inner.ResourceRequirements `json:"resources" yaml:"resources"`
 }
 
 type PodStatus struct {
