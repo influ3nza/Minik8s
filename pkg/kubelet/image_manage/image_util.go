@@ -1,7 +1,7 @@
 package image_manage
 
 import (
-	"SE3356/pkg/api_obj/obj_inner"
+	"minik8s/pkg/api_obj/obj_inner"
 	"strings"
 )
 

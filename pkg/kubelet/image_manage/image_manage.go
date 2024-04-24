@@ -1,10 +1,10 @@
 package image_manage
 
 import (
-	"SE3356/pkg/api_obj/obj_inner"
-	"SE3356/pkg/kubelet/util"
 	"context"
 	"github.com/containerd/containerd"
+	"minik8s/pkg/api_obj/obj_inner"
+	"minik8s/pkg/kubelet/util"
 )
 
 func GetImageFromLocal(client *containerd.Client, name string, ctx context.Context) (containerd.Image, error) {

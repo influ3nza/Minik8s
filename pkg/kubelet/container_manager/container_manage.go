@@ -1,10 +1,6 @@
 package container_manager
 
 import (
-	"SE3356/pkg/api_obj"
-	"SE3356/pkg/api_obj/obj_inner"
-	"SE3356/pkg/kubelet/image_manage"
-	"SE3356/pkg/kubelet/util"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -12,6 +8,10 @@ import (
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/oci"
 	"github.com/opencontainers/runtime-spec/specs-go"
+	"minik8s/pkg/api_obj"
+	"minik8s/pkg/api_obj/obj_inner"
+	"minik8s/pkg/kubelet/image_manage"
+	"minik8s/pkg/kubelet/util"
 )
 
 func ListContainers(client *containerd.Client, ctx context.Context, filter ...string) ([]containerd.Container, error) {
@@ -25,9 +25,12 @@ func ListContainers(client *containerd.Client, ctx context.Context, filter ...st
 // CreateK8sContainer 创建一个proj容器
 // 参数：
 //
-//	client : *containerd.Client
 //	ctx 	 : context.Context
-//	container : api_obj.Container
+//	client : *containerd.Client
+//	container : *api_obj.Container
+//	metaName : metaData.Name in Pod
+//	podVolumes : volumes on host in Pod
+//	linuxNamespace : Create Pause And Then Generated
 //
 // 返回值：
 //
@@ -58,7 +61,9 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 
 	// 配置容器EntryPoint：包括WorkDir，Cmd，Args
 	var entryOci []oci.SpecOpts
-	entryOci = append(entryOci, oci.WithProcessCwd(container.EntryPoint.WorkingDir))
+	if container.EntryPoint.WorkingDir != "" {
+		entryOci = append(entryOci, oci.WithProcessCwd(container.EntryPoint.WorkingDir))
+	}
 	if len(container.EntryPoint.Command) != 0 {
 		var processArgs []string
 		for _, cmd := range container.EntryPoint.Command {
@@ -83,8 +88,8 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 			i := 0
 			for _, mount := range mounts {
 				ociMounts[i] = specs.Mount{
-					Destination: mount.Container_,
-					Source:      mount.Host_ + "/" + mount.Subdir_,
+					Destination: mount.Host_ + "/" + mount.Subdir_,
+					Source:      mount.Container_,
 					Type:        "bind",
 					Options:     []string{"bind"},
 				}

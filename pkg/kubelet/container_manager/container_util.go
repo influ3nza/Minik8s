@@ -1,12 +1,12 @@
 package container_manager
 
 import (
-	"SE3356/pkg/api_obj"
-	"SE3356/pkg/api_obj/obj_inner"
 	"errors"
 	"fmt"
 	"github.com/containerd/containerd/oci"
 	"github.com/docker/go-units"
+	"minik8s/pkg/api_obj"
+	"minik8s/pkg/api_obj/obj_inner"
 	"strconv"
 )
 
@@ -97,9 +97,9 @@ func convertMounts(volumes []obj_inner.Volume, container *api_obj.Container) ([]
 			for _, volume := range volumes {
 				if volumeMount.Name == volume.Name {
 					mounts = append(mounts, VolumeMap{
-						Host_:      volume.Path,
-						Container_: volumeMount.MountPath,
-						Subdir_:    volumeMount.SubPath,
+						Host_:      volume.Path,           // /var/lib
+						Container_: volumeMount.MountPath, // /home
+						Subdir_:    volumeMount.SubPath,   // /config
 						Type_:      volume.Type,
 					})
 				}

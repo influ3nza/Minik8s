@@ -1,12 +1,12 @@
 package container_manager
 
 import (
-	"SE3356/pkg/api_obj"
-	"SE3356/pkg/api_obj/obj_inner"
 	"context"
 	"fmt"
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/namespaces"
+	"minik8s/pkg/api_obj"
+	"minik8s/pkg/api_obj/obj_inner"
 	"testing"
 )
 
@@ -17,7 +17,7 @@ func TestCreateK8sContainer(t *testing.T) {
 		{
 			Name: "testMount",
 			Type: "",
-			Path: "/home",
+			Path: "/mydata/mnttest",
 		},
 	}
 	var container = api_obj.Container{
