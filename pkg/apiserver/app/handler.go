@@ -275,4 +275,7 @@ func (s *ApiServer) UpdatePod(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": "[handler/updatePod] Update pod success",
 	})
+
+	//测试的终点，到达这里就可以下班了
+	fmt.Printf("[handler/updatePod] Update pod success")
 }
