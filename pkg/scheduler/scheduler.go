@@ -24,15 +24,22 @@ type Scheduler struct {
 	apiPort    string
 }
 
-func (s *Scheduler) MsgHandler(_ *message.Message) {
+func (s *Scheduler) MsgHandler(msg *message.Message) {
 	fmt.Printf("[scheduler/MsgHandler] Received message from apiserver!\n")
 
-	podDummy := api_obj.Pod{}
+	pod_str := msg.Content
+	new_pod := &api_obj.Pod{}
 
-	s.ExecSchedule(podDummy)
+	err := json.Unmarshal([]byte(pod_str), new_pod)
+	if err != nil {
+		fmt.Printf("[ERR/scheduler/MsgHandler] Failed to marshal pod, " + err.Error())
+		return
+	}
+
+	s.ExecSchedule(new_pod)
 }
 
-func (s *Scheduler) ExecSchedule(pod api_obj.Pod) {
+func (s *Scheduler) ExecSchedule(pod *api_obj.Pod) {
 	pack, err := s.GetNodes()
 
 	if err != nil {
@@ -79,10 +86,10 @@ func (s *Scheduler) ExecSchedule(pod api_obj.Pod) {
 	//TODO:暂定发送topic为kubelet+node名字，且此处的消息为假体
 	//实际应为更新后的pod对象。
 	msgDummy := message.Message{}
-	s.producer.Produce("kubelet-"+node_chosen, &msgDummy)
+	s.producer.Produce("trashbin/"+node_chosen, &msgDummy)
 }
 
-func (s *Scheduler) DecideNode(pod api_obj.Pod, avail_pack []api_obj.Node) string {
+func (s *Scheduler) DecideNode(pod *api_obj.Pod, avail_pack []api_obj.Node) string {
 	//指定席
 	requested := pod.Spec.NodeName
 	if requested != "" {

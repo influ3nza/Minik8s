@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"minik8s/pkg/api_obj"
+	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/apiserver/config"
 )
 
@@ -132,7 +133,6 @@ func (s *ApiServer) AddNode(c *gin.Context) {
 
 func (s *ApiServer) AddPod(c *gin.Context) {
 	//在etcd中创建一个新的pod对象，内容已从用户yaml文件中读取完毕。
-	//TODO:
 	new_pod := &api_obj.Pod{}
 	err := c.ShouldBind(new_pod)
 	if err != nil {
@@ -153,7 +153,8 @@ func (s *ApiServer) AddPod(c *gin.Context) {
 
 	//存入etcd
 	//是否已经有同名pod
-	res, err := s.EtcdWrap.Get(config.ETCD_pod_prefix + new_pod_name + "/" + new_pod_namespace)
+	e_key := config.ETCD_pod_prefix + new_pod_name + "/" + new_pod_namespace
+	res, err := s.EtcdWrap.Get(e_key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "[ERR/handler/addPod] Failed to get pod, " + err.Error(),
@@ -170,16 +171,30 @@ func (s *ApiServer) AddPod(c *gin.Context) {
 	//更新相关状态
 	//TODO: 这里的UUID仍然为default。
 	new_pod.MetaData.UUID = "default"
+	new_pod.PodStatus.Phase = obj_inner.Pending
 	new_pod_str, err := json.Marshal(new_pod)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[msgHandler/addPod] Failed to marshal pod, " + err.Error(),
+			"error": "[ERR/msgHandler/addPod] Failed to marshal pod, " + err.Error(),
+		})
+		return
+	}
+
+	err = s.EtcdWrap.Put(e_key, new_pod_str)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/msgHandler/addPod] Failed to write into etcd, " + err.Error(),
 		})
 		return
 	}
 
 	//创建完成之后，通知scheduler分配node
-	s.Producer.CallScheduleNode()
+	s.Producer.CallScheduleNode(string(new_pod_str))
+
+	//成功返回
+	c.JSON(http.StatusCreated, gin.H{
+		"data": "[msgHandler/addPod] Create pod success",
+	})
 }
 
 func (s *ApiServer) UpdatePod(c *gin.Context) {

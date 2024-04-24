@@ -8,6 +8,7 @@ const (
 	API_get_nodes  string = "/nodes"
 	API_get_node   string = "/nodes/:name"
 	API_update_pod string = "/pods/update"
+	API_add_pod    string = "/pods/add"
 )
 
 type ServerConfig struct {
