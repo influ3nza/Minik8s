@@ -17,8 +17,8 @@ var pollIndex int32 = 0
 var lock sync.Mutex
 
 type Scheduler struct {
-	consumer   *(message.MsgConsumer)
-	producer   *(message.MsgProducer)
+	Consumer   *(message.MsgConsumer)
+	Producer   *(message.MsgProducer)
 	policy     SchedulingPolicy
 	apiAddress string
 	apiPort    string
@@ -43,7 +43,7 @@ func (s *Scheduler) ExecSchedule(pod *api_obj.Pod) {
 	pack, err := s.GetNodes()
 
 	if err != nil {
-		fmt.Printf("[ERR/scheduler/ExecSchedule] Failed to get nodes, %s", err)
+		fmt.Printf("[ERR/scheduler/ExecSchedule] Failed to get nodes, %s\n", err)
 		return
 	}
 
@@ -55,38 +55,40 @@ func (s *Scheduler) ExecSchedule(pod *api_obj.Pod) {
 		}
 	}
 
+	fmt.Printf("[scheduler/ExecSchedule] Available node count: %d\n", len(avail_pack))
+
 	//挑选唯一的node
 	node_chosen := s.DecideNode(pod, avail_pack)
 	if node_chosen == "" {
-		fmt.Printf("[ERR/scheduler/ExecSchedule] No suitable node to distribute")
+		fmt.Printf("[ERR/scheduler/ExecSchedule] No suitable node to distribute.\n")
 		return
 	}
 
 	pod.Spec.NodeName = node_chosen
 	pod_str, err := json.Marshal(pod)
 	if err != nil {
-		fmt.Printf("[ERR/scheduler/ExecSchedule] Failed to marshal pod")
+		fmt.Printf("[ERR/scheduler/ExecSchedule] Failed to marshal pod.\n")
 		return
 	}
 
 	//向apiserver提交更新请求
-	uri := s.apiAddress + ":" + s.apiPort + config.API_update_pod
+	uri := config.API_server_prefix + config.API_update_pod
 	_, errStr, err := network.PostRequest(uri, pod_str)
 	if err != nil {
-		fmt.Printf("[ERR/scheduler/ExecSchedule] Failed to update pod to apiserver, %s", err)
+		fmt.Printf("[ERR/scheduler/ExecSchedule] Failed to update pod to apiserver, %s.\n", err)
 		return
 	} else if errStr != "" {
-		fmt.Printf("[ERR/scheduler/ExecSchedule] Failed to update pod to apiserver, %s", errStr)
+		fmt.Printf("[ERR/scheduler/ExecSchedule] Failed to update pod to apiserver, %s.\n", errStr)
 		return
 	} else {
-		fmt.Printf("[scheduler/ExecSchedule] Updated pod to apiserver")
+		fmt.Printf("[scheduler/ExecSchedule] Updated pod to apiserver.\n")
 	}
 
 	//向消息队列发送创建pod消息->kubelet
 	//TODO:暂定发送topic为kubelet+node名字，且此处的消息为假体
 	//实际应为更新后的pod对象。
-	msgDummy := message.Message{}
-	s.producer.Produce("trashbin/"+node_chosen, &msgDummy)
+	// msgDummy := message.Message{}
+	// s.Producer.Produce("trashbin/"+node_chosen, &msgDummy)
 }
 
 func (s *Scheduler) DecideNode(pod *api_obj.Pod, avail_pack []api_obj.Node) string {
@@ -123,7 +125,7 @@ func (s *Scheduler) SchedulePoll(avail_pack []api_obj.Node) string {
 	i := pollIndex % int32(node_cnt)
 	node_chosen := avail_pack[i].GetName()
 	pollIndex += 1
-	fmt.Printf("[scheduler/SchedulePoll] Node %d chosen for the new pod", i)
+	fmt.Printf("[scheduler/SchedulePoll] Node [%d]:%s chosen for the new pod.\n", i, node_chosen)
 
 	return node_chosen
 }
@@ -133,28 +135,35 @@ func (s *Scheduler) ScheduleRandom(avail_pack []api_obj.Node) string {
 	i := rand.Intn(1000) % len(avail_pack)
 
 	node_chosen := avail_pack[i].GetName()
-	fmt.Printf("[scheduler/ScheduleRandom] Node %d chosen for the new pod", i)
+	fmt.Printf("[scheduler/ScheduleRandom] Node [%d]:%s chosen for the new pod.\n", i, node_chosen)
 
 	return node_chosen
 }
 
 func (s *Scheduler) GetNodes() ([]api_obj.Node, error) {
 	//向apiServer发送http请求
-	uri := s.apiAddress + ":" + s.apiPort + config.API_get_nodes
+	uri := config.API_server_prefix + config.API_get_nodes
 	var pack []api_obj.Node
 
 	dataStr, errStr, err := network.GetRequest(uri)
 	if err != nil {
-		fmt.Printf("[ERR/scheduler/GetNodes] GET request failed, %s", err)
+		fmt.Printf("[ERR/scheduler/GetNodes] GET request failed, %s.\n", err)
 		return pack, err
 	} else if errStr != "" {
-		fmt.Printf("[ERR/scheduler/GetNodes] GET request failed, %s", errStr)
-		return pack, err
+		fmt.Printf("[ERR/scheduler/GetNodes] GET request failed, %s.\n", errStr)
+		return pack, nil
 	}
+
+	if dataStr == "" {
+		fmt.Printf("[ERR/scheduler/GetNodes] Not any node available.\n")
+		return []api_obj.Node{}, nil
+	}
+
+	fmt.Printf("[scheduler/GetNodes] Sent request to apiserver!\n")
 
 	err = json.Unmarshal([]byte(dataStr), &pack)
 	if err != nil {
-		fmt.Printf("[scheduler/GetNodes] Failed to unmarshall data, %s", err)
+		fmt.Printf("[ERR/scheduler/GetNodes] Failed to unmarshall data, %s.\n", err)
 		return []api_obj.Node{}, err
 	}
 
@@ -167,8 +176,8 @@ func CreateSchedulerInstance() (*Scheduler, error) {
 
 	c := DefaultSchedulerConfig()
 	scheduler := &Scheduler{
-		consumer:   consumer,
-		producer:   producer,
+		Consumer:   consumer,
+		Producer:   producer,
 		policy:     c.policy,
 		apiAddress: c.apiAddress,
 		apiPort:    c.apiPort,
@@ -178,5 +187,5 @@ func CreateSchedulerInstance() (*Scheduler, error) {
 }
 
 func (s *Scheduler) Run() {
-	go s.consumer.Consume([]string{"scheduler"}, s.MsgHandler)
+	go s.Consumer.Consume([]string{"scheduler"}, s.MsgHandler)
 }

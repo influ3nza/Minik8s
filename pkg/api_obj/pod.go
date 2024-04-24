@@ -9,7 +9,7 @@ import (
 type Pod struct {
 	ApiVersion string               `json:"apiVersion" yaml:"apiVersion"`
 	Kind       string               `json:"kind" yaml:"kind"`
-	MetaData   obj_inner.ObjectMeta `json:"metaData" yaml:"metaData"`
+	MetaData   obj_inner.ObjectMeta `json:"metaData" yaml:"metadata"`
 	Spec       PodSpec              `json:"spec" yaml:"spec"`
 	PodStatus  PodStatus
 }

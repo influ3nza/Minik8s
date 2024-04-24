@@ -3,14 +3,12 @@ package message
 import (
 	"encoding/json"
 	"fmt"
-	"sync"
 
 	"github.com/IBM/sarama"
 )
 
 type MsgProducer struct {
-	producer sarama.AsyncProducer
-	wg       *sync.WaitGroup
+	Producer sarama.AsyncProducer
 }
 
 func NewProducer() *MsgProducer {
@@ -19,10 +17,11 @@ func NewProducer() *MsgProducer {
 	config.Producer.Return.Errors = true
 	producer, _ := sarama.NewAsyncProducer([]string{"localhost:9092"}, config)
 
-	var wg sync.WaitGroup
-	wg.Add(1)
+	mp := &MsgProducer{
+		Producer: producer,
+	}
+
 	go func() {
-		defer wg.Done()
 		for {
 			select {
 			case success := <-producer.Successes():
@@ -34,10 +33,7 @@ func NewProducer() *MsgProducer {
 		}
 	}()
 
-	return &MsgProducer{
-		producer: producer,
-		wg:       &wg,
-	}
+	return mp
 }
 
 func (mp *MsgProducer) Produce(topic string, msg *Message) {
@@ -46,7 +42,7 @@ func (mp *MsgProducer) Produce(topic string, msg *Message) {
 		fmt.Println("[ERROR/message/producer] Failed to marshal message")
 	}
 
-	mp.producer.Input() <- &sarama.ProducerMessage{Topic: topic, Value: sarama.ByteEncoder(msg_str)}
+	mp.Producer.Input() <- &sarama.ProducerMessage{Topic: topic, Value: sarama.ByteEncoder(msg_str)}
 }
 
 func (mp *MsgProducer) CallScheduleNode(pod_str string) {

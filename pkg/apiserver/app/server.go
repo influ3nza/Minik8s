@@ -9,6 +9,7 @@ import (
 	"minik8s/pkg/apiserver/config"
 	"minik8s/pkg/etcd"
 	"minik8s/pkg/message"
+	"minik8s/tools"
 )
 
 type ApiServer struct {
@@ -54,11 +55,13 @@ func (s *ApiServer) Bind() {
 
 	s.router.POST(config.API_update_pod, s.UpdatePod)
 	s.router.POST(config.API_add_pod, s.AddPod)
+	s.router.POST(config.API_add_node, s.AddNode)
 }
 
 // 在进行测试/实际运行时，第2步调用此函数。默认端口为8080
 func (s *ApiServer) Run() error {
 	s.Bind()
+	tools.Apiserver_boot_finished = true
 	err := s.router.Run(fmt.Sprintf(":%d", s.port))
 	return err
 }

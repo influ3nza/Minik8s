@@ -4,14 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sync"
 
 	"github.com/IBM/sarama"
 )
 
 type MsgConsumer struct {
-	consumer sarama.ConsumerGroup
-	wg       *sync.WaitGroup
+	Consumer sarama.ConsumerGroup
 }
 
 func NewConsumer(topic, groupId string) (*MsgConsumer, error) {
@@ -25,19 +23,11 @@ func NewConsumer(topic, groupId string) (*MsgConsumer, error) {
 		return nil, err
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for err := range consumer.Errors() {
-			fmt.Printf("Consumer error: %v\n", err)
-		}
-	}()
+	mc := &MsgConsumer{
+		Consumer: consumer,
+	}
 
-	return &MsgConsumer{
-		consumer: consumer,
-		wg:       &wg,
-	}, nil
+	return mc, nil
 }
 
 func (mc *MsgConsumer) Consume(topic []string, callback func(*Message)) {
@@ -48,7 +38,7 @@ func (mc *MsgConsumer) Consume(topic []string, callback func(*Message)) {
 	// 启动消费者组
 	go func() {
 		for {
-			err := mc.consumer.Consume(context.Background(), topic, handler)
+			err := mc.Consumer.Consume(context.Background(), topic, handler)
 			if err != nil {
 				fmt.Printf("Error from consumer: %v\n", err)
 			}

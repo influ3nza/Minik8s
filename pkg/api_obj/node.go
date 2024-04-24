@@ -15,11 +15,6 @@ const (
 	NetworkUnavailable Condition = "NetworkUnavailable"
 )
 
-type NodeDummy struct {
-	UUID string
-	Val  string
-}
-
 type Address struct {
 	HostName   string `json:"hostname" yaml:"hostname"`
 	ExternalIp string `json:"externalIp" yaml:"externalIp"`

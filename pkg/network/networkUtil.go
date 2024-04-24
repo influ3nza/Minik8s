@@ -19,11 +19,17 @@ func GetRequest(uri string) (string, string, error) {
 	decoder := json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&result)
 
+	dataStr, errStr := "", ""
+
 	data := result["data"]
-	dataStr := fmt.Sprint(data)
+	if data != nil {
+		dataStr = fmt.Sprint(data)
+	}
 
 	errs := result["error"]
-	errStr := fmt.Sprint(errs)
+	if errs != nil {
+		errStr = fmt.Sprint(errs)
+	}
 
 	return dataStr, errStr, nil
 }
@@ -41,11 +47,17 @@ func PostRequest(uri string, req_body []byte) (string, string, error) {
 	decoder := json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&result)
 
+	dataStr, errStr := "", ""
+
 	data := result["data"]
-	dataStr := fmt.Sprint(data)
+	if data != nil {
+		dataStr = fmt.Sprint(data)
+	}
 
 	errs := result["error"]
-	errStr := fmt.Sprint(errs)
+	if errs != nil {
+		errStr = fmt.Sprint(errs)
+	}
 
 	return dataStr, errStr, nil
 }
