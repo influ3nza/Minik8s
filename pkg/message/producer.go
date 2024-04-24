@@ -40,11 +40,15 @@ func NewProducer() *MsgProducer {
 	}
 }
 
-func (mp *MsgProducer) Produce(topic string, msg *MsgDummy) {
-	dummy, err := json.Marshal(msg)
+func (mp *MsgProducer) Produce(topic string, msg *Message) {
+	msg_str, err := json.Marshal(msg)
 	if err != nil {
 		fmt.Println("[ERROR/message/producer] Failed to marshal message")
 	}
 
-	mp.producer.Input() <- &sarama.ProducerMessage{Topic: topic, Value: sarama.ByteEncoder(dummy)}
+	mp.producer.Input() <- &sarama.ProducerMessage{Topic: topic, Value: sarama.ByteEncoder(msg_str)}
+}
+
+func (mp *MsgProducer) CallScheduleNode() {
+	//apiserver -> scheduler
 }

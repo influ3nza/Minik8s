@@ -24,7 +24,7 @@ type Scheduler struct {
 	apiPort    string
 }
 
-func (s *Scheduler) MsgHandler(_ *message.MsgDummy) {
+func (s *Scheduler) MsgHandler(_ *message.Message) {
 	fmt.Printf("[scheduler/MsgHandler] Received message from apiserver!\n")
 
 	podDummy := api_obj.Pod{}
@@ -48,6 +48,7 @@ func (s *Scheduler) ExecSchedule(pod api_obj.Pod) {
 		}
 	}
 
+	//挑选唯一的node
 	node_chosen := s.DecideNode(pod, avail_pack)
 	if node_chosen == "" {
 		fmt.Printf("[ERR/scheduler/ExecSchedule] No suitable node to distribute")
@@ -77,7 +78,7 @@ func (s *Scheduler) ExecSchedule(pod api_obj.Pod) {
 	//向消息队列发送创建pod消息->kubelet
 	//TODO:暂定发送topic为kubelet+node名字，且此处的消息为假体
 	//实际应为更新后的pod对象。
-	msgDummy := message.MsgDummy{}
+	msgDummy := message.Message{}
 	s.producer.Produce("kubelet-"+node_chosen, &msgDummy)
 }
 

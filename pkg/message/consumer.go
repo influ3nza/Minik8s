@@ -40,7 +40,7 @@ func NewConsumer(topic, groupId string) (*MsgConsumer, error) {
 	}, nil
 }
 
-func (mc *MsgConsumer) Consume(topic []string, callback func(*MsgDummy)) {
+func (mc *MsgConsumer) Consume(topic []string, callback func(*Message)) {
 	handler := &ConsumerHandler{
 		callback: callback,
 	}
@@ -57,7 +57,7 @@ func (mc *MsgConsumer) Consume(topic []string, callback func(*MsgDummy)) {
 }
 
 type ConsumerHandler struct {
-	callback func(*MsgDummy)
+	callback func(*Message)
 }
 
 func (h *ConsumerHandler) Setup(sarama.ConsumerGroupSession) error {
@@ -70,7 +70,7 @@ func (h *ConsumerHandler) Cleanup(sarama.ConsumerGroupSession) error {
 
 func (h *ConsumerHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	for msg := range claim.Messages() {
-		var dummy MsgDummy
+		var dummy Message
 		err := json.Unmarshal(msg.Value, &dummy)
 		if err != nil {
 			fmt.Printf("Error unmarshalling message: %v\n", err)

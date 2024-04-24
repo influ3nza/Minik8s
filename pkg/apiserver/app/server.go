@@ -15,7 +15,7 @@ type ApiServer struct {
 	router   *gin.Engine
 	EtcdWrap *etcd.EtcdWrap
 	port     int32
-	producer *message.MsgProducer
+	Producer *message.MsgProducer
 }
 
 // 在进行测试/实际运行时，第1步调用此函数。
@@ -35,7 +35,7 @@ func CreateApiServerInstance(c *config.ServerConfig) (*ApiServer, error) {
 		router:   router,
 		EtcdWrap: wrap,
 		port:     c.Port,
-		producer: producer,
+		Producer: producer,
 	}, nil
 }
 
@@ -44,15 +44,6 @@ func serverHelloWorld(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "hello world from apiserver!",
 	})
-}
-
-func (s *ApiServer) MsgToScheduler() {
-	dummy := &message.MsgDummy{
-		Type: "default",
-		Key:  "1",
-		Val:  "hello",
-	}
-	s.producer.Produce("scheduler", dummy)
 }
 
 // 将所有的接口在此函数内进行绑定

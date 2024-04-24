@@ -1,7 +1,8 @@
 package message
 
-type MsgDummy struct {
-	Type string
-	Key string
-	Val string
+type Message struct {
+	Type    string
+	Content string
+	Backup  string
+	Backup2 string
 }

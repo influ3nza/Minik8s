@@ -10,8 +10,8 @@ import (
 var producerDummy *MsgProducer = nil
 var consumerDummy *MsgConsumer = nil
 
-func SampleHandler(msg *MsgDummy) {
-	fmt.Printf("Received %s, hello.\n", msg.Val)
+func SampleHandler(msg *Message) {
+	fmt.Printf("Received %s, hello.\n", msg.Content)
 }
 
 func TestMain(m *testing.M) {
@@ -23,10 +23,9 @@ func TestMain(m *testing.M) {
 
 func TestSend(t *testing.T) {
 	for i := 0; i < 10; i++ {
-		msg := &MsgDummy{
-			Type: "default",
-			Key:  "default",
-			Val:  "world" + strconv.Itoa(i),
+		msg := &Message{
+			Type:    "default",
+			Content: "world" + strconv.Itoa(i),
 		}
 		producerDummy.Produce("testMsg", msg)
 		fmt.Printf("Send message %d\n", i)

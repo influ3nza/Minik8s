@@ -35,7 +35,7 @@ func TestSendMsg(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	for i := 0; i < 1; i++ {
-		apiServerDummy.MsgToScheduler()
+		apiServerDummy.Producer.CallScheduleNode()
 	}
 
 	for {
