@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/cio"
+	"github.com/containerd/containerd/namespaces"
 	"github.com/containerd/containerd/oci"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"minik8s/pkg/api_obj"
@@ -109,7 +110,7 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 		}
 	}
 
-	// 配置容器namespace pid net ipc uts
+	// 配置容器namespace pid net ipc uts /proc/%pid/ns/
 	if linuxNamespace != "" {
 		var linuxNamespaces = map[string]string{
 			"pid":     linuxNamespace + "pid",
@@ -207,13 +208,29 @@ func StopAndRmContainer(pod *api_obj.Pod, container containerd.Container, ifForc
 	return nil
 }
 
-func CreatePauseContainer(namespace string, name string) error {
+func CreatePauseContainer(namespace string, name string) (string, error) {
+	client, err := containerd.New("/run/containerd/containerd.sock")
+	if err != nil {
+		fmt.Println("Create Client Failed At CreatePauseContainer line 213", err.Error())
+		return "", err
+	}
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
+	img := obj_inner.Image{
+		Img:           util.FirstSandbox,
+		ImgPullPolicy: "Always",
+	}
+	_, err = image_manager.GetImage(client, &img, ctx)
+	if err != nil {
+		fmt.Println("Pull Pause Image Failed At CreatePauseContainer line 224, ", err.Error())
+		return "", err
+	}
+
 	res, err := util.RunContainer(namespace, name)
 	if err != nil {
-		return err
+		return "", err
 	}
 	fmt.Println("res is :", res)
-	return nil
+	return res, nil
 }
 
 func DeletePauseContainer(namespace string, name string) error {

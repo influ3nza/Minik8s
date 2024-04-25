@@ -8,6 +8,7 @@ import (
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/kubelet/container_manager"
+	"minik8s/pkg/kubelet/pod_manager"
 )
 
 //func main() {
@@ -52,61 +53,80 @@ import (
 func main() {
 	client, err := containerd.New("/run/containerd/containerd.sock")
 	defer client.Close()
-	volumes := []obj_inner.Volume{
-		{
-			Name: "testMount",
-			Type: "",
-			Path: "/testOOO",
+	pod := api_obj.Pod{
+		ApiVersion: "1",
+		Kind:       "pod",
+		MetaData: obj_inner.ObjectMeta{
+			Name:      "testpod",
+			NameSpace: "test1",
+			Labels: map[string]string{
+				"testlabel": "podlabel",
+			},
+			Annotations: nil,
+			UUID:        "",
+		},
+		Spec: api_obj.PodSpec{
+			Containers: []api_obj.Container{
+				{
+					Name: "testName",
+					Image: obj_inner.Image{
+						Img:           "docker.io/library/ubuntu:latest",
+						ImgPullPolicy: "Always",
+					},
+					EntryPoint: obj_inner.EntryPoint{
+						//Command:    []string{"ls"},
+						WorkingDir: "/",
+					},
+					Ports: []obj_inner.ContainerPort{
+						{
+							ContainerPort: 0,
+							HostIP:        "0.0.0.0",
+							HostPort:      0,
+							Name:          "no name",
+							Protocol:      "TCP",
+						},
+					},
+					Env: []obj_inner.EnvVar{
+						{
+							Name:  "env1",
+							Value: "env1Value",
+						},
+					},
+					VolumeMounts: []obj_inner.VolumeMount{
+						{
+							MountPath: "/home",
+							SubPath:   "config",
+							Name:      "testMount",
+							ReadOnly:  false,
+						},
+					},
+					Resources: obj_inner.ResourceRequirements{
+						Limits: map[string]obj_inner.Quantity{
+							"CPU":    obj_inner.Quantity("0.5"),
+							"Memory": obj_inner.Quantity("200MiB"),
+						},
+						Requests: map[string]obj_inner.Quantity{
+							"CPU":    obj_inner.Quantity("0.25"),
+							"Memory": obj_inner.Quantity("100MiB"),
+						},
+					},
+				},
+			},
+			Volumes: []obj_inner.Volume{
+				{
+					Name: "testMount",
+					Type: "",
+					Path: "/testOOO",
+				},
+			},
+			NodeName:      "",
+			NodeSelector:  nil,
+			RestartPolicy: "",
 		},
 	}
-	var container = api_obj.Container{
-		Name: "testName",
-		Image: obj_inner.Image{
-			Img:           "docker.io/library/redis:latest",
-			ImgPullPolicy: "Always",
-		},
-		EntryPoint: obj_inner.EntryPoint{
-			//Command:    []string{"ls"},
-			WorkingDir: "/",
-		},
-		Ports: []obj_inner.ContainerPort{
-			{
-				ContainerPort: 0,
-				HostIP:        "0.0.0.0",
-				HostPort:      0,
-				Name:          "no name",
-				Protocol:      "TCP",
-			},
-		},
-		Env: []obj_inner.EnvVar{
-			{
-				Name:  "env1",
-				Value: "env1Value",
-			},
-		},
-		VolumeMounts: []obj_inner.VolumeMount{
-			{
-				MountPath: "/var/lib",
-				SubPath:   "config",
-				Name:      "testMount",
-				ReadOnly:  false,
-			},
-		},
-		Resources: obj_inner.ResourceRequirements{
-			Limits: map[string]obj_inner.Quantity{
-				"CPU":    obj_inner.Quantity("0.5"),
-				"Memory": obj_inner.Quantity("200MiB"),
-			},
-			Requests: map[string]obj_inner.Quantity{
-				"CPU":    obj_inner.Quantity("0.25"),
-				"Memory": obj_inner.Quantity("100MiB"),
-			},
-		},
-	}
-	fmt.Println(container.Name)
+	fmt.Println(pod.Spec.Containers[0].Name)
 
-	nameSpace := "test"
-	ctx := namespaces.WithNamespace(context.Background(), nameSpace)
+	ctx := namespaces.WithNamespace(context.Background(), pod.MetaData.NameSpace)
 	if client == nil {
 		fmt.Println("Create Client Failed : ", err.Error())
 	}
@@ -120,13 +140,18 @@ func main() {
 		fmt.Println("There should be no containers in \"test\"")
 	}
 
-	createdContainer, err := container_manager.CreateK8sContainer(ctx, client, &container, "test", volumes, "")
-	if createdContainer == nil {
-		fmt.Println("Create Container Failed ", err.Error())
+	//createdContainer, err := container_manager.CreateK8sContainer(ctx, client, &container, "test", volumes, "")
+	//if createdContainer == nil {
+	//	fmt.Println("Create Container Failed ", err.Error())
+	//}
+	//defer createdContainer.Delete(ctx, containerd.WithSnapshotCleanup)
+	//pid, err := container_manager.StartContainer(ctx, createdContainer)
+	//if pid == 0 {
+	//	fmt.Println("Run Container Failed ", err.Error())
+	//}
+	err = pod_manager.AddPod(&pod)
+	if err != nil {
+		fmt.Println("Main Failed At line 154 ", err.Error())
 	}
-	defer createdContainer.Delete(ctx, containerd.WithSnapshotCleanup)
-	pid, err := container_manager.StartContainer(ctx, createdContainer)
-	if pid == 0 {
-		fmt.Println("Run Container Failed ", err.Error())
-	}
+	fmt.Println("Pod Ip is ", pod.PodStatus.PodIP)
 }

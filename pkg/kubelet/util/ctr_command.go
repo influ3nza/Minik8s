@@ -17,17 +17,39 @@ func Exec(namespace string, args ...string) (string, error) {
 	return string(res), err
 }
 
+func PrintCmd(namespace string, args ...string) string {
+	str := []string{"-n", namespace}
+	str = append(str, args...)
+	fmt.Println(str)
+	return str[0]
+}
+
 func Mkdir(path string) (string, error) {
 	res, err := exec.Command("mkdir", "-p", path).CombinedOutput()
 	fmt.Println("At Mkdir line 22", string(res), err)
 	return string(res), err
 }
 
-func PrintCmd(namespace string, args ...string) string {
-	str := []string{"-n", namespace}
-	str = append(str, args...)
-	fmt.Println(str)
-	return str[0]
+func CpContainer(namespace string, containerId string, containerPath string, hostPath string, inOrOut bool) (string, error) {
+	if inOrOut == true {
+		cmd := []string{"cp", containerId + ":" + containerPath, hostPath}
+		res, err := Exec(namespace, cmd...)
+		PrintCmd(namespace, cmd...)
+		if err != nil {
+			fmt.Println("Err At GetFileFromContainer 39 ", err.Error())
+			return "", err
+		}
+		return res, nil
+	} else {
+		cmd := []string{"cp", hostPath, containerId + ":" + containerPath}
+		res, err := Exec(namespace, cmd...)
+		PrintCmd(namespace, cmd...)
+		if err != nil {
+			fmt.Println("Err At GetFileFromContainer 48 ", err.Error())
+			return "", err
+		}
+		return res, nil
+	}
 }
 
 func RunContainer(namespace string, name string) (string, error) {
@@ -43,7 +65,7 @@ func RunContainer(namespace string, name string) (string, error) {
 	//return res, nil
 }
 
-func GetContainerInfo(namespace string, info string, containerId string) (string, err) {
+func GetContainerInfo(namespace string, info string, containerId string) (string, error) {
 	cmd := []string{"inspect", "-f", fmt.Sprintf("{{%s}}", info), containerId}
 	res, err := Exec(namespace, cmd...)
 	if err != nil {

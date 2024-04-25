@@ -10,6 +10,7 @@ type Pod struct {
 	Kind       string               `json:"kind" yaml:"kind"`
 	MetaData   obj_inner.ObjectMeta `json:"metaData" yaml:"metaData"`
 	Spec       PodSpec              `json:"spec" yaml:"spec"`
+	PodStatus  PodStatus
 }
 
 type PodSpec struct {

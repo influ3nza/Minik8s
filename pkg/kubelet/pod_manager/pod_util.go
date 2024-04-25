@@ -1,3 +1,76 @@
 package pod_manager
 
-func GetPodIp()
+import (
+	"fmt"
+	"minik8s/pkg/kubelet/util"
+	"os"
+	"strconv"
+	"strings"
+)
+
+func GetPodIp(namespace string, containerName string) (string, error) {
+	res, err := util.GetContainerInfo(namespace, ".NetworkSettings.IPAddress", containerName)
+	if err != nil {
+		fmt.Println("Failed At GetPodIp line 11 ", err.Error())
+		return "", err
+	}
+	return res, nil
+}
+
+func GetPodPid(namespace string, containerName string) (int, error) {
+	res, err := util.GetContainerInfo(namespace, ".State.Pid", containerName)
+	if err != nil {
+		fmt.Println("Failed At GetPodPid line 21", err.Error())
+		return 0, err
+	}
+	if strings.HasSuffix(res, "\n") {
+		res = strings.TrimRight(res, "\n")
+	}
+
+	pid, err_ := strconv.Atoi(res)
+	if err_ != nil {
+		fmt.Println("Failed At GetPodPid line 27 ", err_.Error())
+		return 0, err_
+	}
+
+	return pid, nil
+}
+
+func GetPodNetConfFile(namespace string, container string) ([]string, error) {
+	_, err := util.CpContainer(namespace, container, "/etc/resolv.conf", "./resolv.conf", true)
+	if err != nil {
+		fmt.Println("GetPodNetConfFile Failed At line 20", err.Error())
+		return []string{}, err
+	}
+	_, err = util.CpContainer(namespace, container, "/etc/hosts", "./hosts", true)
+	if err != nil {
+		fmt.Println("GetPodNetConfFile Failed At line 26 ", err.Error())
+		return []string{}, err
+	}
+	return []string{"./resolv.conf", "./hosts"}, nil
+
+}
+
+func GenPodNetConfFile(namespace string, container string) error {
+	_, err := util.CpContainer(namespace, container, "/etc/resolv.conf", "./resolv.conf", false)
+	if err != nil {
+		fmt.Println("GenPodNetConfFile Failed At line 36 ", err.Error())
+		return err
+	}
+	_, err = util.CpContainer(namespace, container, "/etc/hosts", "./hosts", false)
+	if err != nil {
+		fmt.Println("GenPodNetConfFile Failed At line 41 ", err.Error())
+		return err
+	}
+	return nil
+}
+
+func RmLocalFile(files []string) error {
+	for _, file := range files {
+		err := os.Remove(file)
+		if err != nil {
+			fmt.Println("RmLocal File At line 32 ", err.Error())
+		}
+	}
+	return nil
+}
