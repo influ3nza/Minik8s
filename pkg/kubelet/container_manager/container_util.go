@@ -121,7 +121,7 @@ func GenerateUUIDForContainer() (string, error) {
 		return "", err
 	}
 	if n != bytesLength {
-		fmt.Println("expected %d bytes, got %d bytes", bytesLength, n)
+		fmt.Printf("expected %d bytes, got %d bytes\n", bytesLength, n)
 		return "", nil
 	}
 	return hex.EncodeToString(b), nil

@@ -18,7 +18,7 @@ func AddPod(pod *api_obj.Pod) error {
 	}
 
 	res, err := container_manager.CreatePauseContainer(pod.MetaData.NameSpace,
-		fmt.Sprintf("%s-pause", pod.MetaData.Name))
+		/*fmt.Sprintf("%s-pause", pod.MetaData.Name)*/ pod.MetaData.Name)
 	containerPauseId := ""
 	fmt.Println("Create Pause At AddPod line 23 ", res)
 	if err != nil {

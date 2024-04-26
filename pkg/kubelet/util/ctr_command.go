@@ -53,7 +53,7 @@ func CpContainer(namespace string, containerId string, containerPath string, hos
 }
 
 func RunContainer(namespace string, name string) (string, error) {
-	cmd := []string{"run", "-d", "--name", name, "--net", "flannel", "--label", "podStart=pause4pod", FirstSandbox}
+	cmd := []string{"run", "-d", "--name", fmt.Sprintf("%q-%s", name, "pause"), "--net", "flannel", "--label", fmt.Sprintf("podName=%s", name), FirstSandbox}
 	PrintCmd(namespace, cmd...)
 	// fmt.Println("RunContainer")
 	res, err := Exec(namespace, cmd...)
