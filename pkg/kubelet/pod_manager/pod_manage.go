@@ -69,7 +69,7 @@ func AddPod(pod *api_obj.Pod) error {
 	}
 	//fmt.Sprintf("%s-pause", pod.MetaData.Name)
 	// podIp, err := GetPodIp(pod.MetaData.NameSpace, podId)
-	podIp_pause, _ := GetPodIp(pod.MetaData.NameSpace, fmt.Sprintf("%s-pause", pod.MetaData.Name))
+	podIp_pause, err := GetPodIp(pod.MetaData.NameSpace, fmt.Sprintf("%s-pause", pod.MetaData.Name))
 	fmt.Println("create pod success!")
 	if err != nil {
 		fmt.Println("Add Pod Failed At line 72 ", err.Error())
