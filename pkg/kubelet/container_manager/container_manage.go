@@ -37,11 +37,11 @@ func ListContainers(client *containerd.Client, ctx context.Context, filter ...st
 // 返回值：
 //
 //	container : containerd.Container
-func CreateK8sContainer(ctx context.Context, client *containerd.Client, container *api_obj.Container, metaName string, podVolumes []obj_inner.Volume, linuxNamespace string) (containerd.Container, error) {
+func CreateK8sContainer(ctx context.Context, client *containerd.Client, container *api_obj.Container, metaName string, podVolumes []obj_inner.Volume, linuxNamespace string) (containerd.Container, string, error) {
 	// 解析image，配置容器image选项
 	image, err := image_manager.GetImage(client, &container.Image, ctx)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	createOpts := []oci.SpecOpts{oci.WithImageConfig(image)}
 
@@ -83,7 +83,7 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 		mounts, e := convertMounts(podVolumes, container)
 		if e != nil {
 			fmt.Println("At CreateK8sContainer line 80 ", e.Error())
-			return nil, e
+			return nil, "", e
 		}
 		if mounts != nil && len(mounts) > 0 {
 			var ociMounts = make([]specs.Mount, len(mounts), len(mounts))
@@ -102,7 +102,7 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 				if os.IsNotExist(err) {
 					_, err := util.Mkdir(Mounts.Source)
 					if err != nil {
-						return nil, err
+						return nil, "", err
 					}
 				}
 			}
@@ -129,7 +129,10 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 		createOpts = append(createOpts, ociLinuxNsOpt...)
 	}
 
-	// 配置容器labels，包含"podName" ： podname/ "ports" : serialize(container.ports)
+	// 配置容器labels，包含“Name” : container.Name, "podName" : podname/ "ports" : serialize(container.ports)
+	nameLabel := map[string]string{
+		"Name": container.Name,
+	}
 	podLabel := map[string]string{
 		"podName": metaName,
 	}
@@ -137,7 +140,7 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 	if len(container.Ports) > 0 {
 		jsonFy, err := json.Marshal(container.Ports)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		portLabel["ports"] = string(jsonFy)
 	}
@@ -145,17 +148,24 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 	containerOpts := []containerd.NewContainerOpts{
 		containerd.WithNewSnapshot(container.Name+"snapshot", image),
 		containerd.WithNewSpec(createOpts...),
+		containerd.WithContainerLabels(nameLabel),
 		containerd.WithAdditionalContainerLabels(podLabel),
 		containerd.WithAdditionalContainerLabels(portLabel),
 	}
 
-	containerCreated, err := client.NewContainer(ctx, container.Name, containerOpts...)
+	containerId, err := GenerateUUIDForContainer()
 	if err != nil {
-		fmt.Println(err.Error())
-		return nil, err
+		fmt.Println("Failed At CreateK8sContainer line 154 ", err.Error())
+		return nil, "", err
 	}
 
-	return containerCreated, nil
+	containerCreated, err := client.NewContainer(ctx, containerId, containerOpts...)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, "", err
+	}
+
+	return containerCreated, containerId, nil
 }
 
 // StartContainer 启动创建好的container
@@ -233,8 +243,8 @@ func CreatePauseContainer(namespace string, name string) (string, error) {
 	return res, nil
 }
 
-func DeletePauseContainer(namespace string, name string) error {
-	_, _ = util.StopContainer(namespace, name)
-	_, _ = util.RemoveContainer(namespace, name)
+func DeletePauseContainer(namespace string, id string) error {
+	_, _ = util.StopContainer(namespace, id)
+	_, _ = util.RemoveContainer(namespace, id)
 	return nil
 }

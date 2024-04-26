@@ -6,3 +6,5 @@ type VolumeMap struct {
 	Subdir_    string
 	Type_      string
 }
+
+var IDLength int = 64

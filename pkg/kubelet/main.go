@@ -58,7 +58,7 @@ func main() {
 		Kind:       "pod",
 		MetaData: obj_inner.ObjectMeta{
 			Name:      "testpod",
-			NameSpace: "test1",
+			NameSpace: "test2",
 			Labels: map[string]string{
 				"testlabel": "podlabel",
 			},
@@ -68,7 +68,7 @@ func main() {
 		Spec: api_obj.PodSpec{
 			Containers: []api_obj.Container{
 				{
-					Name: "testName",
+					Name: "testubuntu",
 					Image: obj_inner.Image{
 						Img:           "docker.io/library/ubuntu:latest",
 						ImgPullPolicy: "Always",
@@ -96,6 +96,49 @@ func main() {
 						{
 							MountPath: "/home",
 							SubPath:   "config",
+							Name:      "testMount",
+							ReadOnly:  false,
+						},
+					},
+					Resources: obj_inner.ResourceRequirements{
+						Limits: map[string]obj_inner.Quantity{
+							"CPU":    obj_inner.Quantity("0.5"),
+							"Memory": obj_inner.Quantity("200MiB"),
+						},
+						Requests: map[string]obj_inner.Quantity{
+							"CPU":    obj_inner.Quantity("0.25"),
+							"Memory": obj_inner.Quantity("100MiB"),
+						},
+					},
+				}, {
+					Name: "testName1",
+					Image: obj_inner.Image{
+						Img:           "docker.io/library/ubuntu:latest",
+						ImgPullPolicy: "Always",
+					},
+					EntryPoint: obj_inner.EntryPoint{
+						//Command:    []string{"ls"},
+						WorkingDir: "/",
+					},
+					Ports: []obj_inner.ContainerPort{
+						{
+							ContainerPort: 0,
+							HostIP:        "0.0.0.0",
+							HostPort:      0,
+							Name:          "no name",
+							Protocol:      "TCP",
+						},
+					},
+					Env: []obj_inner.EnvVar{
+						{
+							Name:  "env2",
+							Value: "env2Value",
+						},
+					},
+					VolumeMounts: []obj_inner.VolumeMount{
+						{
+							MountPath: "/home",
+							SubPath:   "config1",
 							Name:      "testMount",
 							ReadOnly:  false,
 						},

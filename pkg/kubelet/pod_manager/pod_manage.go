@@ -49,7 +49,7 @@ func AddPod(pod *api_obj.Pod) error {
 	ns := fmt.Sprintf("/proc/%d/ns/", pid)
 	ctx := namespaces.WithNamespace(context.Background(), pod.MetaData.NameSpace)
 	for _, container := range pod.Spec.Containers {
-		startRes, err_ := container_manager.CreateK8sContainer(ctx, client, &container, pod.MetaData.Name, pod.Spec.Volumes, ns)
+		startRes, podId, err_ := container_manager.CreateK8sContainer(ctx, client, &container, pod.MetaData.Name, pod.Spec.Volumes, ns)
 		if err_ != nil {
 			fmt.Println("Add Pod Failed At Line 53 ", err_.Error())
 			return err_
@@ -61,23 +61,21 @@ func AddPod(pod *api_obj.Pod) error {
 			return err_
 		}
 
-		err_ = GenPodNetConfFile(pod.MetaData.NameSpace, container.Name)
+		err_ = GenPodNetConfFile(pod.MetaData.NameSpace, podId)
 		if err_ != nil {
 			fmt.Println("Add Pod Failed At line 64", err_.Error())
 			return err_
 		}
 	}
 	//fmt.Sprintf("%s-pause", pod.MetaData.Name)
-	podIp, err := GetPodIp(pod.MetaData.NameSpace, pod.Spec.Containers[0].Name)
+	// podIp, err := GetPodIp(pod.MetaData.NameSpace, podId)
 	podIp_pause, _ := GetPodIp(pod.MetaData.NameSpace, fmt.Sprintf("%s-pause", pod.MetaData.Name))
-	if podIp == podIp_pause {
-		fmt.Println("create pod success!")
-	}
+	fmt.Println("create pod success!")
 	if err != nil {
 		fmt.Println("Add Pod Failed At line 72 ", err.Error())
 		return err
 	}
-	pod.PodStatus.PodIP = podIp
+	pod.PodStatus.PodIP = podIp_pause
 
 	return nil
 }

@@ -1,6 +1,8 @@
 package container_manager
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"github.com/containerd/containerd/oci"
@@ -108,4 +110,19 @@ func convertMounts(volumes []obj_inner.Volume, container *api_obj.Container) ([]
 		return mounts, nil
 	}
 	return nil, errors.New("Convert Mounts Error")
+}
+
+func GenerateUUIDForContainer() (string, error) {
+	bytesLength := IDLength / 2
+	b := make([]byte, bytesLength)
+	n, err := rand.Read(b)
+	if err != nil {
+		fmt.Println("Failed At GenerateUUIDForContainer line 120 ", err.Error())
+		return "", err
+	}
+	if n != bytesLength {
+		fmt.Println("expected %d bytes, got %d bytes", bytesLength, n)
+		return "", nil
+	}
+	return hex.EncodeToString(b), nil
 }
