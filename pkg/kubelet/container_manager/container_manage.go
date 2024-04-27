@@ -4,16 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/containerd/containerd"
-	"github.com/containerd/containerd/cio"
-	"github.com/containerd/containerd/namespaces"
-	"github.com/containerd/containerd/oci"
-	"github.com/opencontainers/runtime-spec/specs-go"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/kubelet/image_manager"
 	"minik8s/pkg/kubelet/util"
 	"os"
+	"time"
+
+	"github.com/containerd/containerd"
+	"github.com/containerd/containerd/cio"
+	"github.com/containerd/containerd/namespaces"
+	"github.com/containerd/containerd/oci"
+	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
 func ListContainers(client *containerd.Client, ctx context.Context, filter ...string) ([]containerd.Container, error) {
@@ -247,4 +249,62 @@ func DeletePauseContainer(namespace string, id string) error {
 	_, _ = util.StopContainer(namespace, id)
 	_, _ = util.RemoveContainer(namespace, id)
 	return nil
+}
+
+// MonitorPodContainers 监控指定 Pod 中的所有容器
+func MonitorPodContainers(ctx context.Context, client *containerd.Client, podName string) {
+	// 获取所有容器
+	containers, err := client.Containers(ctx)
+	if err != nil {
+		fmt.Println("Failed to get containers:", err)
+		return
+	}
+
+	// 遍历所有容器
+	for _, container := range containers {
+		// 检查容器的标签，查找所属的 Pod
+		labels, err := container.Labels(ctx)
+		if err != nil {
+			fmt.Println("Failed to get container labels:", err)
+			continue
+		}
+
+		// 检查容器是否属于指定的 Pod
+		if podLabel, ok := labels["podName"]; ok && podLabel == podName {
+			// 如果属于指定的 Pod，则监控该容器的状态
+			go MonitorContainerState(ctx, client, container.ID())
+		}
+	}
+}
+
+// MonitorContainerState 监控容器的状态
+func MonitorContainerState(ctx context.Context, client *containerd.Client, containerID string) {
+	for {
+		// 加载容器
+		container, err := client.LoadContainer(ctx, containerID)
+		if err != nil {
+			fmt.Println("Failed to load container:", err)
+			return
+		}
+
+		// 获取容器的任务
+		task, err := container.Task(ctx, nil)
+		if err != nil {
+			fmt.Println("Failed to get task:", err)
+			return
+		}
+
+		// 获取任务的状态
+		status, err := task.Status(ctx)
+		if err != nil {
+			fmt.Println("Failed to get task status:", err)
+			return
+		}
+
+		// 打印容器的状态信息
+		fmt.Printf("Container %s Status: %v\n", containerID, status)
+
+		// 等待一段时间后继续监控
+		time.Sleep(10 * time.Second)
+	}
 }
