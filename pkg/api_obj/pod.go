@@ -1,14 +1,15 @@
 package api_obj
 
 import (
-	"github.com/containerd/containerd"
 	"minik8s/pkg/api_obj/obj_inner"
+
+	"github.com/containerd/containerd"
 )
 
 type Pod struct {
 	ApiVersion string               `json:"apiVersion" yaml:"apiVersion"`
 	Kind       string               `json:"kind" yaml:"kind"`
-	MetaData   obj_inner.ObjectMeta `json:"metaData" yaml:"metaData"`
+	MetaData   obj_inner.ObjectMeta `json:"metaData" yaml:"metadata"`
 	Spec       PodSpec              `json:"spec" yaml:"spec"`
 	PodStatus  PodStatus
 }

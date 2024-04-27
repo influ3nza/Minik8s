@@ -1,5 +1,10 @@
 package obj_inner
 
+const CPU_REQUEST = "cpu"
+const MEMORY_REQUEST = "memory"
+const CPU_LIMIT = "cpu"
+const MEMORY_LIMIT = "memory"
+
 type Quantity string
 
 type ObjectMeta struct {
