@@ -83,7 +83,7 @@ fi
 mkdir -p /opt/cni/bin
 tar -xzvf cni-plugins-linux-amd64-v0.9.1.tgz -C /opt/cni/bin
 
-mkdir -p /etc/cni/net.d/flannel.conflist
+touch -p /etc/cni/net.d/flannel.conflist
 cat << EOF > /etc/cni/net.d/flannel.conflist
 {
     "name": "flannel",
