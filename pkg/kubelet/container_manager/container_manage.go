@@ -9,12 +9,15 @@ import (
 	"minik8s/pkg/kubelet/image_manager"
 	"minik8s/pkg/kubelet/util"
 	"os"
+	"reflect"
 	"time"
 
+	v1 "github.com/containerd/cgroups/stats/v1"
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/oci"
 	"github.com/opencontainers/runtime-spec/specs-go"
+	"google.golang.org/protobuf/proto"
 )
 
 // CreateK8sContainer 创建一个proj容器
@@ -317,5 +320,110 @@ func MonitorContainerState(ctx context.Context, client *containerd.Client, conta
 
 		// 等待一段时间后继续监控
 		time.Sleep(10 * time.Second)
+	}
+}
+
+type metricsCollection struct {
+	begin       time.Time
+	tasks       []containerd.Task
+	lastTimes   []time.Time
+	lastCPUs    []uint64
+	CPUPercents []uint64
+	memory      []uint64
+}
+
+func GetContainersMetrics(cs []containerd.Container) *api_obj.PodMetrics {
+	if len(cs) == 0 {
+		return &api_obj.PodMetrics{}
+	}
+
+	ctx := context.Background()
+
+	collection := &metricsCollection{
+		begin:       time.Now(),
+		tasks:       make([]containerd.Task, 0),
+		lastTimes:   make([]time.Time, 0),
+		lastCPUs:    make([]uint64, 0),
+		CPUPercents: make([]uint64, 0),
+		memory:      make([]uint64, 0),
+	}
+
+	initializeMetricsCollector(ctx, cs, collection)
+
+	podMetrics := &api_obj.PodMetrics{
+		Window:     time.Second * 5,
+		Containers: make([]api_obj.ContainerMetrics, 0),
+	}
+
+	collectContainerMetrics(ctx, collection, podMetrics, cs)
+
+	return podMetrics
+}
+
+func initializeMetricsCollector(ctx context.Context, cs []containerd.Container, collection *metricsCollection) {
+	for _, c := range cs {
+		task, err := c.Task(ctx, nil)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		collection.tasks = append(collection.tasks, task)
+		collection.lastTimes = append(collection.lastTimes, time.Now())
+		collection.lastCPUs = append(collection.lastCPUs, 0)
+		collection.CPUPercents = append(collection.CPUPercents, 0)
+		collection.memory = append(collection.memory, 0)
+	}
+}
+
+func collectContainerMetrics(ctx context.Context, collection *metricsCollection, podMetrics *api_obj.PodMetrics, cs []containerd.Container) {
+	var currentMetrics v1.Metrics
+	var temporaryInterface interface{}
+	var curTime time.Time
+	var allCPUUsage uint64
+	collection.begin = time.Now()
+	for i := 0; i <= 1; i++ {
+		for taskIter, task := range collection.tasks {
+			metrics, err := task.Metrics(ctx)
+			if err != nil {
+				continue
+			}
+			curTime = time.Now()
+
+			temporaryInterface = reflect.New(reflect.TypeOf(currentMetrics)).Interface()
+			err = proto.Unmarshal(metrics.Data.Value, temporaryInterface.(proto.Message))
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+			switch value := temporaryInterface.(type) {
+			case *v1.Metrics:
+				currentMetrics = *value
+			default:
+				return
+			}
+			if i == 0 {
+				collection.lastTimes[taskIter] = curTime
+				collection.lastCPUs[taskIter] = currentMetrics.CPU.Usage.Total
+				collection.memory[taskIter] = currentMetrics.Memory.Usage.Usage
+				time.Sleep(podMetrics.Window)
+				continue
+			}
+			collection.memory[taskIter] += currentMetrics.Memory.Usage.Usage
+			collection.memory[taskIter] /= 2
+
+			allCPUUsage = currentMetrics.CPU.Usage.Total
+			cpuNow := allCPUUsage - collection.lastCPUs[taskIter]
+
+			timeDelta := curTime.Sub(collection.lastTimes[taskIter])
+			collection.CPUPercents[taskIter] = uint64(float64(cpuNow) / float64(timeDelta.Nanoseconds()) * 1000)
+		}
+	}
+	podMetrics.Timestamp = curTime
+	for ci, c := range cs {
+		podMetrics.Containers = append(podMetrics.Containers, api_obj.ContainerMetrics{
+			Name: c.ID(),
+			Usage: map[string]uint64{
+				"cpu":    uint64(collection.CPUPercents[ci]),
+				"memory": uint64(collection.memory[ci]),
+			},
+		})
 	}
 }
