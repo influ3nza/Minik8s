@@ -3,10 +3,12 @@ module minik8s
 go 1.22.2
 
 require (
+	github.com/containerd/cgroups v1.1.0
 	github.com/containerd/containerd v1.7.16
 	github.com/docker/go-units v0.5.0
 	github.com/opencontainers/runtime-spec v1.2.0
 	golang.org/x/net v0.24.0
+	google.golang.org/protobuf v1.33.0
 )
 
 require (
@@ -14,7 +16,6 @@ require (
 	github.com/AdamKorcz/go-118-fuzz-build v0.0.0-20230306123547-8075edf89bb0 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/Microsoft/hcsshim v0.11.4 // indirect
-	github.com/containerd/cgroups v1.1.0 // indirect
 	github.com/containerd/continuity v0.4.2 // indirect
 	github.com/containerd/fifo v1.1.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
@@ -53,5 +54,4 @@ require (
 	google.golang.org/genproto v0.0.0-20230711160842-782d3b101e98 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230731190214-cbb8c96f2d6d // indirect
 	google.golang.org/grpc v1.58.3 // indirect
-	google.golang.org/protobuf v1.33.0 // indirect
 )

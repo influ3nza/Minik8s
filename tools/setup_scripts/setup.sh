@@ -128,6 +128,7 @@ PROJECT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 export MINIK8S_SCRIPTS_PATH="$SCRIPTS_ROOT"
 export MINIK8S_PATH="$PROJECT_ROOT"
 echo "设置环境变量: MINIK8S_PATH=$MINIK8S_PATH"
+cat /etc/cni/net.d/flannel.conflist
 # 关闭
 # /usr/local/kafka/bin/kafka-server-stop.sh
 # /usr/local/kafka/bin/zookeeper-server-stop.sh
