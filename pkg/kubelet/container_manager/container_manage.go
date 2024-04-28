@@ -13,18 +13,9 @@ import (
 
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/cio"
-	"github.com/containerd/containerd/namespaces"
 	"github.com/containerd/containerd/oci"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
-
-func ListContainers(client *containerd.Client, ctx context.Context, filter ...string) ([]containerd.Container, error) {
-	res, err := client.Containers(ctx, filter...)
-	if err != nil {
-		return nil, err
-	}
-	return res, nil
-}
 
 // CreateK8sContainer 创建一个proj容器
 // 参数：
@@ -195,9 +186,9 @@ func StartContainer(ctx context.Context, container containerd.Container) (uint32
 	return newTask.Pid(), nil
 }
 
-func StopAndRmContainer(pod *api_obj.Pod, container containerd.Container, ifForce bool) error {
-	name := container.ID()
-	namespace := pod.MetaData.NameSpace
+func StopAndRmContainer(namespace string, name string, ifForce bool) error {
+	// name := container.ID()
+	// namespace := pod.MetaData.NameSpace
 	if ifForce == false {
 		_, err := util.StopContainer(namespace, name)
 		if err != nil {
@@ -220,18 +211,38 @@ func StopAndRmContainer(pod *api_obj.Pod, container containerd.Container, ifForc
 	return nil
 }
 
-func CreatePauseContainer(namespace string, name string) (string, error) {
-	client, err := containerd.New("/run/containerd/containerd.sock")
-	if err != nil {
-		fmt.Println("Create Client Failed At CreatePauseContainer line 213", err.Error())
-		return "", err
+func DeleteContainerInPod(ctx context.Context, client *containerd.Client, podName string, podNamespace string, ifForce bool) error {
+	walker := &ContainerWalker{
+		Client: client,
+		OnFound: func(ctx context.Context, found Found) error {
+			fmt.Println(found.Container.ID())
+			err := StopAndRmContainer(podNamespace, found.Container.ID(), ifForce)
+			if err != nil {
+				fmt.Println("Stop Rm Container in Walker Failed at line 221 ", err.Error())
+			}
+			return nil
+		},
 	}
-	ctx := namespaces.WithNamespace(context.Background(), namespace)
+
+	filter := map[string]string{
+		"podName": podName,
+	}
+	_, err := walker.Walk(ctx, filter)
+	if err != nil {
+		fmt.Println("Failed At DeleteContainerInPod line 228 ", err.Error())
+		return err
+	}
+	return nil
+}
+
+func CreatePauseContainer(ctx context.Context, client *containerd.Client, namespace string, name string) (string, error) {
+	// client, err := containerd.New("/run/containerd/containerd.sock")
+	// ctx := namespaces.WithNamespace(context.Background(), namespace)
 	img := obj_inner.Image{
 		Img:           util.FirstSandbox,
 		ImgPullPolicy: "Always",
 	}
-	_, err = image_manager.GetImage(client, &img, ctx)
+	_, err := image_manager.GetImage(client, &img, ctx)
 	if err != nil {
 		fmt.Println("Pull Pause Image Failed At CreatePauseContainer line 224, ", err.Error())
 		return "", err

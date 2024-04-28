@@ -9,15 +9,15 @@ import (
 	"minik8s/pkg/kubelet/container_manager"
 )
 
-// todo 需要Master上有DNS服务器
+// AddPod todo 需要Master上有DNS服务器
 func AddPod(pod *api_obj.Pod) error {
 	client, err := containerd.New("/run/containerd/containerd.sock")
 	if err != nil {
 		fmt.Println("Create Client Failed At line 14")
 		return err
 	}
-
-	res, err := container_manager.CreatePauseContainer(pod.MetaData.NameSpace,
+	ctx := namespaces.WithNamespace(context.Background(), pod.MetaData.NameSpace)
+	res, err := container_manager.CreatePauseContainer(ctx, client, pod.MetaData.NameSpace,
 		/*fmt.Sprintf("%s-pause", pod.MetaData.Name)*/ pod.MetaData.Name)
 	containerPauseId := ""
 	fmt.Println("Create Pause At AddPod line 23 ", res)
@@ -47,7 +47,6 @@ func AddPod(pod *api_obj.Pod) error {
 	}
 
 	ns := fmt.Sprintf("/proc/%d/ns/", pid)
-	ctx := namespaces.WithNamespace(context.Background(), pod.MetaData.NameSpace)
 	for _, container := range pod.Spec.Containers {
 		startRes, podId, err_ := container_manager.CreateK8sContainer(ctx, client, &container, pod.MetaData.Name, pod.Spec.Volumes, ns)
 		if err_ != nil {
@@ -69,13 +68,28 @@ func AddPod(pod *api_obj.Pod) error {
 	}
 	//fmt.Sprintf("%s-pause", pod.MetaData.Name)
 	// podIp, err := GetPodIp(pod.MetaData.NameSpace, podId)
-	podIp_pause, err := GetPodIp(pod.MetaData.NameSpace, fmt.Sprintf("%s-pause", pod.MetaData.Name))
+	podIpInPause, err := GetPodIp(pod.MetaData.NameSpace, fmt.Sprintf("%s-pause", pod.MetaData.Name))
 	fmt.Println("create pod success!")
 	if err != nil {
 		fmt.Println("Add Pod Failed At line 72 ", err.Error())
 		return err
 	}
-	pod.PodStatus.PodIP = podIp_pause
+	pod.PodStatus.PodIP = podIpInPause
 
+	return nil
+}
+
+func DeletePod(podName string, namespace string) error {
+	client, err := containerd.New("/run/containerd/containerd.sock")
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
+	if err != nil {
+		fmt.Println("DeletePod Create Client Failed At line 85 ", err.Error())
+		return err
+	}
+	err = container_manager.DeleteContainerInPod(ctx, client, podName, namespace, false)
+	if err != nil {
+		fmt.Println("DeletePod DeleteContainer Failed At line 91 ", err.Error())
+		return err
+	}
 	return nil
 }
