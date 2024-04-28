@@ -13,6 +13,8 @@ const (
 
 	API_update_pod string = "/pods/update"
 	API_add_pod    string = "/pods/add"
+
+	API_add_service string = "/services/add"
 )
 
 type ServerConfig struct {
