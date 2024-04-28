@@ -23,10 +23,6 @@ jobs:
     - name: Install dependencies
       run:
         go get .
-        go get github.com/containerd/containerd
-        go get github.com/docker/go-units
-        go get github.com/opencontainers/runtime-spec
-        go get golang.org/x/net
     - name: Install Softwares
       run:
         sudo chmod 777 ./tools/script/setup.sh
