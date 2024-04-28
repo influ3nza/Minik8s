@@ -332,49 +332,45 @@ type metricsCollection struct {
 	memory      []uint64
 }
 
-func GetContainersMetrics(cs []containerd.Container) *api_obj.PodMetrics {
-	if len(cs) == 0 {
-		return &api_obj.PodMetrics{}
-	}
-
+func GetContainersMetrics(c containerd.Container) (*api_obj.PodMetrics, error) {
 	ctx := context.Background()
 
 	collection := &metricsCollection{
 		begin:       time.Now(),
-		tasks:       make([]containerd.Task, 0),
-		lastTimes:   make([]time.Time, 0),
-		lastCPUs:    make([]uint64, 0),
-		CPUPercents: make([]uint64, 0),
-		memory:      make([]uint64, 0),
+		tasks:       []containerd.Task{},
+		lastTimes:   []time.Time{},
+		lastCPUs:    []uint64{},
+		CPUPercents: []uint64{},
+		memory:      []uint64{},
 	}
 
-	initializeMetricsCollector(ctx, cs, collection)
+	initializeMetricsCollector(ctx, c, collection)
 
 	podMetrics := &api_obj.PodMetrics{
 		Window:     time.Second * 5,
-		Containers: make([]api_obj.ContainerMetrics, 0),
+		Containers: []api_obj.ContainerMetrics{},
 	}
 
-	collectContainerMetrics(ctx, collection, podMetrics, cs)
+	collectContainerMetrics(ctx, collection, podMetrics, c)
+	
 
-	return podMetrics
+	return podMetrics, nil
 }
 
-func initializeMetricsCollector(ctx context.Context, cs []containerd.Container, collection *metricsCollection) {
-	for _, c := range cs {
-		task, err := c.Task(ctx, nil)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-		collection.tasks = append(collection.tasks, task)
-		collection.lastTimes = append(collection.lastTimes, time.Now())
-		collection.lastCPUs = append(collection.lastCPUs, 0)
-		collection.CPUPercents = append(collection.CPUPercents, 0)
-		collection.memory = append(collection.memory, 0)
+func initializeMetricsCollector(ctx context.Context, c containerd.Container, collection *metricsCollection) {
+	task, err := c.Task(ctx, nil)
+	if err != nil {
+		fmt.Println(err.Error())
 	}
+	fmt.Println(task)
+	collection.tasks = append(collection.tasks, task)
+	collection.lastTimes = append(collection.lastTimes, time.Now())
+	collection.lastCPUs = append(collection.lastCPUs, 0)
+	collection.CPUPercents = append(collection.CPUPercents, 0)
+	collection.memory = append(collection.memory, 0)
 }
 
-func collectContainerMetrics(ctx context.Context, collection *metricsCollection, podMetrics *api_obj.PodMetrics, cs []containerd.Container) {
+func collectContainerMetrics(ctx context.Context, collection *metricsCollection, podMetrics *api_obj.PodMetrics, c containerd.Container) {
 	var currentMetrics v1.Metrics
 	var temporaryInterface interface{}
 	var curTime time.Time
@@ -382,6 +378,7 @@ func collectContainerMetrics(ctx context.Context, collection *metricsCollection,
 	collection.begin = time.Now()
 	for i := 0; i <= 1; i++ {
 		for taskIter, task := range collection.tasks {
+			fmt.Println(collection.tasks)
 			metrics, err := task.Metrics(ctx)
 			if err != nil {
 				continue
@@ -417,13 +414,16 @@ func collectContainerMetrics(ctx context.Context, collection *metricsCollection,
 		}
 	}
 	podMetrics.Timestamp = curTime
-	for ci, c := range cs {
-		podMetrics.Containers = append(podMetrics.Containers, api_obj.ContainerMetrics{
-			Name: c.ID(),
-			Usage: map[string]uint64{
-				"cpu":    uint64(collection.CPUPercents[ci]),
-				"memory": uint64(collection.memory[ci]),
-			},
-		})
+	for ci, task := range collection.tasks {
+		if task.ID() == c.ID() {
+			podMetrics.Containers = append(podMetrics.Containers, api_obj.ContainerMetrics{
+				Name: task.ID(),
+				Usage: map[string]uint64{
+					"cpu":    uint64(collection.CPUPercents[ci]),
+					"memory": uint64(collection.memory[ci]),
+				},
+			})
+			break // 终止循环，因为已经找到了对应的容器
+		}
 	}
 }
