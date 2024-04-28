@@ -123,8 +123,9 @@ mv kafka_2.13-3.5.1 /usr/local/kafka
 /usr/local/kafka/bin/kafka-server-start.sh /usr/local/kafka/config/server.properties &
 
 SCRIPTS_ROOT="$(cd "$(dirname "$0")" && pwd)"
-. "$SCRIPTS_ROOT/etcd_clear.sh" /
+#. "$SCRIPTS_ROOT/etcd_clear.sh" /
 PROJECT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+export MINIK8S_SCRIPTS_PATH="$SCRIPTS_ROOT"
 export MINIK8S_PATH="$PROJECT_ROOT"
 echo "设置环境变量: MINIK8S_PATH=$MINIK8S_PATH"
 # 关闭
