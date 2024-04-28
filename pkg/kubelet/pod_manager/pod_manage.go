@@ -35,6 +35,7 @@ func AddPod(pod *api_obj.Pod) error {
 	files, err := GetPodNetConfFile(pod.MetaData.NameSpace, containerPauseId)
 	if err != nil {
 		fmt.Println("Add Pod Failed At line 37", err.Error())
+		container_manager.DeletePauseContainer(pod.MetaData.NameSpace, containerPauseId)
 		return err
 	}
 	defer RmLocalFile(files)
@@ -43,6 +44,7 @@ func AddPod(pod *api_obj.Pod) error {
 	pid, err := GetPodPid(pod.MetaData.NameSpace, containerPauseId)
 	if err != nil {
 		fmt.Println("Add Pod Failed At line 44 ", err.Error())
+		container_manager.DeletePauseContainer(pod.MetaData.NameSpace, containerPauseId)
 		return err
 	}
 
@@ -51,18 +53,21 @@ func AddPod(pod *api_obj.Pod) error {
 		startRes, podId, err_ := container_manager.CreateK8sContainer(ctx, client, &container, pod.MetaData.Name, pod.Spec.Volumes, ns)
 		if err_ != nil {
 			fmt.Println("Add Pod Failed At Line 53 ", err_.Error())
+			container_manager.DeletePauseContainer(pod.MetaData.NameSpace, containerPauseId)
 			return err_
 		}
 
 		pid_, err_ := container_manager.StartContainer(ctx, startRes)
 		if err_ != nil || pid_ == 0 {
 			fmt.Println("Add Pod Failed At Line 58 ")
+			container_manager.DeletePauseContainer(pod.MetaData.NameSpace, containerPauseId)
 			return err_
 		}
 
 		err_ = GenPodNetConfFile(pod.MetaData.NameSpace, podId)
 		if err_ != nil {
 			fmt.Println("Add Pod Failed At line 64", err_.Error())
+			container_manager.DeletePauseContainer(pod.MetaData.NameSpace, containerPauseId)
 			return err_
 		}
 	}
@@ -72,6 +77,7 @@ func AddPod(pod *api_obj.Pod) error {
 	fmt.Println("create pod success!")
 	if err != nil {
 		fmt.Println("Add Pod Failed At line 72 ", err.Error())
+		container_manager.DeletePauseContainer(pod.MetaData.NameSpace, containerPauseId)
 		return err
 	}
 	pod.PodStatus.PodIP = podIpInPause

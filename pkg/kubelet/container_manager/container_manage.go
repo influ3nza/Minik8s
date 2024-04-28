@@ -193,7 +193,7 @@ func StopAndRmContainer(namespace string, name string, ifForce bool) error {
 		_, err := util.StopContainer(namespace, name)
 		if err != nil {
 			fmt.Println("At Func StopAndRmContainer line 172 ", err.Error())
-			return err
+			//return err
 		}
 
 		_, err = util.RemoveContainer(namespace, name)
