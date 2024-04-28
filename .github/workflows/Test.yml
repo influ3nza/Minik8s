@@ -22,7 +22,7 @@ jobs:
 
     - name: Install dependencies
       run:
-        go get .
+        go mod tidy
     - name: Install Softwares
       run:
         sudo chmod 777 ./tools/script/setup.sh
