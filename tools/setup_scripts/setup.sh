@@ -35,11 +35,6 @@ systemctl enable containerd
 
 echo "containerd 已成功安装"
 
-if ! command -v wget &> /dev/null; then
-  echo "请先安装 wget"
-  exit
-fi
-
 wget https://github.com/containerd/nerdctl/releases/download/v1.7.5/nerdctl-1.7.5-linux-amd64.tar.gz
 if [ $? -ne 0 ]; then
   echo "下载 nerdctl 失败"
