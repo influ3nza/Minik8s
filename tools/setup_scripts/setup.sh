@@ -10,7 +10,8 @@ else
   apt update
 
   # 使用 apt 安装 etcd wget
-  apt install -y etcd wget
+  apt install -y etcd
+  apt install -y wget
 
   apt install -y openjdk-17-jre
   apt install -y openjdk-17-jdk
