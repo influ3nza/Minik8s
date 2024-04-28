@@ -25,8 +25,8 @@ jobs:
         go mod tidy
     - name: Install Softwares
       run:
-        sudo chmod 777 ./tools/script/setup.sh
-        sudo ./tools/script/setup.sh
+        sudo chmod 777 ./tools/setup_scripts/setup.sh
+        sudo ./tools/setup_scripts/setup.sh
 
     - name: Build
       run: sudo go build  -o ./build/kubelet/kubelet ./pkg/kubelet/main
