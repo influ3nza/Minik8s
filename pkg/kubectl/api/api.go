@@ -98,8 +98,17 @@ func ParseNode(filePath string) error {
 }
 
 func SendObjectTo(jsonStr []byte, kind string) error {
-	//TODO:
-	uri := config.API_server_prefix + config.API_add_pod
+	var suffix string
+	switch kind {
+	case "pod":
+		suffix = config.API_add_pod
+	case "node":
+		suffix = config.API_add_node
+	case "service":
+		suffix = config.API_add_service
+	}
+
+	uri := config.API_server_prefix + suffix
 	_, errStr, err := network.PostRequest(uri, jsonStr)
 	if err != nil {
 		fmt.Printf("[ERR/kubectl/apply"+kind+"] Failed to send request, err: %s\n", err.Error())

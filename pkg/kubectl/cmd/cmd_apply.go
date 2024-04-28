@@ -129,7 +129,7 @@ func ApplyHandler(cmd *cobra.Command, args []string) {
 				}
 				fmt.Print(*service)
 
-				err = api.sendObjectTo(fileToJson, "service")
+				err = api.SendObjectTo(fileToJson, "service")
 				if err != nil {
 					fmt.Printf("[ERR] Cannot send service to server, err: %s\n", err.Error())
 					return

@@ -8,7 +8,7 @@ const (
 	API_server_prefix string = "http://127.0.0.1:50000"
 
 	API_get_nodes string = "/nodes"
-	API_get_node  string = "/nodes/:name"
+	API_get_node  string = "/nodes/:namespace/:name"
 	API_add_node  string = "/nodes/add"
 
 	API_update_pod string = "/pods/update"
