@@ -2,6 +2,16 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 echo "Parent directory of the script is: $SCRIPT_DIR"
 
+flanneld_pid=$(pgrep -f flanneld)
+
+if [ -z "$flanneld_pid" ]; then
+  echo "flanneld进程未运行"
+else
+  # 杀死flanneld进程
+  sudo kill -9 "$flanneld_pid"
+  echo "已杀死flanneld进程 (PID: $flanneld_pid)"
+fi
+
 $SCRIPT_DIR/deletcd.sh
 
 export ETCDCTL_API=3
