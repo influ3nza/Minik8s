@@ -9,19 +9,9 @@ type Endpoint struct {
 	//我们这里采用最原始的枚举方法。
 	ApiVersion string               `json:"apiVersion" yaml:"apiVersion"`
 	Kind       string               `json:"kind" yaml:"kind"`
-	MetaData   obj_inner.ObjectMeta `json:"metadata" yaml:"metadata"`
+	MetaData   obj_inner.ObjectMeta `json:"metaData" yaml:"metadata"`
 
-	//where do you go?
-	PodName string
-	PodIP   string
-	PodPort string
-
-	//where do you come from?
-	ServiceIP   string
-	ServicePort string
-
-	//if it hadn't been for Cotton Eye Joe,
-	//i'd been married long time age,
-	//where 'd you come from where 'd you go?
-	//where 'd you come from Cotton Eye Joe?
+	PodUUID  string   `json:"PodUUID"`
+	PodIP    string   `json:"PodIP"`
+	PodPorts []string `json:"PodPort"`
 }
