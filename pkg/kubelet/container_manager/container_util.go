@@ -21,12 +21,13 @@ func ParseResources(requirements obj_inner.ResourceRequirements) ([]oci.SpecOpts
 		limCpu int64  = 0
 		limMem uint64 = 0
 	)
-
+	fmt.Println(requirements)
 	//parse all string to numbers
 	if res, ok := requirements.Requests[obj_inner.CPU_REQUEST]; ok {
 		parseRes, err := strconv.ParseFloat(string(res), 64)
 		if err == nil {
 			reqCpu = int64(parseRes * 100000.0)
+			// fmt.Println(reqCpu)
 			// opts = append(opts, oci.WithCPUCFS(quota, period))
 		} else {
 			return nil, fmt.Errorf("parse cpu requests error")
@@ -37,6 +38,7 @@ func ParseResources(requirements obj_inner.ResourceRequirements) ([]oci.SpecOpts
 		parseRes, err := units.RAMInBytes(string(res))
 		if err == nil {
 			reqMem = uint64(parseRes)
+			// fmt.Println(reqMem)
 		} else {
 			return nil, fmt.Errorf("parse mem requests error")
 		}
@@ -46,6 +48,7 @@ func ParseResources(requirements obj_inner.ResourceRequirements) ([]oci.SpecOpts
 		parseRes, err := strconv.ParseFloat(string(res), 64)
 		if err == nil {
 			limCpu = int64(parseRes * 100000.0)
+			// fmt.Println(limCpu)
 		} else {
 			return nil, fmt.Errorf("parse cpu limits error")
 		}
@@ -55,11 +58,13 @@ func ParseResources(requirements obj_inner.ResourceRequirements) ([]oci.SpecOpts
 		parseRes, err := units.RAMInBytes(string(res))
 		if err == nil {
 			limMem = uint64(parseRes)
+			// fmt.Println(reqMem)
 		} else {
 			return nil, fmt.Errorf("parse mem limits error")
 		}
 	}
 
+	// fmt.Printf("req is mem %d, cpu %d, lim is mem %d, cpu %d", reqMem, reqCpu, limMem, limCpu)
 	if reqCpu == 0 && reqMem == 0 && limCpu == 0 && limMem == 0 {
 		return opts, nil
 	}
@@ -78,6 +83,7 @@ func ParseResources(requirements obj_inner.ResourceRequirements) ([]oci.SpecOpts
 	if limMem != 0 {
 		opts = append(opts, oci.WithMemoryLimit(limMem))
 	}
+	println("set opt is :", len(opts))
 	return opts, nil
 }
 

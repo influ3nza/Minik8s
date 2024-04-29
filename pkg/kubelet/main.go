@@ -9,7 +9,6 @@ import (
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/kubelet/container_manager"
 	"minik8s/pkg/kubelet/pod_manager"
-	"time"
 )
 
 //func main() {
@@ -103,12 +102,12 @@ func main() {
 					},
 					Resources: obj_inner.ResourceRequirements{
 						Limits: map[string]obj_inner.Quantity{
-							"CPU":    obj_inner.Quantity("0.5"),
-							"Memory": obj_inner.Quantity("200MiB"),
+							obj_inner.CPU_LIMIT:    obj_inner.Quantity("0.5"),
+							obj_inner.MEMORY_LIMIT: obj_inner.Quantity("200MiB"),
 						},
 						Requests: map[string]obj_inner.Quantity{
-							"CPU":    obj_inner.Quantity("0.25"),
-							"Memory": obj_inner.Quantity("100MiB"),
+							obj_inner.CPU_REQUEST:    obj_inner.Quantity("0.25"),
+							obj_inner.MEMORY_REQUEST: obj_inner.Quantity("100MiB"),
 						},
 					},
 				}, {
@@ -146,12 +145,12 @@ func main() {
 					},
 					Resources: obj_inner.ResourceRequirements{
 						Limits: map[string]obj_inner.Quantity{
-							"CPU":    obj_inner.Quantity("0.5"),
-							"Memory": obj_inner.Quantity("200MiB"),
+							obj_inner.CPU_LIMIT:    obj_inner.Quantity("0.5"),
+							obj_inner.MEMORY_LIMIT: obj_inner.Quantity("200MiB"),
 						},
 						Requests: map[string]obj_inner.Quantity{
-							"CPU":    obj_inner.Quantity("0.25"),
-							"Memory": obj_inner.Quantity("100MiB"),
+							obj_inner.CPU_REQUEST:    obj_inner.Quantity("0.25"),
+							obj_inner.MEMORY_REQUEST: obj_inner.Quantity("100MiB"),
 						},
 					},
 				},
@@ -200,7 +199,9 @@ func main() {
 	fmt.Println("Pod Ip is ", pod.PodStatus.PodIP)
 
 	pod_manager.MonitorPodContainers(pod.MetaData.Name, pod.MetaData.NameSpace)
-	time.Sleep(5 * time.Second)
+	pod_manager.GetPodMetrics(pod.MetaData.Name, pod.MetaData.NameSpace)
+	containers, _ = container_manager.ListContainers(client, ctx)
+
 	err = pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace)
 	if err != nil {
 		fmt.Println("Main Failed At line 202 ", err.Error())

@@ -7,6 +7,7 @@ import (
 	"golang.org/x/net/context"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/kubelet/container_manager"
+	"time"
 )
 
 // AddPod todo 需要Master上有DNS服务器
@@ -16,6 +17,7 @@ func AddPod(pod *api_obj.Pod) error {
 		fmt.Println("Create Client Failed At line 14")
 		return err
 	}
+	defer client.Close()
 	ctx := namespaces.WithNamespace(context.Background(), pod.MetaData.NameSpace)
 	res, err := container_manager.CreatePauseContainer(ctx, client, pod.MetaData.NameSpace,
 		/*fmt.Sprintf("%s-pause", pod.MetaData.Name)*/ pod.MetaData.Name)
@@ -92,6 +94,7 @@ func DeletePod(podName string, namespace string) error {
 		fmt.Println("DeletePod Create Client Failed At line 85 ", err.Error())
 		return err
 	}
+	defer client.Close()
 	err = container_manager.DeleteContainerInPod(ctx, client, podName, namespace, false)
 	if err != nil {
 		fmt.Println("DeletePod DeleteContainer Failed At line 91 ", err.Error())
@@ -108,11 +111,11 @@ func MonitorPodContainers(podName string, namespace string) {
 		fmt.Println("MonitorPodContainers Failed At line 108 Create Client Failed ", err.Error())
 		return
 	}
+	defer client.Close()
 
 	walker := container_manager.ContainerWalker{
 		Client: client,
 		OnFound: func(ctx context.Context, found container_manager.Found) error {
-			fmt.Println("Monitor at line 118, container Id is : ", found.Container.ID())
 			container_manager.MonitorContainerState(ctx, found.Container)
 			return nil
 		},
@@ -126,4 +129,46 @@ func MonitorPodContainers(podName string, namespace string) {
 		fmt.Println("Failed At MonitorPodStatus line 129 ", err.Error())
 		return
 	}
+}
+
+func GetPodMetrics(podName string, namespace string) {
+	client, err := containerd.New("/run/containerd/containerd.sock")
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
+	if err != nil {
+		fmt.Println("GetPodMetrics Failed At line 134 ", err.Error())
+		return
+	}
+	defer client.Close()
+
+	podMetric := api_obj.PodMetrics{
+		Timestamp:  time.Time{},
+		Window:     3 * time.Second,
+		Containers: []api_obj.ContainerMetrics{},
+	}
+	walker := container_manager.ContainerWalker{
+		Client: client,
+		OnFound: func(ctx context.Context, found container_manager.Found) error {
+			res, erro := container_manager.GetContainersMetrics(ctx, found.Container, podMetric.Window)
+			if erro != nil {
+				fmt.Println("Get Metrics Failed At line 145 ", err.Error())
+				return erro
+			}
+			podMetric.Containers = append(podMetric.Containers, *res)
+			return nil
+		},
+	}
+
+	filter := map[string]string{
+		"podName": podName,
+	}
+
+	count, err := walker.Walk(ctx, filter)
+	if err != nil {
+		fmt.Println("Get Metrics Failed At line 159 ", err.Error())
+	}
+	for _, containerM := range podMetric.Containers {
+		fmt.Println("container metrics is ", containerM)
+	}
+	fmt.Println("container number is ", count)
+	return
 }

@@ -12,12 +12,12 @@ import (
 	"reflect"
 	"time"
 
-	v1 "github.com/containerd/cgroups/stats/v1"
+	v2 "github.com/containerd/cgroups/v2/stats"
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/oci"
+	"github.com/gogo/protobuf/proto"
 	"github.com/opencontainers/runtime-spec/specs-go"
-	"google.golang.org/protobuf/proto"
 )
 
 // CreateK8sContainer 创建一个proj容器
@@ -47,6 +47,7 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 	//配置容器资源
 	limitOpts, err := ParseResources(container.Resources)
 	if err == nil {
+		fmt.Println("append opts")
 		createOpts = append(createOpts, limitOpts...)
 	}
 
@@ -216,7 +217,7 @@ func DeleteContainerInPod(ctx context.Context, client *containerd.Client, podNam
 	walker := &ContainerWalker{
 		Client: client,
 		OnFound: func(ctx context.Context, found Found) error {
-			fmt.Println(found.Container.ID())
+			// fmt.Println(found.Container.ID())
 			err := StopAndRmContainer(podNamespace, found.Container.ID(), ifForce)
 			if err != nil {
 				fmt.Println("Stop Rm Container in Walker Failed at line 221 ", err.Error())
@@ -282,105 +283,104 @@ func MonitorContainerState(ctx context.Context, container containerd.Container) 
 }
 
 type metricsCollection struct {
-	begin       time.Time
-	tasks       []containerd.Task
-	lastTimes   []time.Time
-	lastCPUs    []uint64
-	CPUPercents []uint64
-	memory      []uint64
+	begin      time.Time
+	task       containerd.Task
+	lastTime   time.Time
+	lastCPU    uint64
+	CPUPercent uint64
+	memory     uint64
 }
 
-func GetContainersMetrics(c containerd.Container) (*api_obj.PodMetrics, error) {
-	ctx := context.Background()
-
-	collection := &metricsCollection{
-		begin:       time.Now(),
-		tasks:       []containerd.Task{},
-		lastTimes:   []time.Time{},
-		lastCPUs:    []uint64{},
-		CPUPercents: []uint64{},
-		memory:      []uint64{},
-	}
-
-	initializeMetricsCollector(ctx, c, collection)
-
-	podMetrics := &api_obj.PodMetrics{
-		Window:     time.Second * 5,
-		Containers: []api_obj.ContainerMetrics{},
-	}
-
-	collectContainerMetrics(ctx, collection, podMetrics, c)
-
-	return podMetrics, nil
-}
-
-func initializeMetricsCollector(ctx context.Context, c containerd.Container, collection *metricsCollection) {
+func GetContainersMetrics(ctx context.Context, c containerd.Container, window time.Duration) (*api_obj.ContainerMetrics, error) {
 	task, err := c.Task(ctx, nil)
 	if err != nil {
 		fmt.Println(err.Error())
+		return nil, err
 	}
-	fmt.Println(task)
-	collection.tasks = append(collection.tasks, task)
-	collection.lastTimes = append(collection.lastTimes, time.Now())
-	collection.lastCPUs = append(collection.lastCPUs, 0)
-	collection.CPUPercents = append(collection.CPUPercents, 0)
-	collection.memory = append(collection.memory, 0)
+
+	collection := &metricsCollection{
+		begin:      time.Now(),
+		task:       task,
+		lastTime:   time.Now(),
+		lastCPU:    uint64(0),
+		CPUPercent: uint64(0),
+		memory:     uint64(0),
+	}
+
+	cm := CollectContainerMetrics(ctx, collection, window, c)
+
+	return cm, nil
 }
 
-func collectContainerMetrics(ctx context.Context, collection *metricsCollection, podMetrics *api_obj.PodMetrics, c containerd.Container) {
-	var currentMetrics v1.Metrics
+func CollectContainerMetrics(ctx context.Context, collection *metricsCollection, window time.Duration, c containerd.Container) *api_obj.ContainerMetrics {
+	var currentMetrics v2.Metrics
 	var temporaryInterface interface{}
 	var curTime time.Time
 	var allCPUUsage uint64
 	collection.begin = time.Now()
-	for i := 0; i <= 1; i++ {
-		for taskIter, task := range collection.tasks {
-			fmt.Println(collection.tasks)
-			metrics, err := task.Metrics(ctx)
-			if err != nil {
-				continue
-			}
-			curTime = time.Now()
+	task := collection.task
+	metrics, err := task.Metrics(ctx)
+	if err != nil {
+		fmt.Println("CollectContainerMetrics Failed At line 338 ", err.Error())
+		return nil
+	}
+	curTime = time.Now()
+	temporaryInterface = reflect.New(reflect.TypeOf(currentMetrics)).Interface()
+	err = proto.Unmarshal(metrics.Data.Value, temporaryInterface.(proto.Message))
+	// fmt.Println(temporaryInterface)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	switch value := temporaryInterface.(type) {
+	case *v2.Metrics:
+		currentMetrics = *value
+	default:
+		return nil
+	}
+	collection.lastTime = curTime
+	collection.lastCPU = currentMetrics.CPU.UsageUsec
+	collection.memory = currentMetrics.Memory.Usage
+	time.Sleep(window)
 
-			temporaryInterface = reflect.New(reflect.TypeOf(currentMetrics)).Interface()
-			err = proto.Unmarshal(metrics.Data.Value, temporaryInterface.(proto.Message))
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-			switch value := temporaryInterface.(type) {
-			case *v1.Metrics:
-				currentMetrics = *value
-			default:
-				return
-			}
-			if i == 0 {
-				collection.lastTimes[taskIter] = curTime
-				collection.lastCPUs[taskIter] = currentMetrics.CPU.Usage.Total
-				collection.memory[taskIter] = currentMetrics.Memory.Usage.Usage
-				time.Sleep(podMetrics.Window)
-				continue
-			}
-			collection.memory[taskIter] += currentMetrics.Memory.Usage.Usage
-			collection.memory[taskIter] /= 2
+	task = collection.task
+	metrics, err = task.Metrics(ctx)
+	if err != nil {
+		fmt.Println("CollectContainerMetrics Failed At line 362 ", err.Error())
+		return nil
+	}
+	curTime = time.Now()
+	temporaryInterface = reflect.New(reflect.TypeOf(currentMetrics)).Interface()
+	err = proto.Unmarshal(metrics.Data.Value, temporaryInterface.(proto.Message))
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	switch value := temporaryInterface.(type) {
+	case *v2.Metrics:
+		currentMetrics = *value
+	default:
+		return nil
+	}
+	collection.memory += currentMetrics.Memory.Usage
+	collection.memory /= 2
 
-			allCPUUsage = currentMetrics.CPU.Usage.Total
-			cpuNow := allCPUUsage - collection.lastCPUs[taskIter]
+	allCPUUsage = currentMetrics.CPU.UsageUsec
+	cpuNow := allCPUUsage - collection.lastCPU
 
-			timeDelta := curTime.Sub(collection.lastTimes[taskIter])
-			collection.CPUPercents[taskIter] = uint64(float64(cpuNow) / float64(timeDelta.Nanoseconds()) * 1000)
+	timeDelta := curTime.Sub(collection.lastTime)
+	collection.CPUPercent = uint64(float64(cpuNow) / float64(timeDelta.Nanoseconds()) * 1000)
+	task1 := collection.task
+	memPercent := 100 * float64(collection.memory) / float64(currentMetrics.Memory.UsageLimit)
+	var cm api_obj.ContainerMetrics
+	if task1.ID() == c.ID() {
+		cm = api_obj.ContainerMetrics{
+			Name: task.ID(),
+			Usage: map[string]string{
+				"CPUPercent":    fmt.Sprintf("%d", collection.CPUPercent),
+				"MemoryUsage":   fmt.Sprintf("%d", collection.memory),
+				"MemoryPercent": fmt.Sprintf("%f%%", memPercent),
+			},
 		}
 	}
-	podMetrics.Timestamp = curTime
-	for ci, task := range collection.tasks {
-		if task.ID() == c.ID() {
-			podMetrics.Containers = append(podMetrics.Containers, api_obj.ContainerMetrics{
-				Name: task.ID(),
-				Usage: map[string]uint64{
-					"cpu":    uint64(collection.CPUPercents[ci]),
-					"memory": uint64(collection.memory[ci]),
-				},
-			})
-			break // 终止循环，因为已经找到了对应的容器
-		}
-	}
+	// fmt.Println("container matrics is ", cm.Usage)
+	return &cm
 }

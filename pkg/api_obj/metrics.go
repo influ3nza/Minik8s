@@ -1,14 +1,10 @@
 package api_obj
 
 import (
-	"minik8s/pkg/api_obj/obj_inner"
 	"time"
 )
 
 type PodMetrics struct {
-	APIVersion string               `json:"apiVersion" yaml:"apiVersion"`
-	MetaData   obj_inner.ObjectMeta `json:"metadata" yaml:"metadata"`
-
 	Timestamp time.Time     `json:"timestamp" yaml:"timeStamp"`
 	Window    time.Duration `json:"window" yaml:"window"`
 
@@ -16,7 +12,7 @@ type PodMetrics struct {
 	Containers []ContainerMetrics `json:"containers" yaml:"containers"`
 }
 
-type ResourceList map[string]uint64
+type ResourceList map[string]string
 
 type ContainerMetrics struct {
 	Name string `json:"name" yaml:"name"`

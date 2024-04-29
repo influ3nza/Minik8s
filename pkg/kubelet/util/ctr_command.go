@@ -86,7 +86,7 @@ func RmForce(namespace string, name string) (string, error) {
 
 func StopContainer(namespace string, name string) (string, error) {
 	cmd := []string{"stop", name}
-	PrintCmd(namespace, cmd...)
+	// PrintCmd(namespace, cmd...)
 	res, err := Exec(namespace, cmd...)
 	if err != nil {
 		return "", err
