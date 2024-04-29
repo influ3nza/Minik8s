@@ -29,11 +29,6 @@ func AddPod(pod *api_obj.Pod) error {
 	}
 	containerPauseId = res[:12]
 
-	//defer func() {
-	//	container_manager.DeletePauseContainer(pod.MetaData.NameSpace,
-	//		fmt.Sprintf("%s-pause", pod.MetaData.Name))
-	//}()
-
 	files, err := GetPodNetConfFile(pod.MetaData.NameSpace, containerPauseId)
 	if err != nil {
 		fmt.Println("Add Pod Failed At line 37", err.Error())
@@ -73,8 +68,6 @@ func AddPod(pod *api_obj.Pod) error {
 			return err_
 		}
 	}
-	//fmt.Sprintf("%s-pause", pod.MetaData.Name)
-	// podIp, err := GetPodIp(pod.MetaData.NameSpace, podId)
 	podIpInPause, err := GetPodIp(pod.MetaData.NameSpace, fmt.Sprintf("%s-pause", pod.MetaData.Name))
 	fmt.Println("create pod success!")
 	if err != nil {
@@ -141,9 +134,9 @@ func GetPodMetrics(podName string, namespace string) {
 	defer client.Close()
 
 	podMetric := api_obj.PodMetrics{
-		Timestamp:  time.Time{},
-		Window:     3 * time.Second,
-		Containers: []api_obj.ContainerMetrics{},
+		Timestamp:        time.Time{},
+		Window:           3 * time.Second,
+		ContainerMetrics: []api_obj.ContainerMetrics{},
 	}
 	walker := container_manager.ContainerWalker{
 		Client: client,
@@ -153,7 +146,7 @@ func GetPodMetrics(podName string, namespace string) {
 				fmt.Println("Get Metrics Failed At line 145 ", err.Error())
 				return erro
 			}
-			podMetric.Containers = append(podMetric.Containers, *res)
+			podMetric.ContainerMetrics = append(podMetric.ContainerMetrics, *res)
 			return nil
 		},
 	}
@@ -166,7 +159,7 @@ func GetPodMetrics(podName string, namespace string) {
 	if err != nil {
 		fmt.Println("Get Metrics Failed At line 159 ", err.Error())
 	}
-	for _, containerM := range podMetric.Containers {
+	for _, containerM := range podMetric.ContainerMetrics {
 		fmt.Println("container metrics is ", containerM)
 	}
 	fmt.Println("container number is ", count)

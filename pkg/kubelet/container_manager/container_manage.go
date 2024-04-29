@@ -374,10 +374,10 @@ func CollectContainerMetrics(ctx context.Context, collection *metricsCollection,
 	if task1.ID() == c.ID() {
 		cm = api_obj.ContainerMetrics{
 			Name: task.ID(),
-			Usage: map[string]string{
-				"CPUPercent":    fmt.Sprintf("%d", collection.CPUPercent),
-				"MemoryUsage":   fmt.Sprintf("%d", collection.memory),
-				"MemoryPercent": fmt.Sprintf("%f%%", memPercent),
+			Usage: api_obj.ResourceList{
+				CPUPercent:    collection.CPUPercent,
+				MemoryUsage:   collection.memory,
+				MemoryPercent: memPercent,
 			},
 		}
 	}
