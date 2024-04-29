@@ -8,7 +8,6 @@ import (
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/kubelet/container_manager"
-	"minik8s/pkg/kubelet/pod_manager"
 )
 
 //func main() {
@@ -58,7 +57,7 @@ func main() {
 		Kind:       "pod",
 		MetaData: obj_inner.ObjectMeta{
 			Name:      "testpod",
-			NameSpace: "test2",
+			NameSpace: "haha",
 			Labels: map[string]string{
 				"testlabel": "podlabel",
 			},
@@ -183,6 +182,51 @@ func main() {
 		fmt.Println("There should be no containers in \"test\"")
 	}
 
+	var container = api_obj.Container{
+			Name: "testubuntu",
+			Image: obj_inner.Image{
+				Img:           "docker.io/library/ubuntu:latest",
+				ImgPullPolicy: "Always",
+			},
+			EntryPoint: obj_inner.EntryPoint{
+				//Command:    []string{"ls"},
+				WorkingDir: "/",
+			},
+			Ports: []obj_inner.ContainerPort{
+				{
+					ContainerPort: 0,
+					HostIP:        "0.0.0.0",
+					HostPort:      0,
+					Name:          "no name",
+					Protocol:      "TCP",
+				},
+			},
+			Env: []obj_inner.EnvVar{
+				{
+					Name:  "env1",
+					Value: "env1Value",
+				},
+			},
+			VolumeMounts: []obj_inner.VolumeMount{
+				{
+					MountPath: "/home",
+					SubPath:   "config",
+					Name:      "testMount",
+					ReadOnly:  false,
+				},
+			},
+			Resources: obj_inner.ResourceRequirements{
+				Limits: map[string]obj_inner.Quantity{
+					"CPU":    obj_inner.Quantity("0.5"),
+					"Memory": obj_inner.Quantity("200MiB"),
+				},
+				Requests: map[string]obj_inner.Quantity{
+					"CPU":    obj_inner.Quantity("0.25"),
+					"Memory": obj_inner.Quantity("100MiB"),
+				},
+			},
+		}
+
 	//createdContainer, err := container_manager.CreateK8sContainer(ctx, client, &container, "test", volumes, "")
 	//if createdContainer == nil {
 	//	fmt.Println("Create Container Failed ", err.Error())
@@ -192,9 +236,56 @@ func main() {
 	//if pid == 0 {
 	//	fmt.Println("Run Container Failed ", err.Error())
 	//}
-	err = pod_manager.AddPod(&pod)
-	if err != nil {
-		fmt.Println("Main Failed At line 154 ", err.Error())
+
+	startRes, podId, err_ := container_manager.CreateK8sContainer(ctx, client, &container, pod.MetaData.Name, pod.Spec.Volumes, "")
+	if err_ != nil {
+		fmt.Println("create container Failed At Line 198 ", err_.Error())
 	}
-	fmt.Println("Pod Ip is ", pod.PodStatus.PodIP)
+
+	pid_, err_ := container_manager.StartContainer(ctx, startRes)
+	if err_ != nil || pid_ == 0 {
+		fmt.Println("start container Failed At Line 205")
+	}
+
+	// 获取所有容器
+	acontainers, err := client.Containers(ctx)
+	if err != nil {
+		fmt.Println("Failed to get containers:", err)
+		return
+	}
+
+	// 遍历所有容器
+	for _, container := range acontainers {
+		// 检查容器的标签，查找所属的 Pod
+		labels, err := container.Labels(ctx)
+		if err != nil {
+			fmt.Println("Failed to get container labels:", err)
+			continue
+		}
+
+		fmt.Println("labels:", labels)
+		// 检查容器是否属于指定的 Pod
+		if cname, ok := labels["Name"]; ok && cname == "testubuntu" {
+
+			// 如果属于指定的 Pod，则监控该容器的状态
+			podmetrics, err_ := container_manager.GetContainersMetrics(container)
+			if err_ != nil {
+				fmt.Println("watch container Failed At Line 205")
+			}
+			fmt.Println("podmetrics:", podmetrics)
+		}
+	}
+
+	fmt.Println("start container success At Line 256")
+	fmt.Println("startRes:", startRes)
+	fmt.Println("podId:", podId)
+	fmt.Println("pid_:", pid_)
+
+
+
+	//err = pod_manager.AddPod(&pod)
+	//if err != nil {
+		//fmt.Println("Main Failed At line 154 ", err.Error())
+	//}
+	//fmt.Println("Pod Ip is ", pod.PodStatus.PodIP)
 }
