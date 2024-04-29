@@ -150,6 +150,32 @@ func (s *ApiServer) AddNode(c *gin.Context) {
 	})
 }
 
+func (s *ApiServer) GetPods(c *gin.Context) {
+	fmt.Printf("[apiserver/GetPods] Try to add all pods.\n")
+
+	res, err := s.EtcdWrap.GetByPrefix(config.ETCD_pod_prefix)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[apiserver/GetPods] Failed to get pods, " + err.Error(),
+		})
+		return
+	} else {
+		var pods []string
+		for id, pod := range res {
+			pods = append(pods, pod.Value)
+
+			//返回值以逗号隔开
+			if id < len(res)-1 {
+				pods = append(pods, ",")
+			}
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"data": pods,
+		})
+	}
+}
+
 func (s *ApiServer) AddPod(c *gin.Context) {
 	fmt.Printf("[apiserver/addPod] Try to add a pod.\n")
 
@@ -326,24 +352,25 @@ func (s *ApiServer) AddService(c *gin.Context) {
 
 	if service_name == "" || service_namespace == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[msgHandler/AddService] Empty service name or namespace",
+			"error": "[ERR/handler/AddService] Empty service name or namespace",
 		})
 		return
 	}
 
 	fmt.Printf("[apiserver/AddService] Service name: %s\n", service_name)
 
-	res, err := s.EtcdWrap.Get(config.ETCD_service_prefix + service_namespace + "/" + service_name)
+	e_key := config.ETCD_service_prefix + service_namespace + "/" + service_name
+	res, err := s.EtcdWrap.Get(e_key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[msgHandler/AddService] Get service failed, " + err.Error(),
+			"error": "[ERR/handler/AddService] Get service failed, " + err.Error(),
 		})
 		return
 	}
 
 	if len(res) != 0 {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[msgHandler/AddService] Service name already exists.",
+			"error": "[ERR/handler/AddService] Service name already exists.",
 		})
 		return
 	}
@@ -351,20 +378,28 @@ func (s *ApiServer) AddService(c *gin.Context) {
 	//TODO:分配IP（检查IP）
 	//TODO:分配UUID
 	new_service.MetaData.UUID = "default_service"
-	new_service.Status = api_obj.ServiceStatus{}
+	new_service.Status = api_obj.ServiceStatus{
+		Condition: api_obj.SERVICE_PENDING,
+	}
 
-	//TODO:循环，将endpoints加入数组
-	
+	//存入etcd
+	service_str, err := json.Marshal(new_service)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/AddService] Failed to marshal service, " + err.Error(),
+		})
+		return
+	}
 
-	//TODO:存入etcd
-	//TODO:返回
+	err = s.EtcdWrap.Put(e_key, service_str)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/AddService] Failed to write into etcd, " + err.Error(),
+		})
+		return
+	}
+
+	//TODO:创建endpoints
+	//TODO:返回200
 	//TODO:通知proxy，service已经创建
-
-	/*在apiserver创建pod，而kubelet没有创建pod之前，etcd中的pod
-	是没有ip地址的。只有在kubelet创建完pod之后，才会有ip地址，这个时候
-	需要status manager定时将pod的所有信息更新到apiserver上面之后，
-	apiserver比对完新建的pod发现有ip，再创建endpoints。这个时候
-	将会调用update service的函数。
-	与此同时，pod被update，被delete之后，都会触发service update的函数。
-	*/
 }

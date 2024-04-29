@@ -171,7 +171,7 @@ func (s *Scheduler) GetNodes() ([]api_obj.Node, error) {
 }
 
 func CreateSchedulerInstance() (*Scheduler, error) {
-	consumer, _ := message.NewConsumer("scheduler", "default")
+	consumer, err := message.NewConsumer("scheduler", "default")
 	producer := message.NewProducer()
 
 	c := DefaultSchedulerConfig()
@@ -183,7 +183,7 @@ func CreateSchedulerInstance() (*Scheduler, error) {
 		apiPort:    c.apiPort,
 	}
 
-	return scheduler, nil
+	return scheduler, err
 }
 
 func (s *Scheduler) Run() {

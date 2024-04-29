@@ -19,8 +19,7 @@ const (
 )
 
 type ServiceStatus struct {
-	Condition string     `json:"condition" yaml:"condition"`
-	Endpoints []Endpoint `json:"endpoints" yaml:"endpoints"`
+	Condition string `json:"condition" yaml:"condition"`
 }
 
 type ServicePort struct {

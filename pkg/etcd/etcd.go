@@ -86,3 +86,8 @@ func (w *EtcdWrap) GetByPrefix(key string) ([]EtcdKV, error) {
 
 	return pack, nil
 }
+
+func (w *EtcdWrap) DeleteByPrefix(key string) error {
+	_, err := w.client.Delete(context.TODO(), key, etcd.WithPrefix())
+	return err
+}

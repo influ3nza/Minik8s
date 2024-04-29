@@ -50,12 +50,15 @@ func serverHelloWorld(c *gin.Context) {
 // 将所有的接口在此函数内进行绑定
 func (s *ApiServer) Bind() {
 	s.router.GET("/hello", serverHelloWorld)
+
 	s.router.GET(config.API_get_nodes, s.GetNodes)
 	s.router.GET(config.API_get_node, s.GetNode)
+	s.router.POST(config.API_add_node, s.AddNode)
 
+	s.router.GET(config.API_get_pods, s.GetPods)
 	s.router.POST(config.API_update_pod, s.UpdatePod)
 	s.router.POST(config.API_add_pod, s.AddPod)
-	s.router.POST(config.API_add_node, s.AddNode)
+
 	s.router.POST(config.API_add_service, s.AddService)
 }
 
