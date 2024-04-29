@@ -354,6 +354,7 @@ func (s *ApiServer) AddService(c *gin.Context) {
 	new_service.Status = api_obj.ServiceStatus{}
 
 	//TODO:循环，将endpoints加入数组
+	
 	//TODO:存入etcd
 	//TODO:返回
 	//TODO:通知proxy，service已经创建

@@ -8,4 +8,6 @@ const (
 
 	//"/registry/services/:namespace/:name"
 	ETCD_service_prefix = "/registry/services"
+
+	//"/registry/endpoints/:namespace/:podUUID"
 )
