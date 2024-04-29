@@ -97,34 +97,28 @@ func ParseNode(filePath string) error {
 	return nil
 }
 
-func SendPodTo(jsonPod []byte) error {
-	uri := config.API_server_prefix + config.API_add_pod
-	_, errStr, err := network.PostRequest(uri, jsonPod)
+func SendObjectTo(jsonStr []byte, kind string) error {
+	var suffix string
+	switch kind {
+	case "pod":
+		suffix = config.API_add_pod
+	case "node":
+		suffix = config.API_add_node
+	case "service":
+		suffix = config.API_add_service
+	}
+
+	uri := config.API_server_prefix + suffix
+	_, errStr, err := network.PostRequest(uri, jsonStr)
 	if err != nil {
-		fmt.Printf("[ERR/kubectl/Apply Pod] Failed to send request, err: %s\n", err.Error())
+		fmt.Printf("[ERR/kubectl/apply"+kind+"] Failed to send request, err: %s\n", err.Error())
 		return err
 	} else if errStr != "" {
-		fmt.Printf("[ERR/kubectl/Apply Pod] Failed to send request, err: %v\n", errStr)
+		fmt.Printf("[ERR/kubectl/apply"+kind+"] Failed to send request, err: %v\n", errStr)
 		return nil
 	}
 
-	fmt.Printf("[kubectl/Apply Pod] Send add pod request success!\n")
-
-	return nil
-}
-
-func SendNodeTo(jsonNode []byte) error {
-	uri := config.API_server_prefix + config.API_add_node
-	_, errStr, err := network.PostRequest(uri, jsonNode)
-	if err != nil {
-		fmt.Printf("[ERR/kubectl/Apply Node] Failed to send request, err: %s\n", err.Error())
-		return err
-	} else if errStr != "" {
-		fmt.Printf("[ERR/kubectl/Apply Node] Failed to send request, err: %v\n", errStr)
-		return nil
-	}
-
-	fmt.Printf("[kubectl/Apply Node] Send add node request success!\n")
+	fmt.Printf("[kubectl/apply" + kind + "] Send add " + kind + " request success!\n")
 
 	return nil
 }

@@ -56,6 +56,7 @@ func (s *ApiServer) Bind() {
 	s.router.POST(config.API_update_pod, s.UpdatePod)
 	s.router.POST(config.API_add_pod, s.AddPod)
 	s.router.POST(config.API_add_node, s.AddNode)
+	s.router.POST(config.API_add_service, s.AddService)
 }
 
 // 在进行测试/实际运行时，第2步调用此函数。默认端口为8080
