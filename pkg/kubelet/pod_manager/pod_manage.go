@@ -99,3 +99,31 @@ func DeletePod(podName string, namespace string) error {
 	}
 	return nil
 }
+
+// MonitorPodContainers 监控指定 Pod 中的所有容器
+func MonitorPodContainers(podName string, namespace string) {
+	client, err := containerd.New("/run/containerd/containerd.sock")
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
+	if err != nil {
+		fmt.Println("MonitorPodContainers Failed At line 108 Create Client Failed ", err.Error())
+		return
+	}
+
+	walker := container_manager.ContainerWalker{
+		Client: client,
+		OnFound: func(ctx context.Context, found container_manager.Found) error {
+			fmt.Println("Monitor at line 118, container Id is : ", found.Container.ID())
+			container_manager.MonitorContainerState(ctx, found.Container)
+			return nil
+		},
+	}
+
+	filter := map[string]string{
+		"podName": podName,
+	}
+	_, err = walker.Walk(ctx, filter)
+	if err != nil {
+		fmt.Println("Failed At MonitorPodStatus line 129 ", err.Error())
+		return
+	}
+}

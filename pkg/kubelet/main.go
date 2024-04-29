@@ -9,6 +9,7 @@ import (
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/kubelet/container_manager"
 	"minik8s/pkg/kubelet/pod_manager"
+	"time"
 )
 
 //func main() {
@@ -194,7 +195,14 @@ func main() {
 	//}
 	err = pod_manager.AddPod(&pod)
 	if err != nil {
-		fmt.Println("Main Failed At line 154 ", err.Error())
+		fmt.Println("Main Failed At line 197 ", err.Error())
 	}
 	fmt.Println("Pod Ip is ", pod.PodStatus.PodIP)
+
+	pod_manager.MonitorPodContainers(pod.MetaData.Name, pod.MetaData.NameSpace)
+	time.Sleep(5 * time.Second)
+	err = pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace)
+	if err != nil {
+		fmt.Println("Main Failed At line 202 ", err.Error())
+	}
 }
