@@ -1,7 +1,13 @@
 package utils
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
 	"minik8s/pkg/api_obj"
+	"minik8s/pkg/api_obj/obj_inner"
+	"minik8s/pkg/apiserver/config"
+	"minik8s/pkg/network"
 )
 
 func CompareLabels(a map[string]string, b map[string]string) bool {
@@ -15,5 +21,45 @@ func CompareLabels(a map[string]string, b map[string]string) bool {
 
 func CreateEndpoint(srv api_obj.Service, pod api_obj.Pod) error {
 	//TODO:
+	for _, pair := range srv.Spec.Ports {
+		port := GetMatchPort(pair.TargetPort, pod.Spec.Containers)
+		if port == 0 {
+			return errors.New("no matching port")
+		}
+
+		ep := &api_obj.Endpoint{
+			MetaData: obj_inner.ObjectMeta{
+				Name:      srv.MetaData.Name + "-" + pod.MetaData.Name,
+				NameSpace: srv.MetaData.NameSpace,
+			},
+			PodUUID: pod.MetaData.UUID,
+			PodIP:   pod.PodStatus.PodIP,
+			PodPort: port,
+		}
+
+		ep_str, err := json.Marshal(ep)
+		if err != nil {
+			fmt.Printf("[ERR/Controller/Utils/Endpoint] Failed to marshal endpoint, " + err.Error())
+			return err
+		}
+
+		uri := config.API_server_prefix + config.API_add_endpoint
+		_, errStr, err := network.PostRequest(uri, ep_str)
+		if err != nil {
+			fmt.Printf("[ERR/Controller/Utils/Endpoint] GET request failed, %v.\n", err)
+			return err
+		} else if errStr != "" {
+			fmt.Printf("[ERR/Controller/Utils/Endpoint] GET request failed, %s.\n", errStr)
+			return errors.New(errStr)
+		}
+
+		fmt.Printf("[Controller/Utils/Endpoint] Endpoint create request for srv %s:%d, pod %s:%d.\n",
+			srv.Spec.ClusterIP, pair.TargetPort, pod.PodStatus.PodIP, port)
+	}
+
 	return nil
+}
+
+func GetMatchPort(srvPort int32, cons []api_obj.Container) int32 {
+	return 0
 }

@@ -43,7 +43,7 @@ func (ec *EndpointController) OnAddService(pack string) {
 	} else {
 		err = json.Unmarshal([]byte(dataStr), &allPods)
 		if err != nil {
-			fmt.Printf("[ERR/EndpointController/OnAddService] Failed to unmarshall data, %s.\n", err)
+			fmt.Printf("[ERR/EndpointController/OnAddService] Failed to unmarshal dataS, %s.\n", err)
 			ec.PrintHandlerWarning()
 			return
 		}
@@ -53,15 +53,17 @@ func (ec *EndpointController) OnAddService(pack string) {
 	srv := &api_obj.Service{}
 	err = json.Unmarshal([]byte(pack), srv)
 	if err != nil {
-		fmt.Printf("[ERR/EndpointController/OnAddService] Failed to marshal pod, " + err.Error())
+		fmt.Printf("[ERR/EndpointController/OnAddService] Failed to unmarshal service, " + err.Error())
 		ec.PrintHandlerWarning()
 		return
 	}
 
 	//比对每一个pod
 	for _, pod := range allPods {
-		if pod.PodStatus.Phase == obj_inner.Running && utils.CompareLabels(srv.Spec.Selector, pod.MetaData.Labels) {
-			//TODO:创建一个endpoint
+		if pod.PodStatus.Phase == obj_inner.Running &&
+			utils.CompareLabels(srv.Spec.Selector, pod.MetaData.Labels) &&
+			pod.MetaData.NameSpace == srv.MetaData.NameSpace {
+			//创建一个endpoint
 			err = utils.CreateEndpoint(*srv, pod)
 			if err != nil {
 				fmt.Printf("[ERR/EndpointController/OnAddService] Failed to create endpoint, " + err.Error())

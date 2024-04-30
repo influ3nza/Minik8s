@@ -403,3 +403,7 @@ func (s *ApiServer) AddService(c *gin.Context) {
 	//TODO:返回200
 	//TODO:通知proxy，service已经创建
 }
+
+func (s *ApiServer) AddEndpoint(c *gin.Context) {
+	fmt.Printf("[apiserver/AddEndpoint] Try to add an endpoint.\n")
+}

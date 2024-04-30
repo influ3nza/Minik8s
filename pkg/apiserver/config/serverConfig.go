@@ -16,6 +16,8 @@ const (
 	API_get_pods   string = "/pods/get/:nodename"
 
 	API_add_service string = "/services/add"
+
+	API_add_endpoint string = "/endpoints/add"
 )
 
 type ServerConfig struct {
