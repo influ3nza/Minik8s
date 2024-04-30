@@ -21,20 +21,21 @@ func main() {
 	lockin := func(str string) {
 		util.RegisterPod(str, str)
 		for {
-			res := util.Lock(str, str)
-			if res == false {
+			if util.Lock(str, str) {
+				time.Sleep(1 * time.Second)
+				res := util.UnLock(str, str)
+				if res == false {
+					fmt.Println("Lock But Unlock Error, Means Implement Wrong")
+				}
+			} else {
 				break
-			}
-			res = util.UnLock(str, str)
-			if res == false {
-				fmt.Println("Lock But Unlock Error, Means Implement Wrong")
 			}
 		}
 		wg.Done()
 	}
 
 	lockout := func(str string) {
-		time.Sleep(3 * time.Second)
+		time.Sleep(5 * time.Second)
 		for {
 			if res := util.UnRegisterPod(str, str); res == true {
 				break
@@ -49,7 +50,7 @@ func main() {
 		go lockout(test_)
 	}
 	wg.Wait()
-	
+
 	test()
 }
 
@@ -190,12 +191,36 @@ func test() {
 	}
 	fmt.Println("Pod Ip is ", pod.PodStatus.PodIP)
 
-	pod_manager.MonitorPodContainers(pod.MetaData.Name, pod.MetaData.NameSpace)
+	util.RegisterPod(pod.MetaData.Name, pod.MetaData.NameSpace)
 	pod_manager.GetPodMetrics(pod.MetaData.Name, pod.MetaData.NameSpace)
-	containers, _ = container_manager.ListContainers(client, ctx)
 
-	err = pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace)
-	if err != nil {
-		fmt.Println("Main Failed At line 202 ", err.Error())
-	}
+	wg.Add(2)
+	go func() {
+		for {
+			if util.Lock(pod.MetaData.Name, pod.MetaData.NameSpace) {
+				pod_manager.MonitorPodContainers(pod.MetaData.Name, pod.MetaData.NameSpace)
+				util.UnLock(pod.MetaData.Name, pod.MetaData.NameSpace)
+			} else {
+				break
+			}
+			time.Sleep(2 * time.Second)
+		}
+		wg.Done()
+	}()
+
+	go func() {
+		time.Sleep(10 * time.Second)
+		for {
+			if util.UnRegisterPod(pod.MetaData.Name, pod.MetaData.NameSpace) {
+				fmt.Println("UnRegister Success")
+				break
+			}
+		}
+		err = pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace)
+		if err != nil {
+			fmt.Println("Main Failed At line 202 ", err.Error())
+		}
+		wg.Done()
+	}()
+	wg.Wait()
 }

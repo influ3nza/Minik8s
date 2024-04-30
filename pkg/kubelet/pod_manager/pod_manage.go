@@ -6,6 +6,7 @@ import (
 	"github.com/containerd/containerd/namespaces"
 	"golang.org/x/net/context"
 	"minik8s/pkg/api_obj"
+	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/kubelet/container_manager"
 	"time"
 )
@@ -97,19 +98,35 @@ func DeletePod(podName string, namespace string) error {
 }
 
 // MonitorPodContainers 监控指定 Pod 中的所有容器
-func MonitorPodContainers(podName string, namespace string) {
+func MonitorPodContainers(podName string, namespace string) string {
 	client, err := containerd.New("/run/containerd/containerd.sock")
 	ctx := namespaces.WithNamespace(context.Background(), namespace)
 	if err != nil {
 		fmt.Println("MonitorPodContainers Failed At line 108 Create Client Failed ", err.Error())
-		return
+		return ""
 	}
 	defer client.Close()
 
 	walker := container_manager.ContainerWalker{
 		Client: client,
 		OnFound: func(ctx context.Context, found container_manager.Found) error {
-			container_manager.MonitorContainerState(ctx, found.Container)
+			state, u, err_ := container_manager.MonitorContainerState(ctx, found.Container)
+			if err_ != nil {
+				return err_
+			}
+			if state == "running" {
+				return nil
+			}
+			if state == "created" {
+				return fmt.Errorf(obj_inner.Pending)
+			}
+			if state == "stopped" {
+				if u == 0 {
+					return fmt.Errorf(obj_inner.Succeeded)
+				} else {
+					return fmt.Errorf(obj_inner.Failed)
+				}
+			}
 			return nil
 		},
 	}
@@ -117,11 +134,12 @@ func MonitorPodContainers(podName string, namespace string) {
 	filter := map[string]string{
 		"podName": podName,
 	}
-	_, err = walker.Walk(ctx, filter)
+	res, err := walker.WalkStatus(ctx, filter)
 	if err != nil {
 		fmt.Println("Failed At MonitorPodStatus line 129 ", err.Error())
-		return
+		return ""
 	}
+	return res
 }
 
 func GetPodMetrics(podName string, namespace string) {

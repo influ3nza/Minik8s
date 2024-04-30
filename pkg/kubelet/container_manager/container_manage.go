@@ -263,23 +263,23 @@ func DeletePauseContainer(namespace string, id string) error {
 }
 
 // MonitorContainerState 监控容器的状态
-func MonitorContainerState(ctx context.Context, container containerd.Container) {
+func MonitorContainerState(ctx context.Context, container containerd.Container) (string, uint32, error) {
 	// 获取容器的任务
 	task, err := container.Task(ctx, nil)
 	if err != nil {
 		fmt.Println("Failed to get task:", err)
-		return
+		return "", 0, err
 	}
 
 	// 获取任务的状态
 	status, err := task.Status(ctx)
 	if err != nil {
 		fmt.Println("Failed to get task status:", err)
-		return
+		return "", 0, err
 	}
+	fmt.Printf("Pod id is %s, status is %v\n", container.ID(), status)
 
-	// 打印容器的状态信息
-	fmt.Printf("Container %s Status: %v\n", container.ID(), status)
+	return string(status.Status), status.ExitStatus, nil
 }
 
 type metricsCollection struct {
