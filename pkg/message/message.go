@@ -7,6 +7,10 @@ const (
 	ENDPOINT_POD_DELETE string = "endpoint_pod_delete"
 )
 
+const (
+	TOPIC_EndpointController string = "EndpointController"
+)
+
 type Message struct {
 	Type    string
 	Content string

@@ -62,6 +62,7 @@ func (s *ApiServer) Bind() {
 	s.router.POST(config.API_add_service, s.AddService)
 
 	s.router.POST(config.API_add_endpoint, s.AddEndpoint)
+	s.router.DELETE(config.API_delete_endpoint, s.DeleteEndpoint)
 }
 
 // 在进行测试/实际运行时，第2步调用此函数。默认端口为8080

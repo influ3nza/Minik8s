@@ -75,7 +75,28 @@ func (ec *EndpointController) OnAddService(pack string) {
 }
 
 func (ec *EndpointController) OnDeleteService(pack string) {
+	//需要删除所有的endpoints
 
+	//从msg中读取service
+	srv := &api_obj.Service{}
+	err := json.Unmarshal([]byte(pack), srv)
+	if err != nil {
+		fmt.Printf("[ERR/EndpointController/OnDeleteService] Failed to unmarshal service, " + err.Error())
+		ec.PrintHandlerWarning()
+		return
+	}
+
+	uri := config.API_server_prefix + config.API_delete_endpoint + srv.MetaData.NameSpace + "/" + srv.MetaData.Name
+	_, errStr, err := network.DelRequest(uri)
+	if err != nil {
+		fmt.Printf("[ERR/EndpointController/OnDeleteService] DEL request failed, %v.\n", err)
+		ec.PrintHandlerWarning()
+		return
+	} else if errStr != "" {
+		fmt.Printf("[ERR/EndpointController/OnDeleteService] DEL request failed, %s.\n", errStr)
+		ec.PrintHandlerWarning()
+		return
+	}
 }
 
 func (ec *EndpointController) OnUpdatePod(pack string) {
@@ -103,11 +124,11 @@ func (ec *EndpointController) MsgHandler(msg *message.Message) {
 }
 
 func (ec *EndpointController) Run() {
-	go ec.Consumer.Consume([]string{"endpointcontroller"}, ec.MsgHandler)
+	go ec.Consumer.Consume([]string{message.TOPIC_EndpointController}, ec.MsgHandler)
 }
 
 func CreateEndpointControllerInstance() (*EndpointController, error) {
-	consumer, err := message.NewConsumer("endpointcontroller", "default")
+	consumer, err := message.NewConsumer(message.TOPIC_EndpointController, "default")
 	return &EndpointController{
 		Consumer: consumer,
 	}, err

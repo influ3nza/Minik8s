@@ -18,6 +18,8 @@ const (
 	API_add_service string = "/services/add"
 
 	API_add_endpoint string = "/endpoints/add"
+	//所有endpoint的名字{srvname}-{podname}
+	API_delete_endpoint string = "/endpoints/delete/:namespace/:srvname"
 )
 
 type ServerConfig struct {

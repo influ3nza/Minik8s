@@ -10,6 +10,7 @@ import (
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/apiserver/config"
+	"minik8s/pkg/message"
 	"minik8s/tools"
 )
 
@@ -399,11 +400,78 @@ func (s *ApiServer) AddService(c *gin.Context) {
 		return
 	}
 
-	//TODO:创建endpoints
-	//TODO:返回200
+	//创建endpoints -> 向endpointController发送消息。
+	msg := &message.Message{
+		Type:    message.ENDPOINT_SRV_CREATE,
+		Content: string(service_str),
+	}
+	s.Producer.Produce(message.TOPIC_EndpointController, msg)
+
+	//返回200
+	c.JSON(http.StatusOK, gin.H{
+		"data": "[handler/AddService] Add service success",
+	})
+
 	//TODO:通知proxy，service已经创建
+
 }
 
 func (s *ApiServer) AddEndpoint(c *gin.Context) {
 	fmt.Printf("[apiserver/AddEndpoint] Try to add an endpoint.\n")
+
+	new_ep := &api_obj.Endpoint{}
+	err := c.ShouldBind(new_ep)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/AddEndpoint] Failed to parse endpoint, " + err.Error(),
+		})
+		return
+	}
+
+	//存入etcd
+	e_key := config.ETCD_endpoint_prefix + new_ep.MetaData.NameSpace + "/" + new_ep.MetaData.Name
+	ep_str, err := json.Marshal(new_ep)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/AddEndpoint] Failed to marshal endpoint, " + err.Error(),
+		})
+		return
+	}
+
+	err = s.EtcdWrap.Put(e_key, ep_str)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/AddEndpoint] Failed to write into etcd, " + err.Error(),
+		})
+		return
+	}
+
+	//返回200
+	c.JSON(http.StatusOK, gin.H{
+		"data": "[handler/AddEndpoint] Add endpoint success",
+	})
+}
+
+func (s *ApiServer) DeleteEndpoint(c *gin.Context) {
+	namespace := c.Param("namespace")
+	srvname := c.Param("srvname")
+	if srvname == "" || namespace == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/DeleteEndpoint] Service name and namespace shall not be null.",
+		})
+		return
+	}
+
+	err := s.EtcdWrap.DeleteByPrefix(config.ETCD_endpoint_prefix + srvname)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/DeleteEndpoint] Failed to delete from etcd, " + err.Error(),
+		})
+		return
+	}
+
+	//返回200
+	c.JSON(http.StatusOK, gin.H{
+		"data": "[handler/DeleteEndpoint] Delete endpoint success",
+	})
 }

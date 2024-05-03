@@ -20,7 +20,6 @@ func CompareLabels(a map[string]string, b map[string]string) bool {
 }
 
 func CreateEndpoint(srv api_obj.Service, pod api_obj.Pod) error {
-	//TODO:
 	for _, pair := range srv.Spec.Ports {
 		port := GetMatchPort(pair.TargetPort, pod.Spec.Containers)
 		if port == 0 {
