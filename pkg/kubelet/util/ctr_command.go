@@ -75,7 +75,7 @@ func GetContainerInfo(namespace string, info string, containerId string) (string
 }
 
 func RmForce(namespace string, name string) (string, error) {
-	cmd := []string{"rm -f", name}
+	cmd := []string{"rm", "-f", name}
 	PrintCmd(namespace, cmd...)
 	res, err := Exec(namespace, cmd...)
 	if err != nil {

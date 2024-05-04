@@ -142,12 +142,12 @@ func MonitorPodContainers(podName string, namespace string) string {
 	return res
 }
 
-func GetPodMetrics(podName string, namespace string) {
+func GetPodMetrics(podName string, namespace string) *api_obj.PodMetrics {
 	client, err := containerd.New("/run/containerd/containerd.sock")
 	ctx := namespaces.WithNamespace(context.Background(), namespace)
 	if err != nil {
 		fmt.Println("GetPodMetrics Failed At line 134 ", err.Error())
-		return
+		return nil
 	}
 	defer client.Close()
 
@@ -181,5 +181,5 @@ func GetPodMetrics(podName string, namespace string) {
 		fmt.Println("container metrics is ", containerM)
 	}
 	fmt.Println("container number is ", count)
-	return
+	return &podMetric
 }
