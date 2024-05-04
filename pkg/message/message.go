@@ -10,7 +10,7 @@ const (
 
 const (
 	TOPIC_EndpointController string = "EndpointController"
-	TOPIC_Apiserver_FromNode string = "ApiserverFromNode"
+	TOPIC_ApiServer_FromNode string = "ApiServerFromNode"
 )
 
 type Message struct {
