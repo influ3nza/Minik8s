@@ -1,14 +1,16 @@
 package message
 
 const (
-	ENDPOINT_SRV_CREATE string = "endpoint_srv_create"
-	ENDPOINT_SRV_DELETE string = "endpoint_srv_delete"
-	ENDPOINT_POD_UPDATE string = "endpoint_pod_update"
-	ENDPOINT_POD_DELETE string = "endpoint_pod_delete"
+	SRV_CREATE string = "srv_create"
+	SRV_DELETE string = "srv_delete"
+	POD_CREATE string = "pod_create"
+	POD_UPDATE string = "pod_update"
+	POD_DELETE string = "pod_delete"
 )
 
 const (
 	TOPIC_EndpointController string = "EndpointController"
+	TOPIC_Apiserver_FromNode string = "ApiserverFromNode"
 )
 
 type Message struct {

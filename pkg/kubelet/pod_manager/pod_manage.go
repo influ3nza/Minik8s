@@ -123,6 +123,8 @@ func MonitorPodContainers(podName string, namespace string) string {
 			if state == "stopped" {
 				if u == 0 {
 					return fmt.Errorf(obj_inner.Succeeded)
+				} else if u == 143 {
+					return fmt.Errorf(obj_inner.Terminating)
 				} else {
 					return fmt.Errorf(obj_inner.Failed)
 				}
