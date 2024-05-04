@@ -60,8 +60,10 @@ func (s *ApiServer) Bind() {
 	s.router.POST(config.API_add_pod, s.AddPod)
 
 	s.router.POST(config.API_add_service, s.AddService)
+	s.router.GET(config.API_get_services, s.GetServices)
 
 	s.router.POST(config.API_add_endpoint, s.AddEndpoint)
+	s.router.DELETE(config.API_delete_endpoints, s.DeleteEndpoints)
 	s.router.DELETE(config.API_delete_endpoint, s.DeleteEndpoint)
 }
 

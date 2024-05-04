@@ -62,3 +62,24 @@ func CreateEndpoint(srv api_obj.Service, pod api_obj.Pod) error {
 func GetMatchPort(srvPort int32, cons []api_obj.Container) int32 {
 	return 0
 }
+
+func DeleteEndpoint(batch bool, suffix string) error {
+	uri := ""
+
+	if batch {
+		uri = config.API_server_prefix + config.API_delete_endpoints + suffix
+	} else {
+		uri = config.API_server_prefix + config.API_delete_endpoint + suffix
+	}
+
+	_, errStr, err := network.DelRequest(uri)
+	if err != nil {
+		fmt.Printf("[ERR/EP Controller/Utils/DeleteEndpoint] DEL request failed, %v.\n", err)
+		return err
+	} else if errStr != "" {
+		fmt.Printf("[ERR/EP Controller/Utils/DeleteEndpoint] DEL request failed, %s.\n", errStr)
+		return errors.New(errStr)
+	}
+
+	return nil
+}

@@ -43,7 +43,7 @@ func (ec *EndpointController) OnAddService(pack string) {
 	} else {
 		err = json.Unmarshal([]byte(dataStr), &allPods)
 		if err != nil {
-			fmt.Printf("[ERR/EndpointController/OnAddService] Failed to unmarshal dataS, %s.\n", err)
+			fmt.Printf("[ERR/EndpointController/OnAddService] Failed to unmarshal data, %s.\n", err)
 			ec.PrintHandlerWarning()
 			return
 		}
@@ -86,41 +86,136 @@ func (ec *EndpointController) OnDeleteService(pack string) {
 		return
 	}
 
-	uri := config.API_server_prefix + config.API_delete_endpoint + srv.MetaData.NameSpace + "/" + srv.MetaData.Name
-	_, errStr, err := network.DelRequest(uri)
+	err = utils.DeleteEndpoint(true, srv.MetaData.NameSpace+"/"+srv.MetaData.Name)
 	if err != nil {
-		fmt.Printf("[ERR/EndpointController/OnDeleteService] DEL request failed, %v.\n", err)
-		ec.PrintHandlerWarning()
-		return
-	} else if errStr != "" {
-		fmt.Printf("[ERR/EndpointController/OnDeleteService] DEL request failed, %s.\n", errStr)
+		fmt.Printf("[ERR/EndpointController/OnDeleteService] Failed to delete endpoint, " + err.Error())
 		ec.PrintHandlerWarning()
 		return
 	}
 }
 
-func (ec *EndpointController) OnUpdatePod(pack string) {
+func (ec *EndpointController) OnCreatePod(pack string) {
+	//从msg中读取pod
+	pod := &api_obj.Pod{}
+	err := json.Unmarshal([]byte(pack), pod)
+	if err != nil {
+		fmt.Printf("[ERR/EndpointController/OnCreatePod] Failed to unmarshal pod, " + err.Error())
+		ec.PrintHandlerWarning()
+		return
+	}
 
+	//拿到所有service
+	uri := config.API_server_prefix + config.API_get_services
+	dataStr, errStr, err := network.GetRequest(uri)
+	if err != nil {
+		fmt.Printf("[ERR/EndpointController/OnCreatePod] GET request failed, %v.\n", err)
+		ec.PrintHandlerWarning()
+		return
+	} else if errStr != "" {
+		fmt.Printf("[ERR/EndpointController/OnCreatePod] GET request failed, %s.\n", errStr)
+		ec.PrintHandlerWarning()
+		return
+	}
+
+	var allSrvs []api_obj.Service
+	if dataStr == "" {
+		fmt.Printf("[ERR/EndpointController/OnCreatePod] Not any service available.\n")
+		ec.PrintHandlerWarning()
+	} else {
+		err = json.Unmarshal([]byte(dataStr), &allSrvs)
+		if err != nil {
+			fmt.Printf("[ERR/EndpointController/OnCreatePod] Failed to unmarshal data, %s.\n", err)
+			ec.PrintHandlerWarning()
+			return
+		}
+	}
+
+	//遍历service，寻找所在的所有service并且添加
+	for _, srv := range allSrvs {
+		if utils.CompareLabels(srv.MetaData.Labels, pod.MetaData.Labels) &&
+			pod.MetaData.NameSpace == srv.MetaData.NameSpace {
+			//创建一个endpoint
+			err = utils.CreateEndpoint(srv, *pod)
+			if err != nil {
+				fmt.Printf("[ERR/EndpointController/OnCreatePod] Failed to create endpoint, " + err.Error())
+				ec.PrintHandlerWarning()
+				return
+			}
+		}
+	}
+}
+
+func (ec *EndpointController) OnUpdatePod(pack string) {
+	//TODO:待讨论，update可以不做
 }
 
 func (ec *EndpointController) OnDeletePod(pack string) {
+	//从msg中读取pod
+	pod := &api_obj.Pod{}
+	err := json.Unmarshal([]byte(pack), pod)
+	if err != nil {
+		fmt.Printf("[ERR/EndpointController/OnDeletePod] Failed to unmarshal pod, " + err.Error())
+		ec.PrintHandlerWarning()
+		return
+	}
 
+	//拿到所有service
+	uri := config.API_server_prefix + config.API_get_services
+	dataStr, errStr, err := network.GetRequest(uri)
+	if err != nil {
+		fmt.Printf("[ERR/EndpointController/OnDeletePod] GET request failed, %v.\n", err)
+		ec.PrintHandlerWarning()
+		return
+	} else if errStr != "" {
+		fmt.Printf("[ERR/EndpointController/OnDeletePod] GET request failed, %s.\n", errStr)
+		ec.PrintHandlerWarning()
+		return
+	}
+
+	var allSrvs []api_obj.Service
+	if dataStr == "" {
+		fmt.Printf("[ERR/EndpointController/OnDeletePod] Not any service available.\n")
+		ec.PrintHandlerWarning()
+	} else {
+		err = json.Unmarshal([]byte(dataStr), &allSrvs)
+		if err != nil {
+			fmt.Printf("[ERR/EndpointController/OnDeletePod] Failed to unmarshal data, %s.\n", err)
+			ec.PrintHandlerWarning()
+			return
+		}
+	}
+
+	//遍历service，寻找所在的所有service并且删除
+	for _, srv := range allSrvs {
+		if utils.CompareLabels(srv.MetaData.Labels, pod.MetaData.Labels) {
+			//删除对应的endpoint
+			suffix := srv.MetaData.NameSpace + "/" +
+				srv.MetaData.Name + "-" + pod.MetaData.Name
+			err = utils.DeleteEndpoint(false, suffix)
+			if err != nil {
+				fmt.Printf("[ERR/EndpointController/OnDeletePod] Failed to delete endpoint, " + err.Error())
+				ec.PrintHandlerWarning()
+				return
+			}
+		}
+	}
 }
 
 func (ec *EndpointController) MsgHandler(msg *message.Message) {
 	fmt.Printf("[EndpointController/MsgHandler] Received message from apiserver!\n")
 
 	switch msg.Type {
-	case message.ENDPOINT_SRV_CREATE:
+	case message.SRV_CREATE:
 		ec.OnAddService(msg.Content)
-	case message.ENDPOINT_SRV_DELETE:
+	case message.SRV_DELETE:
 		ec.OnDeleteService(msg.Content)
-	case message.ENDPOINT_POD_UPDATE:
+	case message.POD_CREATE:
+		ec.OnCreatePod(msg.Content)
+	case message.POD_UPDATE:
 		ec.OnUpdatePod(msg.Content)
-	case message.ENDPOINT_POD_DELETE:
+	case message.POD_DELETE:
 		ec.OnDeletePod(msg.Content)
 	}
-
 }
 
 func (ec *EndpointController) Run() {

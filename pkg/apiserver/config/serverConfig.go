@@ -15,11 +15,13 @@ const (
 	API_add_pod    string = "/pods/add"
 	API_get_pods   string = "/pods/get/:nodename"
 
-	API_add_service string = "/services/add"
+	API_add_service  string = "/services/add"
+	API_get_services string = "/services"
 
 	API_add_endpoint string = "/endpoints/add"
 	//所有endpoint的名字{srvname}-{podname}
-	API_delete_endpoint string = "/endpoints/delete/:namespace/:srvname"
+	API_delete_endpoints string = "/endpoints/delete/:namespace/:srvname"
+	API_delete_endpoint  string = "/endpoints/delete/:namespace/:name"
 )
 
 type ServerConfig struct {
