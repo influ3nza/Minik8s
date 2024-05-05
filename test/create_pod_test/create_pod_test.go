@@ -21,7 +21,8 @@ func TestMain(m *testing.M) {
 	tools.Test_finished = false
 	tools.Test_enabled = true
 
-	apiServerDummy, err := app.CreateApiServerInstance(config.DefaultServerConfig())
+	var err error
+	apiServerDummy, err = app.CreateApiServerInstance(config.DefaultServerConfig())
 	if err != nil {
 		_ = fmt.Errorf("Failed to create instance!")
 	}
