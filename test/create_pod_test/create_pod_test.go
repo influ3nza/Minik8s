@@ -40,7 +40,7 @@ func TestCreatePod(t *testing.T) {
 	tools.Test_finished = false
 	for {
 		if tools.Apiserver_boot_finished == false {
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 		} else {
 			break
 		}
@@ -66,7 +66,7 @@ func TestCreatePod(t *testing.T) {
 
 	for {
 		if tools.Test_finished == false {
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 		} else {
 			close(schedulerDummy.Consumer.Sig)
 			close(schedulerDummy.Producer.Sig)

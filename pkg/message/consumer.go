@@ -15,7 +15,7 @@ type MsgConsumer struct {
 
 func NewConsumer(topic, groupId string) (*MsgConsumer, error) {
 	config := sarama.NewConfig()
-	config.Consumer.Offsets.Initial = sarama.OffsetNewest
+	config.Consumer.Offsets.Initial = sarama.OffsetOldest
 	config.Consumer.Return.Errors = true
 
 	// 创建消费者组
