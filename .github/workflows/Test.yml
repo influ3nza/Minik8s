@@ -29,7 +29,17 @@ jobs:
         sudo chmod 777 ./tools/setup_scripts/setup.sh
         sudo ./tools/setup_scripts/setup.sh
 
-    - name: Test
+    - name: Test create pod
       run: |
         cd test/create_pod_test
+        go test
+
+    - name: Test network connection
+      run: |
+        cd ../network_util_test
+        go test
+      
+    - name: Test service and endpoint
+      run: |
+        cd ../srv_endpoint_test
         go test
