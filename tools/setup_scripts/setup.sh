@@ -119,8 +119,8 @@ tar xzf kafka_2.13-3.5.1.tgz
 mv kafka_2.13-3.5.1 /usr/local/kafka
 
 # 启动
-/usr/local/kafka/bin/zookeeper-server-start.sh /usr/local/kafka/config/zookeeper.properties &
-/usr/local/kafka/bin/kafka-server-start.sh /usr/local/kafka/config/server.properties &
+/usr/local/kafka/bin/zookeeper-server-start.sh -daemon /usr/local/kafka/config/zookeeper.properties
+/usr/local/kafka/bin/kafka-server-start.sh -daemon /usr/local/kafka/config/server.properties
 
 SCRIPTS_ROOT="$(cd "$(dirname "$0")" && pwd)"
 #. "$SCRIPTS_ROOT/etcd_clear.sh" /
