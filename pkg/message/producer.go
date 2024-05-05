@@ -9,6 +9,7 @@ import (
 
 type MsgProducer struct {
 	Producer sarama.AsyncProducer
+	Sig      chan struct{}
 }
 
 func NewProducer() *MsgProducer {
@@ -19,6 +20,7 @@ func NewProducer() *MsgProducer {
 
 	mp := &MsgProducer{
 		Producer: producer,
+		Sig:      make(chan struct{}),
 	}
 
 	go func() {
@@ -29,6 +31,8 @@ func NewProducer() *MsgProducer {
 					success.Topic, success.Partition, success.Offset)
 			case err := <-producer.Errors():
 				fmt.Printf("Failed to produce message: %v\n", err)
+			case <-mp.Sig:
+				return
 			}
 		}
 	}()

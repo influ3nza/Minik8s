@@ -8,13 +8,13 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"minik8s/pkg/api_obj"
-	"minik8s/pkg/apiserver/config"
 	"minik8s/pkg/api_obj/obj_inner"
+	"minik8s/pkg/apiserver/config"
 	"minik8s/tools"
 )
 
 func (s *ApiServer) GetPods(c *gin.Context) {
-	fmt.Printf("[apiserver/GetPods] Try to add all pods.\n")
+	fmt.Printf("[apiserver/GetPods] Try to get all pods.\n")
 
 	res, err := s.EtcdWrap.GetByPrefix(config.ETCD_pod_prefix)
 	if err != nil {
@@ -84,7 +84,10 @@ func (s *ApiServer) AddPod(c *gin.Context) {
 	//更新相关状态
 	//TODO: 这里的UUID仍然为default。
 	new_pod.MetaData.UUID = "default"
-	new_pod.PodStatus.Phase = obj_inner.Pending
+	//TODO:（测试专用）
+	if !tools.Test_enabled {
+		new_pod.PodStatus.Phase = obj_inner.Pending
+	}
 	new_pod_str, err := json.Marshal(new_pod)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

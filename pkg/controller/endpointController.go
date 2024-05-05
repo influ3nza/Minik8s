@@ -72,6 +72,11 @@ func (ec *EndpointController) OnAddService(pack string) {
 			}
 		}
 	}
+
+	//仅供测试使用
+	// if tools.Test_enabled {
+	// 	tools.Test_finished = true
+	// }
 }
 
 func (ec *EndpointController) OnDeleteService(pack string) {
@@ -223,7 +228,7 @@ func (ec *EndpointController) Run() {
 }
 
 func CreateEndpointControllerInstance() (*EndpointController, error) {
-	consumer, err := message.NewConsumer(message.TOPIC_EndpointController, "default")
+	consumer, err := message.NewConsumer(message.TOPIC_EndpointController, "EndpointController")
 	return &EndpointController{
 		Consumer: consumer,
 	}, err

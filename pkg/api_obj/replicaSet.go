@@ -12,6 +12,6 @@ type ReplicaSet struct {
 
 type ReplicaSetSpec struct {
 	Replicas int
-	Selector //TODO:
-	Template //TODO:
+	// Selector //TODO:
+	// Template //TODO:
 }

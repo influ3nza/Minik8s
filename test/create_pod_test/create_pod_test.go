@@ -60,10 +60,13 @@ func TestCreatePod(t *testing.T) {
 		if tools.Test_finished == false {
 			time.Sleep(100 * time.Millisecond)
 		} else {
-			time.Sleep(2 * time.Second)
-			// schedulerDummy.Consumer.Consumer.Close()
-			// schedulerDummy.Producer.Producer.Close()
-			// apiServerDummy.Producer.Producer.Close()
+			time.Sleep(1 * time.Second)
+			close(schedulerDummy.Consumer.Sig)
+			close(schedulerDummy.Producer.Sig)
+			close(apiServerDummy.Producer.Sig)
+			schedulerDummy.Consumer.Consumer.Close()
+			schedulerDummy.Producer.Producer.Close()
+			apiServerDummy.Producer.Producer.Close()
 			break
 		}
 	}

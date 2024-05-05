@@ -7,21 +7,24 @@ import (
 const (
 	API_server_prefix string = "http://127.0.0.1:50000"
 
-	API_get_nodes string = "/nodes"
-	API_get_node  string = "/nodes/:namespace/:name"
-	API_add_node  string = "/nodes/add"
+	API_get_nodes       string = "/nodes/getAll"
+	API_get_node_prefix string = "/nodes/"
+	API_get_node        string = "/nodes/:namespace/:name"
+	API_add_node        string = "/nodes/add"
 
 	API_update_pod string = "/pods/update"
 	API_add_pod    string = "/pods/add"
-	API_get_pods   string = "/pods/get/:nodename"
+	API_get_pods   string = "/pods/getAll"
 
 	API_add_service  string = "/services/add"
-	API_get_services string = "/services"
+	API_get_services string = "/services/getAll"
 
 	API_add_endpoint string = "/endpoints/add"
 	//所有endpoint的名字{srvname}-{podname}
-	API_delete_endpoints string = "/endpoints/delete/:namespace/:srvname"
-	API_delete_endpoint  string = "/endpoints/delete/:namespace/:name"
+	API_delete_endpoints_prefix string = "/endpoints/deleteBatch/"
+	API_delete_endpoints        string = "/endpoints/deleteBatch/:namespace/:srvname"
+	API_delete_endpoint_prefix  string = "/endpoints/delete/"
+	API_delete_endpoint         string = "/endpoints/delete/:namespace/:name"
 )
 
 type ServerConfig struct {

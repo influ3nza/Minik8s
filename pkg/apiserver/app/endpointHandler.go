@@ -9,6 +9,7 @@ import (
 
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/apiserver/config"
+	"minik8s/tools"
 )
 
 func (s *ApiServer) AddEndpoint(c *gin.Context) {
@@ -39,6 +40,10 @@ func (s *ApiServer) AddEndpoint(c *gin.Context) {
 			"error": "[ERR/handler/AddEndpoint] Failed to write into etcd, " + err.Error(),
 		})
 		return
+	}
+
+	if tools.Test_enabled {
+		tools.Count_Test_Endpoint_Create += 1
 	}
 
 	//返回200
@@ -84,6 +89,8 @@ func (s *ApiServer) DeleteEndpoint(c *gin.Context) {
 		})
 		return
 	}
+
+	fmt.Printf("[apiserver/DeleteEndpoint] namespace: %s, name: %s\n", name, namespace)
 
 	err := s.EtcdWrap.Del(config.ETCD_endpoint_prefix + namespace + "/" + name)
 	if err != nil {

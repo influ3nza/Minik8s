@@ -42,6 +42,8 @@ func CreateEndpoint(srv api_obj.Service, pod api_obj.Pod) error {
 			return err
 		}
 
+		fmt.Printf("[Controller/Utils/Endpoint] Try to create endpoint %s.\n", ep.MetaData.Name)
+
 		uri := config.API_server_prefix + config.API_add_endpoint
 		_, errStr, err := network.PostRequest(uri, ep_str)
 		if err != nil {
@@ -60,16 +62,16 @@ func CreateEndpoint(srv api_obj.Service, pod api_obj.Pod) error {
 }
 
 func GetMatchPort(srvPort int32, cons []api_obj.Container) int32 {
-	return 0
+	return 10
 }
 
 func DeleteEndpoint(batch bool, suffix string) error {
 	uri := ""
 
 	if batch {
-		uri = config.API_server_prefix + config.API_delete_endpoints + suffix
+		uri = config.API_server_prefix + config.API_delete_endpoints_prefix + suffix
 	} else {
-		uri = config.API_server_prefix + config.API_delete_endpoint + suffix
+		uri = config.API_server_prefix + config.API_delete_endpoint_prefix + suffix
 	}
 
 	_, errStr, err := network.DelRequest(uri)

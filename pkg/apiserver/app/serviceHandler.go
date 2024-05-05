@@ -107,6 +107,7 @@ func (s *ApiServer) AddService(c *gin.Context) {
 		Type:    message.SRV_CREATE,
 		Content: string(service_str),
 	}
+	
 	s.Producer.Produce(message.TOPIC_EndpointController, msg)
 
 	//返回200

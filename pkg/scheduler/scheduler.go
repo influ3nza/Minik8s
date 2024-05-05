@@ -171,7 +171,7 @@ func (s *Scheduler) GetNodes() ([]api_obj.Node, error) {
 }
 
 func CreateSchedulerInstance() (*Scheduler, error) {
-	consumer, err := message.NewConsumer("scheduler", "default")
+	consumer, err := message.NewConsumer("scheduler", "scheduler")
 	producer := message.NewProducer()
 
 	c := DefaultSchedulerConfig()

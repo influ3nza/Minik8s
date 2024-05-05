@@ -9,6 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"minik8s/pkg/api_obj"
+	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/apiserver/config"
 	"minik8s/pkg/network"
 )
@@ -32,6 +33,9 @@ func ParsePod(filePath string) error {
 		fmt.Printf("[ERR/kubectl/parsePod] Failed to unmarshal yaml, err:%v\n", err)
 		return err
 	}
+
+	//TODO: 这里默认为running，便于测试。
+	pod.PodStatus.Phase = obj_inner.Running
 
 	pod_str, err := json.Marshal(pod)
 	if err != nil {
@@ -93,6 +97,48 @@ func ParseNode(filePath string) error {
 	}
 
 	fmt.Printf("[kubectl/parseNode] Send add node request success!\n")
+
+	return nil
+}
+
+func ParseSrv(filePath string) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parseSrv] Failed to open file, err:%v\n", err)
+		return err
+	}
+
+	content, err := io.ReadAll(file)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parseSrv] Failed to read file, err:%v\n", err)
+		return err
+	}
+
+	srv := &api_obj.Service{}
+	err = yaml.Unmarshal(content, srv)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parseSrv] Failed to unmarshal yaml, err:%v\n", err)
+		return err
+	}
+
+	srv_str, err := json.Marshal(srv)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parseSrv] Failed to marshal pod, err:%v\n", err)
+		return err
+	}
+
+	//将请求发送给apiserver
+	uri := config.API_server_prefix + config.API_add_service
+	_, errStr, err := network.PostRequest(uri, srv_str)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parseSrv] Failed to post request, err:%v\n", err)
+		return err
+	} else if errStr != "" {
+		fmt.Printf("[ERR/kubectl/parseSrv] Failed to post request, err:%v\n", errStr)
+		return nil
+	}
+
+	fmt.Printf("[kubectl/parseSrv] Send add srv request success!\n")
 
 	return nil
 }

@@ -24,7 +24,7 @@ func CreateEtcdInstance(endpoints []string, dialTimeout time.Duration) (*EtcdWra
 		DialTimeout: dialTimeout,
 	})
 
-	if err != nil {
+	if err != nil || cli == nil {
 		fmt.Printf("connect to etcd failed, err:%v\n", err)
 		return nil, err
 	}
