@@ -44,7 +44,7 @@ func TestSrvAndEndpoint(t *testing.T) {
 	apiServerDummy.EtcdWrap.DelAll()
 
 	for i := 1; i < 3; i++ {
-		err := api.ParsePod("../pkg/etcd/testfile/Pod-" + strconv.Itoa(i) + ".yaml")
+		err := api.ParsePod("../../pkg/etcd/testfile/Pod-" + strconv.Itoa(i) + ".yaml")
 		if err != nil {
 			tools.Test_finished = true
 			t.Errorf("[ERR/srv_endpoint_test] Test failed.\n")
@@ -53,7 +53,7 @@ func TestSrvAndEndpoint(t *testing.T) {
 
 	time.Sleep(1000 * time.Millisecond)
 
-	err := api.ParseSrv("../pkg/etcd/testfile/Service-1.yaml")
+	err := api.ParseSrv("../../pkg/etcd/testfile/Service-1.yaml")
 	if err != nil {
 		tools.Test_finished = true
 		t.Errorf("[ERR/srv_endpoint_test] Test failed.\n")

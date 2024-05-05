@@ -42,7 +42,7 @@ func TestCreatePod(t *testing.T) {
 	apiServerDummy.EtcdWrap.DelAll()
 
 	for i := 1; i < 3; i++ {
-		err := api.ParseNode("../pkg/etcd/testfile/Node-" + strconv.Itoa(i) + ".yaml")
+		err := api.ParseNode("../../pkg/etcd/testfile/Node-" + strconv.Itoa(i) + ".yaml")
 		if err != nil {
 			tools.Test_finished = true
 			t.Errorf("[ERR/create_pod_test] Test failed.\n")
@@ -50,7 +50,7 @@ func TestCreatePod(t *testing.T) {
 	}
 
 	//读取yaml文件
-	err := api.ParsePod("../pkg/etcd/testfile/Node-1.yaml")
+	err := api.ParsePod("../../pkg/etcd/testfile/Node-1.yaml")
 	if err != nil {
 		tools.Test_finished = true
 		t.Errorf("[ERR/create_pod_test] Test failed.\n")
