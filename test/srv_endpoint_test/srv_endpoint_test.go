@@ -61,7 +61,7 @@ func TestSrvAndEndpoint(t *testing.T) {
 
 	for {
 		if tools.Count_Test_Endpoint_Create < 2 {
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 		} else {
 			close(apiServerDummy.Producer.Sig)
 			apiServerDummy.Producer.Producer.Close()

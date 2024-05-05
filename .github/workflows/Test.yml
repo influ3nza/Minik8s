@@ -36,10 +36,10 @@ jobs:
 
     - name: Test network connection
       run: |
-        cd ../network_util_test
+        cd test/network_util_test
         go test
       
     - name: Test service and endpoint
       run: |
-        cd ../srv_endpoint_test
+        cd test/srv_endpoint_test
         go test
