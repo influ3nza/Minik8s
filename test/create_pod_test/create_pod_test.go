@@ -1,6 +1,7 @@
 package test
 
 import (
+	"fmt"
 	"minik8s/pkg/apiserver/app"
 	"minik8s/pkg/apiserver/config"
 	"minik8s/pkg/kubectl/api"
@@ -20,8 +21,14 @@ func TestMain(m *testing.M) {
 	tools.Test_finished = false
 	tools.Test_enabled = true
 
-	apiServerDummy, _ = app.CreateApiServerInstance(config.DefaultServerConfig())
-	schedulerDummy, _ = scheduler.CreateSchedulerInstance()
+	apiServerDummy, err := app.CreateApiServerInstance(config.DefaultServerConfig())
+	if err != nil {
+		_ = fmt.Errorf("Failed to create instance!")
+	}
+	schedulerDummy, err = scheduler.CreateSchedulerInstance()
+	if err != nil {
+		_ = fmt.Errorf("Failed to create instance!")
+	}
 	go apiServerDummy.Run()
 	go schedulerDummy.Run()
 	m.Run()
@@ -60,7 +67,6 @@ func TestCreatePod(t *testing.T) {
 		if tools.Test_finished == false {
 			time.Sleep(100 * time.Millisecond)
 		} else {
-			time.Sleep(1 * time.Second)
 			close(schedulerDummy.Consumer.Sig)
 			close(schedulerDummy.Producer.Sig)
 			close(apiServerDummy.Producer.Sig)
