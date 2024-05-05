@@ -40,6 +40,14 @@ func TestMain(m *testing.M) {
 }
 
 func TestSrvAndEndpoint(t *testing.T) {
+	for {
+		if tools.Apiserver_boot_finished == false {
+			time.Sleep(10 * time.Millisecond)
+		} else {
+			break
+		}
+	}
+
 	//清除所有记录
 	apiServerDummy.EtcdWrap.DelAll()
 
