@@ -82,6 +82,7 @@ func (walker *ContainerWalker) WalkStatus(ctx context.Context, filter map[string
 	}
 
 	ifFinished := false
+	ifTerminating := false
 	for _, found := range founds {
 		e := walker.OnFound(ctx, found)
 		if e != nil {
@@ -91,11 +92,18 @@ func (walker *ContainerWalker) WalkStatus(ctx context.Context, filter map[string
 				ifFinished = true
 			} else if e.Error() == obj_inner.Pending {
 				return obj_inner.Pending, nil
+			} else if e.Error() == obj_inner.Terminating {
+				ifTerminating = true
 			} else {
 				return obj_inner.Unknown, e
 			}
 		}
 	}
+
+	if ifTerminating {
+		return obj_inner.Terminating, nil
+	}
+
 	if ifFinished {
 		return obj_inner.Succeeded, nil
 	}

@@ -37,21 +37,23 @@ func main() {
 	lockout := func(str string) {
 		time.Sleep(5 * time.Second)
 		for {
-			if res := util.UnRegisterPod(str, str); res == true {
+			if res := util.UnRegisterPod(str, str); res == 0 {
 				break
+			} else if res == 2 {
+				fmt.Println("No Such Key ", str+":"+str)
 			}
 		}
 		wg.Done()
 	}
-	wg.Add(8)
-	for i := 1; i < 5; i++ {
+	wg.Add(4)
+	for i := 1; i < 3; i++ {
 		test_ := "test" + strconv.Itoa(i)
 		go lockin(test_)
 		go lockout(test_)
 	}
 	wg.Wait()
 
-	test()
+	// test()
 }
 
 func test() {

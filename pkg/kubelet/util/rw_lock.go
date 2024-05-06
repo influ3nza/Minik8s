@@ -20,28 +20,28 @@ func RegisterPod(podName string, namespace string) {
 	manageLocks.Unlock()
 }
 
-func UnRegisterPod(podName string, namespace string) bool {
+func UnRegisterPod(podName string, namespace string) int {
 	key := generateKey(podName, namespace)
 	manageLocks.Lock()
 	defer manageLocks.Unlock()
 	mutex, ok := podLocks.Load(key)
 	if ok {
 		res := false
-		for i := 0; i < 200; i++ {
+		for i := 0; i < 100; i++ {
 			res = mutex.(*sync.Mutex).TryLock()
 			if res == true {
 				break
 			}
 		}
 		if !res {
-			return false
+			return 1
 		}
 	} else {
-		return false
+		return 2 // not found
 	}
 	podLocks.Delete(key)
 	mutex.(*sync.Mutex).Unlock()
-	return true
+	return 0
 }
 
 func Lock(podName string, namespace string) bool {
