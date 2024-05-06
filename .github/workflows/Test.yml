@@ -25,7 +25,7 @@ jobs:
         go mod tidy
     - name: Install Softwares
       run: |
-        sudo chmod 777 ./tools/setup_scripts/setup.sh
+        sudo chmod 777 ./tools/setup_scripts/setup.sh github
         sudo ./tools/setup_scripts/setup.sh
 
     - name: Build

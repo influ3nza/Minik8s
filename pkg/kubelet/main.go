@@ -53,7 +53,7 @@ func main() {
 	}
 	wg.Wait()
 
-	// test()
+	test()
 }
 
 func test() {
