@@ -13,7 +13,7 @@ wget https://github.com/etcd-io/etcd/releases/download/v3.4.32/etcd-v3.4.32-linu
 tar -xzvf etcd-v3.4.32-linux-amd64.tar.gz
 cd etcd-v3.4.32-linux-amd64
 cp etcd /usr/local/bin
-cp etcd /usr/local/bin
+cp etcdctl /usr/local/bin
 cd ..
 
 apt install -y openjdk-17-jre
@@ -21,13 +21,11 @@ apt install -y openjdk-17-jdk
 # 输出安装完成的消息
 echo "etcd wget已成功安装"
 
-if [ "$1" == "github" ]; then
-  nohup etcd & > etcd.log
-elif [ "$1" == "node" ]; then
+if [ "$1" == "node" ]; then
   nohup etcd --data-dir="/var/lib/etcd/default.etcd" --listen-client-urls="http://192.168.1.13:2379,http://localhost:2379"  --advertise-client-urls="http://192.168.1.13:2379,http://localhost:2379" & > etcd.log
 else
     # 参数不匹配时的处理
-    echo "Unknown parameter. Please provide either 'github' or 'node'."
+    etcd &
 fi
 
 echo "etcd 已成功安装"
@@ -121,13 +119,11 @@ echo "flannel.conflist 文件已创建并写入内容"
 export ETCDCTL_API=3
 etcdctl --endpoints "http://localhost:2379" put /coreos.com/network/config '{"NetWork":"10.2.0.0/16","SubnetMin":"10.2.1.0","SubnetMax": "10.2.20.0","Backend": {"Type": "vxlan"}}'
 
-if [ "$1" == "github" ]; then
-  nohup /opt/flannel/flanneld -etcd-endpoints=http://localhost:2379 &
-elif [ "$1" == "node" ]; then
+if [ "$1" == "node" ]; then
   nohup /opt/flannel/flanneld -etcd-endpoints=http://192.168.1.13:2379 &
 else
     # 参数不匹配时的处理
-    echo "Unknown parameter. Please provide either 'github' or 'node'."
+    nohup /opt/flannel/flanneld -etcd-endpoints=http://localhost:2379 &
 fi
 
 #安装
