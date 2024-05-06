@@ -13,10 +13,12 @@ import (
 )
 
 type ApiServer struct {
-	router   *gin.Engine
-	EtcdWrap *etcd.EtcdWrap
-	port     int32
-	Producer *message.MsgProducer
+	router    *gin.Engine
+	EtcdWrap  *etcd.EtcdWrap
+	port      int32
+	Producer  *message.MsgProducer
+	Consumer  *message.MsgConsumer
+	NodeIPMap map[string]string
 }
 
 // 在进行测试/实际运行时，第1步调用此函数。
@@ -26,17 +28,24 @@ func CreateApiServerInstance(c *config.ServerConfig) (*ApiServer, error) {
 
 	wrap, err := etcd.CreateEtcdInstance(c.EtcdEndpoints, c.EtcdTimeout)
 	if err != nil {
-		fmt.Printf("create etcd instance failed, err:%v\n", err)
+		fmt.Printf("[ERR/Apiserver] create etcd instance failed, err:%v\n", err)
 		return nil, err
 	}
 
 	producer := message.NewProducer()
+	consumer, err := message.NewConsumer(message.TOPIC_ApiServer_FromNode, message.TOPIC_ApiServer_FromNode)
+	if err != nil {
+		fmt.Printf("[ERR/Apiserver] create kafka consumer instance failed, err:%v\n", err)
+		return nil, err
+	}
 
 	return &ApiServer{
-		router:   router,
-		EtcdWrap: wrap,
-		port:     c.Port,
-		Producer: producer,
+		router:    router,
+		EtcdWrap:  wrap,
+		port:      c.Port,
+		Producer:  producer,
+		Consumer:  consumer,
+		NodeIPMap: make(map[string]string, c.MaxNodeCount),
 	}, nil
 }
 
@@ -70,6 +79,7 @@ func (s *ApiServer) Bind() {
 // 在进行测试/实际运行时，第2步调用此函数。默认端口为8080
 func (s *ApiServer) Run() error {
 	s.Bind()
+	go s.Consumer.Consume()
 	tools.Apiserver_boot_finished = true
 	err := s.router.Run(fmt.Sprintf(":%d", s.port))
 	return err

@@ -32,6 +32,7 @@ type ServerConfig struct {
 	TrustedProxy  []string
 	EtcdEndpoints []string
 	EtcdTimeout   time.Duration
+	MaxNodeCount  int32
 }
 
 func DefaultServerConfig() *ServerConfig {
@@ -40,5 +41,6 @@ func DefaultServerConfig() *ServerConfig {
 		TrustedProxy:  []string{"127.0.0.1"},
 		EtcdEndpoints: []string{"localhost:2379"},
 		EtcdTimeout:   5 * time.Second,
+		MaxNodeCount:  10,
 	}
 }

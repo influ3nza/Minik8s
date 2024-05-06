@@ -93,11 +93,10 @@ func (s *ApiServer) AddNode(c *gin.Context) {
 	//检查node各项参数
 	//name是否重复，是否为空
 	node_name := node.GetName()
-	node_namespace := node.NodeMetadata.NameSpace
 
-	if node_name == "" || node_namespace == "" {
+	if node_name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[msgHandler/addNode] Empty node name or namespace.",
+			"error": "[msgHandler/addNode] Empty node name.",
 		})
 		return
 	}
@@ -142,6 +141,9 @@ func (s *ApiServer) AddNode(c *gin.Context) {
 		})
 		return
 	}
+
+	//存储node的ip地址
+	s.NodeIPMap[node_name] = node.GetInternelIp()
 
 	c.JSON(http.StatusCreated, gin.H{
 		"data": "[msgHandler/addNode] Add node success",
