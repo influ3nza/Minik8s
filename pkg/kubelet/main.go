@@ -45,8 +45,8 @@ func main() {
 		}
 		wg.Done()
 	}
-	wg.Add(4)
-	for i := 1; i < 3; i++ {
+	wg.Add(16)
+	for i := 1; i < 9; i++ {
 		test_ := "test" + strconv.Itoa(i)
 		go lockin(test_)
 		go lockout(test_)
@@ -222,11 +222,13 @@ func test() {
 		//		return
 		//	}
 		//}
-		//time.Sleep(4 * time.Second)
+		time.Sleep(4 * time.Second)
 		for {
-			if util.UnRegisterPod(pod.MetaData.Name, pod.MetaData.NameSpace) {
+			if ok := util.UnRegisterPod(pod.MetaData.Name, pod.MetaData.NameSpace); ok == 0 {
 				fmt.Println("UnRegister Success")
 				break
+			} else if ok == 2 {
+				fmt.Println("UnRegister NonExist")
 			}
 		}
 		//err = pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace)
