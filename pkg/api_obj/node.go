@@ -19,6 +19,7 @@ type Address struct {
 	HostName   string `json:"hostname" yaml:"hostname"`
 	ExternalIp string `json:"externalIp" yaml:"externalIp"`
 	InternalIp string `json:"internalIp" yaml:"InternalIp"`
+	Port       int32  `json:"port" yaml:"port"`
 }
 
 type NodeStatus struct {
@@ -66,7 +67,7 @@ func (n *Node) GetName() string {
 }
 
 func (n *Node) GetLabels() map[string]string {
-	return n.NodeMetadata.Labels 
+	return n.NodeMetadata.Labels
 }
 
 func (n *Node) GetAnnotations() map[string]string {
