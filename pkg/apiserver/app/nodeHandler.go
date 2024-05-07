@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -143,7 +144,17 @@ func (s *ApiServer) AddNode(c *gin.Context) {
 	}
 
 	//存储node的ip地址
-	s.NodeIPMap[node_name] = node.GetInternelIp()
+	nodeaddr := node.GetInternelIp() + ":" + strconv.Itoa(int(node.NodeStatus.Addresses.Port))
+	s.NodeIPMap[node_name] = nodeaddr
+
+	e_key := config.ETCD_node_ip_prefix + node.NodeMetadata.Name
+	err = s.EtcdWrap.Put(e_key, []byte(nodeaddr))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[msgHandler/AddNode] Failed to write in etcd, " + err.Error(),
+		})
+		return
+	}
 
 	c.JSON(http.StatusCreated, gin.H{
 		"data": "[msgHandler/addNode] Add node success",

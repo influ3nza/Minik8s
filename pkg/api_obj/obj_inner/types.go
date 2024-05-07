@@ -59,10 +59,16 @@ type ContainerPort struct {
 }
 
 const (
-	Pending     = "PodPending"
-	Running     = "PodRunning"
-	Succeeded   = "PodSucceeded"
-	Failed      = "PodFailed"
-	Unknown     = "PodUnknown"
+	// 正在创建中
+	Pending = "PodPending"
+	// 在运行
+	Running = "PodRunning"
+	// 成功退出
+	Succeeded = "PodSucceeded"
+	// 运行时出现问题（全部容器都挂了）
+	Failed = "PodFailed"
+	// 找不到状态
+	Unknown = "PodUnknown"
+	// 优雅退出（仅这个容器挂掉）
 	Terminating = "PodTerminating"
 )

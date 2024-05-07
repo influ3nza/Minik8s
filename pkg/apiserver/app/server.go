@@ -79,7 +79,7 @@ func (s *ApiServer) Bind() {
 // 在进行测试/实际运行时，第2步调用此函数。默认端口为8080
 func (s *ApiServer) Run() error {
 	s.Bind()
-	go s.Consumer.Consume()
+	go s.Consumer.Consume([]string{message.TOPIC_ApiServer_FromNode}, s.MsgHandler)
 	tools.Apiserver_boot_finished = true
 	err := s.router.Run(fmt.Sprintf(":%d", s.port))
 	return err

@@ -73,7 +73,7 @@ func (s *Scheduler) ExecSchedule(pod *api_obj.Pod) {
 
 	//向apiserver提交更新请求
 	uri := config.API_server_prefix + config.API_update_pod
-	_, errStr, err := network.PostRequest(uri, pod_str)
+	dataStr, errStr, err := network.PostRequest(uri, pod_str)
 	if err != nil {
 		fmt.Printf("[ERR/scheduler/ExecSchedule] Failed to update pod to apiserver, %s.\n", err)
 		return
@@ -81,14 +81,18 @@ func (s *Scheduler) ExecSchedule(pod *api_obj.Pod) {
 		fmt.Printf("[ERR/scheduler/ExecSchedule] Failed to update pod to apiserver, %s.\n", errStr)
 		return
 	} else {
-		fmt.Printf("[scheduler/ExecSchedule] Updated pod to apiserver.\n")
+		//TODO: 合并后需要修改这里。
+		uri = dataStr + "pod/AddPod"
+		_, errStr, err = network.PostRequest(uri, pod_str)
+		if err != nil {
+			fmt.Printf("[ERR/scheduler/ExecSchedule] Failed to send request to node, %s.\n", err)
+			return
+		} else if errStr != "" {
+			fmt.Printf("[ERR/scheduler/ExecSchedule] Failed to send request to node, %s.\n", errStr)
+			return
+		}
 	}
 
-	//向消息队列发送创建pod消息->kubelet
-	//TODO:暂定发送topic为kubelet+node名字，且此处的消息为假体
-	//实际应为更新后的pod对象。
-	// msgDummy := message.Message{}
-	// s.Producer.Produce("trashbin/"+node_chosen, &msgDummy)
 }
 
 func (s *Scheduler) DecideNode(pod *api_obj.Pod, avail_pack []api_obj.Node) string {

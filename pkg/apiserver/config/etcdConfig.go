@@ -1,6 +1,9 @@
 package config
 
 const (
+	//"registry/nodeip/:nodename/"
+	ETCD_node_ip_prefix = "/registry/nodeip/"
+
 	ETCD_node_prefix = "/registry/nodes/"
 
 	//"/registry/pods/:namespace/:name"

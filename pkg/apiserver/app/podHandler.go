@@ -188,8 +188,28 @@ func (s *ApiServer) UpdatePod(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"data": "[handler/updatePod] Update pod success",
+	//返回node的ip地址
+	e_key = config.ETCD_node_ip_prefix + new_pod.Spec.NodeName
+	res, err = s.EtcdWrap.Get(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/UpdatePod] Failed to get from etcd, " + err.Error(),
+		})
+		return
+	} else if len(res) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/GetNodeIp] Specified node not available.",
+		})
+		return
+	} else if len(res) > 1 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/GetNodeIp] Found more than one node.",
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"data": res[0].Value,
 	})
 
 	//测试的终点，到达这里就可以下班了
