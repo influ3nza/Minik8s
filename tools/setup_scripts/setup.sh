@@ -3,24 +3,32 @@ if [ "$EUID" -ne 0 ]
   exit
 fi
 
-if [ -x "$(command -v etcd)" ]; then
-  echo "etcd 已经安装，跳过安装步骤"
+# 更新 apt 软件包索引
+apt update
+
+# 使用 apt 安装 wget
+apt install -y wget
+
+wget https://github.com/etcd-io/etcd/releases/download/v3.4.32/etcd-v3.4.32-linux-amd64.tar.gz
+tar -xzvf etcd-v3.4.32-linux-amd64.tar.gz
+cd etcd-v3.4.32-linux-amd64
+cp etcd /usr/local/bin
+cp etcdctl /usr/local/bin
+cd ..
+
+apt install -y openjdk-17-jre
+apt install -y openjdk-17-jdk
+# 输出安装完成的消息
+echo "etcd wget已成功安装"
+
+if [ "$1" == "node" ]; then
+  nohup etcd --data-dir="/var/lib/etcd/default.etcd" --listen-client-urls="http://192.168.1.13:2379,http://localhost:2379"  --advertise-client-urls="http://192.168.1.13:2379,http://localhost:2379" & > etcd.log
 else
-  # 更新 apt 软件包索引
-  apt update
-
-  # 使用 apt 安装 etcd wget
-  apt install -y etcd
-  apt install -y wget
-
-  apt install -y openjdk-17-jre
-  apt install -y openjdk-17-jdk
-  # 输出安装完成的消息
-  echo "etcd wget已成功安装"
+    # 参数不匹配时的处理
+    etcd &
 fi
-systemctl enable etcd
 
-echo "etcd 已成功安装并已启用"
+echo "etcd 已成功安装"
 
 if [ -x "$(command -v containerd)" ]; then
   echo "containerd 已经安装，跳过安装步骤"
@@ -109,9 +117,14 @@ nerdctl network ls
 echo "flannel.conflist 文件已创建并写入内容"
 
 export ETCDCTL_API=3
-etcdctl --endpoints "http://127.0.0.1:2379" put /coreos.com/network/config '{"NetWork":"10.2.0.0/16","SubnetMin":"10.2.1.0","SubnetMax": "10.2.20.0","Backend": {"Type": "vxlan"}}'
+etcdctl --endpoints "http://localhost:2379" put /coreos.com/network/config '{"NetWork":"10.2.0.0/16","SubnetMin":"10.2.1.0","SubnetMax": "10.2.20.0","Backend": {"Type": "vxlan"}}'
 
-/opt/flannel/flanneld -etcd-endpoints=http://127.0.0.1:2379 &
+if [ "$1" == "node" ]; then
+  nohup /opt/flannel/flanneld -etcd-endpoints=http://192.168.1.13:2379 & > flannel.log
+else
+    # 参数不匹配时的处理
+    nohup /opt/flannel/flanneld -etcd-endpoints=http://localhost:2379 &
+fi
 
 #安装
 wget https://archive.apache.org/dist/kafka/3.5.1/kafka_2.13-3.5.1.tgz
@@ -119,8 +132,8 @@ tar xzf kafka_2.13-3.5.1.tgz
 mv kafka_2.13-3.5.1 /usr/local/kafka
 
 # 启动
-/usr/local/kafka/bin/zookeeper-server-start.sh /usr/local/kafka/config/zookeeper.properties &
-/usr/local/kafka/bin/kafka-server-start.sh /usr/local/kafka/config/server.properties &
+nohup /usr/local/kafka/bin/zookeeper-server-start.sh /usr/local/kafka/config/zookeeper.properties & > zookeeper.out
+nohup /usr/local/kafka/bin/kafka-server-start.sh /usr/local/kafka/config/server.properties & > kafka.out
 
 SCRIPTS_ROOT="$(cd "$(dirname "$0")" && pwd)"
 #. "$SCRIPTS_ROOT/etcd_clear.sh" /
