@@ -73,26 +73,19 @@ func (s *Scheduler) ExecSchedule(pod *api_obj.Pod) {
 
 	//向apiserver提交更新请求
 	uri := config.API_server_prefix + config.API_update_pod
-	dataStr, errStr, err := network.PostRequest(uri, pod_str)
+	dataStr, err := network.PostRequest(uri, pod_str)
 	if err != nil {
 		fmt.Printf("[ERR/scheduler/ExecSchedule] Failed to update pod to apiserver, %s.\n", err)
-		return
-	} else if errStr != "" {
-		fmt.Printf("[ERR/scheduler/ExecSchedule] Failed to update pod to apiserver, %s.\n", errStr)
 		return
 	} else {
 		//TODO: 合并后需要修改这里。
 		uri = dataStr + "pod/AddPod"
-		_, errStr, err = network.PostRequest(uri, pod_str)
+		_, err = network.PostRequest(uri, pod_str)
 		if err != nil {
 			fmt.Printf("[ERR/scheduler/ExecSchedule] Failed to send request to node, %s.\n", err)
 			return
-		} else if errStr != "" {
-			fmt.Printf("[ERR/scheduler/ExecSchedule] Failed to send request to node, %s.\n", errStr)
-			return
 		}
 	}
-
 }
 
 func (s *Scheduler) DecideNode(pod *api_obj.Pod, avail_pack []api_obj.Node) string {
@@ -149,14 +142,11 @@ func (s *Scheduler) GetNodes() ([]api_obj.Node, error) {
 	uri := config.API_server_prefix + config.API_get_nodes
 	var pack []api_obj.Node
 
-	dataStr, errStr, err := network.GetRequest(uri)
+	dataStr, err := network.GetRequest(uri)
 	if err != nil {
 		fmt.Printf("[ERR/scheduler/GetNodes] GET request failed, %s.\n", err)
 		return pack, err
-	} else if errStr != "" {
-		fmt.Printf("[ERR/scheduler/GetNodes] GET request failed, %s.\n", errStr)
-		return pack, nil
-	}
+	} 
 
 	if dataStr == "" {
 		fmt.Printf("[ERR/scheduler/GetNodes] Not any node available.\n")

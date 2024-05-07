@@ -25,13 +25,9 @@ func (ec *EndpointController) PrintHandlerWarning() {
 func (ec *EndpointController) OnAddService(pack string) {
 	//拿到所有的pod
 	uri := config.API_server_prefix + config.API_get_pods
-	dataStr, errStr, err := network.GetRequest(uri)
+	dataStr, err := network.GetRequest(uri)
 	if err != nil {
 		fmt.Printf("[ERR/EndpointController/OnAddService] GET request failed, %v.\n", err)
-		ec.PrintHandlerWarning()
-		return
-	} else if errStr != "" {
-		fmt.Printf("[ERR/EndpointController/OnAddService] GET request failed, %s.\n", errStr)
 		ec.PrintHandlerWarning()
 		return
 	}
@@ -111,13 +107,9 @@ func (ec *EndpointController) OnCreatePod(pack string) {
 
 	//拿到所有service
 	uri := config.API_server_prefix + config.API_get_services
-	dataStr, errStr, err := network.GetRequest(uri)
+	dataStr, err := network.GetRequest(uri)
 	if err != nil {
 		fmt.Printf("[ERR/EndpointController/OnCreatePod] GET request failed, %v.\n", err)
-		ec.PrintHandlerWarning()
-		return
-	} else if errStr != "" {
-		fmt.Printf("[ERR/EndpointController/OnCreatePod] GET request failed, %s.\n", errStr)
 		ec.PrintHandlerWarning()
 		return
 	}
@@ -166,13 +158,9 @@ func (ec *EndpointController) OnDeletePod(pack string) {
 
 	//拿到所有service
 	uri := config.API_server_prefix + config.API_get_services
-	dataStr, errStr, err := network.GetRequest(uri)
+	dataStr, err := network.GetRequest(uri)
 	if err != nil {
 		fmt.Printf("[ERR/EndpointController/OnDeletePod] GET request failed, %v.\n", err)
-		ec.PrintHandlerWarning()
-		return
-	} else if errStr != "" {
-		fmt.Printf("[ERR/EndpointController/OnDeletePod] GET request failed, %s.\n", errStr)
 		ec.PrintHandlerWarning()
 		return
 	}

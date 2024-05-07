@@ -45,21 +45,21 @@ func TestSendReceive(t *testing.T) {
 
 	apiServerDummy.EtcdWrap.DelAll()
 
-	dataStr, errStr, err := network.GetRequest(uri)
-	fmt.Printf("Get request received: dataStr: %s, errStr: %s, err: %v\n", dataStr, errStr, err)
+	dataStr, err := network.GetRequest(uri)
+	fmt.Printf("Get request received: dataStr: %s, err: %v\n", dataStr, err)
 
 	uri = config.API_server_prefix + config.API_add_endpoint
 	ep := &api_obj.Endpoint{}
 	ep.MetaData.Name = "test"
 	ep.MetaData.NameSpace = "default"
 	ep_str, _ := json.Marshal(ep)
-	_, _, _ = network.PostRequest(uri, []byte(ep_str))
+	_, _ = network.PostRequest(uri, []byte(ep_str))
 
 	uri = config.API_server_prefix + config.API_delete_endpoint_prefix + "default/test"
-	dataStr, errStr, err = network.DelRequest(uri)
+	dataStr, err = network.DelRequest(uri)
 	tools.Test_finished = true
 
-	if err != nil || errStr != "" {
+	if err != nil {
 		t.Errorf("Failed to send DEL request.\n")
 	} else {
 		fmt.Println(dataStr)

@@ -45,13 +45,10 @@ func CreateEndpoint(srv api_obj.Service, pod api_obj.Pod) error {
 		fmt.Printf("[Controller/Utils/Endpoint] Try to create endpoint %s.\n", ep.MetaData.Name)
 
 		uri := config.API_server_prefix + config.API_add_endpoint
-		_, errStr, err := network.PostRequest(uri, ep_str)
+		_, err = network.PostRequest(uri, ep_str)
 		if err != nil {
 			fmt.Printf("[ERR/Controller/Utils/Endpoint] GET request failed, %v.\n", err)
 			return err
-		} else if errStr != "" {
-			fmt.Printf("[ERR/Controller/Utils/Endpoint] GET request failed, %s.\n", errStr)
-			return errors.New(errStr)
 		}
 
 		fmt.Printf("[Controller/Utils/Endpoint] Endpoint create request for srv %s:%d, pod %s:%d.\n",
@@ -74,13 +71,10 @@ func DeleteEndpoint(batch bool, suffix string) error {
 		uri = config.API_server_prefix + config.API_delete_endpoint_prefix + suffix
 	}
 
-	_, errStr, err := network.DelRequest(uri)
+	_, err := network.DelRequest(uri)
 	if err != nil {
 		fmt.Printf("[ERR/EP Controller/Utils/DeleteEndpoint] DEL request failed, %v.\n", err)
 		return err
-	} else if errStr != "" {
-		fmt.Printf("[ERR/EP Controller/Utils/DeleteEndpoint] DEL request failed, %s.\n", errStr)
-		return errors.New(errStr)
 	}
 
 	return nil

@@ -45,13 +45,10 @@ func ParsePod(filePath string) error {
 
 	//将请求发送给apiserver
 	uri := config.API_server_prefix + config.API_add_pod
-	_, errStr, err := network.PostRequest(uri, pod_str)
+	_, err = network.PostRequest(uri, pod_str)
 	if err != nil {
 		fmt.Printf("[ERR/kubectl/parsePod] Failed to post request, err:%v\n", err)
 		return err
-	} else if errStr != "" {
-		fmt.Printf("[ERR/kubectl/parsePod] Failed to post request, err:%v\n", errStr)
-		return nil
 	}
 
 	fmt.Printf("[kubectl/parsePod] Send add pod request success!\n")
@@ -87,13 +84,10 @@ func ParseNode(filePath string) error {
 
 	//将请求发送给apiserver
 	uri := config.API_server_prefix + config.API_add_node
-	_, errStr, err := network.PostRequest(uri, node_str)
+	_, err = network.PostRequest(uri, node_str)
 	if err != nil {
 		fmt.Printf("[ERR/kubectl/parseNode] Failed to post request, err:%v\n", err)
 		return err
-	} else if errStr != "" {
-		fmt.Printf("[ERR/kubectl/parseNode] Failed to post request, err:%v\n", errStr)
-		return nil
 	}
 
 	fmt.Printf("[kubectl/parseNode] Send add node request success!\n")
@@ -129,13 +123,10 @@ func ParseSrv(filePath string) error {
 
 	//将请求发送给apiserver
 	uri := config.API_server_prefix + config.API_add_service
-	_, errStr, err := network.PostRequest(uri, srv_str)
+	_, err = network.PostRequest(uri, srv_str)
 	if err != nil {
 		fmt.Printf("[ERR/kubectl/parseSrv] Failed to post request, err:%v\n", err)
 		return err
-	} else if errStr != "" {
-		fmt.Printf("[ERR/kubectl/parseSrv] Failed to post request, err:%v\n", errStr)
-		return nil
 	}
 
 	fmt.Printf("[kubectl/parseSrv] Send add srv request success!\n")
@@ -155,13 +146,10 @@ func SendObjectTo(jsonStr []byte, kind string) error {
 	}
 
 	uri := config.API_server_prefix + suffix
-	_, errStr, err := network.PostRequest(uri, jsonStr)
+	_, err := network.PostRequest(uri, jsonStr)
 	if err != nil {
 		fmt.Printf("[ERR/kubectl/apply"+kind+"] Failed to send request, err: %s\n", err.Error())
 		return err
-	} else if errStr != "" {
-		fmt.Printf("[ERR/kubectl/apply"+kind+"] Failed to send request, err: %v\n", errStr)
-		return nil
 	}
 
 	fmt.Printf("[kubectl/apply" + kind + "] Send add " + kind + " request success!\n")
