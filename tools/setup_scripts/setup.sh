@@ -120,7 +120,7 @@ export ETCDCTL_API=3
 etcdctl --endpoints "http://localhost:2379" put /coreos.com/network/config '{"NetWork":"10.2.0.0/16","SubnetMin":"10.2.1.0","SubnetMax": "10.2.20.0","Backend": {"Type": "vxlan"}}'
 
 if [ "$1" == "node" ]; then
-  nohup /opt/flannel/flanneld -etcd-endpoints=http://192.168.1.13:2379 &
+  nohup /opt/flannel/flanneld -etcd-endpoints=http://192.168.1.13:2379 & > flannel.log
 else
     # 参数不匹配时的处理
     nohup /opt/flannel/flanneld -etcd-endpoints=http://localhost:2379 &
