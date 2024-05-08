@@ -7,6 +7,7 @@ import (
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/message"
 	"net"
+	"os/exec"
 	"strconv"
 
 	"github.com/moby/ipvs"
@@ -16,13 +17,6 @@ type ProxyManager struct {
 	Consumer    *message.MsgConsumer
 	IpvsHandler *ipvs.Handle
 	Services    map[string]*MainService
-}
-
-type Manager interface {
-	CreateService(srv *api_obj.Service)
-	DeleteService(uuid string, ip string, port int)
-	AddEndPoint(ep *api_obj.Endpoint)
-	DelEndPoint(ip string, port int)
 }
 
 func InitManager() *ProxyManager {
@@ -72,6 +66,11 @@ func (m *ProxyManager) CreateService(srv *api_obj.Service) error {
 			fmt.Println("Create Service Failed At line 71 ", err.Error())
 			return err
 		}
+		args := []string{"-t", "nat", "-A", "POSTROUTING", "-m", "ipvs", "--vaddr", srv.Spec.ClusterIP, "--vport", miniSrv.Port, "-j", "MASQUERADE"}
+		_, err = exec.Command("iptables", args...).CombinedOutput()
+		if err != nil {
+			fmt.Println("Failed Add iptables At line 79 ", err.Error())
+		}
 
 		mySrv := &Service{
 			Service:   ipvsSrv,
@@ -81,38 +80,69 @@ func (m *ProxyManager) CreateService(srv *api_obj.Service) error {
 	}
 
 	m.Services[srv.MetaData.UUID] = mainService
-	return nil
+	args := []string{"addr", "add", srv.Spec.ClusterIP + "/24", "dev", "flannel.1"}
+	_, err := exec.Command("ip", args...).CombinedOutput()
+	if err != nil {
+		fmt.Println("Error Bind Net At Line 88 ", err.Error())
+	}
+
+	return err
 }
 
-func (m *ProxyManager) DelService(uuid string, ip string, port int) error {
+func (m *ProxyManager) DelService(uuid string, ip string) error {
 	mainSrc := m.Services[uuid]
 	if mainSrc == nil {
 		return fmt.Errorf("Error No Such Service")
 	}
 
-	label := fmt.Sprintf("%s:%d", ip, port)
-	service := mainSrc.Srv[label]
-	if service == nil {
-		return fmt.Errorf("Error No Such Service")
+	var e error
+	for _, srv := range mainSrc.Srv {
+		if realIp := srv.Service.Address.String(); realIp != ip {
+			return fmt.Errorf("real srv ip %s is not equal to ip %s", realIp, ip)
+		}
+
+		if err := m.delService(srv); err != nil {
+			e = err
+			fmt.Println("Del Srv Failed ", err.Error())
+		}
+		args := []string{"-t", "nat", "-D", "POSTROUTING", "-m", "ipvs", "--vaddr", ip, "--vport", strconv.Itoa(int(srv.Service.Port)), "-j", "MASQUERADE"}
+		_, err := exec.Command("iptables", args...).CombinedOutput()
+		if err != nil {
+			fmt.Println("Failed Add iptables At line 107 ", err.Error())
+		}
 	}
 
-	for _, dst := range service.EndPoints {
-		err := m.IpvsHandler.DelDestination(service.Service, dst)
+	args := []string{"addr", "del", ip + "/24", "dev", "flannel.1"}
+	_, err := exec.Command("ip", args...).CombinedOutput()
+	if err != nil {
+		fmt.Println("Error Bind Net At Line 109 ", err.Error())
+	}
+
+	delete(m.Services, uuid)
+	return e
+}
+
+func (m *ProxyManager) delService(srv *Service) error {
+	for _, dst := range srv.EndPoints {
+		err := m.IpvsHandler.DelDestination(srv.Service, dst)
 		if err != nil {
 			fmt.Println("Err occurred At DelService Line 102 ", err.Error())
 		}
 	}
 
-	err := m.IpvsHandler.DelService(service.Service)
+	err := m.IpvsHandler.DelService(srv.Service)
 	if err != nil {
 		fmt.Println("Err occurred At DelService line 108 ", err.Error())
 		return err
 	}
 
-	delete(mainSrc.Srv, label)
 	return nil
 }
 
-func (m *ProxyManager) AddEndPoint(ep *api_obj.Endpoint) {
-
-}
+//func (m *ProxyManager) AddEndPoint(ep *api_obj.Endpoint) error {
+//
+//}
+//
+//func (m *ProxyManager) DelEndPoint(ep *api_obj.Endpoint) error {
+//
+//}
