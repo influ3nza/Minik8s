@@ -12,7 +12,7 @@ type Endpoint struct {
 	MetaData   obj_inner.ObjectMeta `json:"metaData" yaml:"metadata"`
 
 	SrvIP   string `json:"srvIP" yaml:"srvIP"`
-	SrvPort string `json:"srvPort" yaml:"srvPort"`
+	SrvPort int32  `json:"srvPort" yaml:"srvPort"`
 
 	PodUUID  string   `json:"PodUUID"`
 	PodIP    string   `json:"PodIP"`
