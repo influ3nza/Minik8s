@@ -163,14 +163,12 @@ func (server *Kubelet) GetPodMatrix(c *gin.Context) {
 func (server *Kubelet) GetPodStatus() {
 	for {
 		time.Sleep(20 * time.Second)
-		request, s, err := network.GetRequest(server.ApiServerAddress + "/pods/getAll")
+		request, err := network.GetRequest(server.ApiServerAddress + "/pods/getAll")
 		if err != nil {
 			fmt.Println("Send Get RequestErr ", err.Error())
 			return
 		}
-		if s != "" {
-			fmt.Println("Get RequestErr", s)
-		}
+
 		list := gjson.Parse(request).Array()
 		for _, p := range list {
 			pod := &api_obj.Pod{}

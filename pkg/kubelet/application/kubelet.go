@@ -53,13 +53,12 @@ func (server *Kubelet) register() {
 	}
 
 	nodeJson, _ := json.Marshal(node)
-	request, s, err := network.PostRequest(server.ApiServerAddress+"/nodes/add", nodeJson)
+	request, err := network.PostRequest(server.ApiServerAddress+"/nodes/add", nodeJson)
 	if err != nil {
 		fmt.Println("Send Register At line 54 ", err.Error())
 		return
 	}
 	fmt.Println("Response data is ", request)
-	fmt.Println("Response Err is ", s)
 }
 
 func (server *Kubelet) registerHandler() {
