@@ -1,0 +1,12 @@
+package kube_proxy
+
+import "github.com/moby/ipvs"
+
+type Service struct {
+	Service   *ipvs.Service
+	EndPoints map[string]*ipvs.Destination
+}
+
+type Services struct {
+	Srv map[string]*Service
+}
