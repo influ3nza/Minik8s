@@ -10,6 +10,7 @@ import (
 
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/apiserver/config"
+	"minik8s/tools"
 )
 
 func (s *ApiServer) GetNodes(c *gin.Context) {
@@ -120,7 +121,7 @@ func (s *ApiServer) AddNode(c *gin.Context) {
 	}
 
 	//初始化
-	node.NodeMetadata.UUID = "default UUID"
+	node.NodeMetadata.UUID = tools.NewUUID()
 	//TODO: 这里是便于测试，之后需要重新书写
 	node.NodeStatus = api_obj.NodeStatus{
 		Condition: api_obj.Ready,

@@ -10,6 +10,7 @@ import (
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/apiserver/config"
 	"minik8s/pkg/message"
+	"minik8s/tools"
 )
 
 func (s *ApiServer) GetServices(c *gin.Context) {
@@ -79,8 +80,7 @@ func (s *ApiServer) AddService(c *gin.Context) {
 	}
 
 	//TODO:分配IP（检查IP）
-	//TODO:分配UUID
-	new_service.MetaData.UUID = "default_service"
+	new_service.MetaData.UUID = tools.NewUUID()
 	new_service.Status = api_obj.ServiceStatus{
 		Condition: api_obj.SERVICE_PENDING,
 	}

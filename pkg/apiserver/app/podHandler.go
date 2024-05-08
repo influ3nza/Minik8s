@@ -82,8 +82,7 @@ func (s *ApiServer) AddPod(c *gin.Context) {
 	}
 
 	//更新相关状态
-	//TODO: 这里的UUID仍然为default。
-	new_pod.MetaData.UUID = "default"
+	new_pod.MetaData.UUID = tools.NewUUID()
 	//TODO:（测试专用）
 	if !tools.Test_enabled {
 		new_pod.PodStatus.Phase = obj_inner.Pending
