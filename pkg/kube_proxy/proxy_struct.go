@@ -7,6 +7,6 @@ type Service struct {
 	EndPoints map[string]*ipvs.Destination
 }
 
-type Services struct {
+type MainService struct {
 	Srv map[string]*Service
 }
