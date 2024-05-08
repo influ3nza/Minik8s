@@ -12,9 +12,11 @@ const (
 	API_get_node        string = "/nodes/:namespace/:name"
 	API_add_node        string = "/nodes/add"
 
-	API_update_pod string = "/pods/update"
-	API_add_pod    string = "/pods/add"
-	API_get_pods   string = "/pods/getAll"
+	API_update_pod              string = "/pods/update"
+	API_add_pod                 string = "/pods/add"
+	API_get_pods                string = "/pods/getAll"
+	API_get_pods_by_node_prefix string = "/pods/getByNode"
+	API_get_pods_by_node        string = "/pods/getByNode/:nodename"
 
 	API_add_service  string = "/services/add"
 	API_get_services string = "/services/getAll"

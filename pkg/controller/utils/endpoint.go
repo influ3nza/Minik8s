@@ -31,6 +31,8 @@ func CreateEndpoint(srv api_obj.Service, pod api_obj.Pod) error {
 				Name:      srv.MetaData.Name + "-" + pod.MetaData.Name,
 				NameSpace: srv.MetaData.NameSpace,
 			},
+			SrvIP:   srv.Spec.ClusterIP,
+			SrvPort: srv.Spec.Ports[0].Port,
 			PodUUID: pod.MetaData.UUID,
 			PodIP:   pod.PodStatus.PodIP,
 			PodPort: port,

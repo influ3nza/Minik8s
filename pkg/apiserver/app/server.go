@@ -67,6 +67,7 @@ func (s *ApiServer) Bind() {
 	s.router.GET(config.API_get_pods, s.GetPods)
 	s.router.POST(config.API_update_pod, s.UpdatePod)
 	s.router.POST(config.API_add_pod, s.AddPod)
+	s.router.GET(config.API_get_pods_by_node, s.GetPodsByNode)
 
 	s.router.POST(config.API_add_service, s.AddService)
 	s.router.GET(config.API_get_services, s.GetServices)

@@ -18,6 +18,8 @@ func (s *ApiServer) MsgHandler(msg *message.Message) {
 		s.HandlePodCreate(msg.Content)
 	case message.POD_UPDATE:
 		s.HandlePodUpdate(msg.Content)
+	case message.POD_DELETE:
+		s.HandlePodDelete(msg.Content)
 	}
 }
 
@@ -89,6 +91,11 @@ func (s *ApiServer) HandlePodUpdate(msg string) {
 			return
 		}
 	}
-	//TODO:是否一定要在原node创建？-> 最好是。因为有nodename。
-	//TODO:是否可以以同一个名字，同一个配置创建？
+	//是否一定要在原node创建？-> 不需要
+	//是否可以以同一个名字，同一个配置创建？-> 不可以 -> 可以考虑将挂掉的pod重命名
+}
+
+func (s *ApiServer) HandlePodDelete(msg string) {
+	//TODO:这里默认发送的是"podnamespace/podname"
+	//do nothing
 }
