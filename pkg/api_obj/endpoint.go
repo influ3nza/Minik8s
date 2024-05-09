@@ -15,7 +15,8 @@ type Endpoint struct {
 	SrvIP   string `json:"srvIP" yaml:"srvIP"`
 	SrvPort int32  `json:"srvPort" yaml:"srvPort"`
 
-	PodUUID  string   `json:"PodUUID"`
-	PodIP    string   `json:"PodIP"`
-	PodPorts []string `json:"PodPort"`
+	PodUUID string `json:"PodUUID"`
+	PodIP   string `json:"PodIP"`
+	PodPort int32  `json:"PodPort"`
+	Weight  int    `json:"Weight"`
 }
