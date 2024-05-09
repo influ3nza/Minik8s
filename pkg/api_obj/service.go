@@ -27,6 +27,7 @@ type ServicePort struct {
 	Protocol   string `json:"protocol" yaml:"protocol"`
 	Port       string `json:"port" yaml:"port"`
 	TargetPort string `json:"targetPort" yaml:"targetPort"`
+	NodePort   int32  `json:"nodePort" yaml:"nodePort"`
 }
 
 type ServiceSpec struct {
@@ -34,7 +35,6 @@ type ServiceSpec struct {
 	Selector  map[string]string `json:"selector" yaml:"selector"`
 	ClusterIP string            `json:"clusterIP" yaml:"clusterIP"`
 	Type      ServiceExportType `json:"type" yaml:"type"`
-	NodePort  int32             `json:"nodePort" yaml:"nodePort"`
 }
 
 type Service struct {
