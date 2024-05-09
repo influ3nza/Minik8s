@@ -44,7 +44,7 @@ func InitManager() *ProxyManager {
 
 func (m *ProxyManager) CreateService(srv *api_obj.Service) error {
 	if srv.MetaData.UUID == "" {
-		return fmt.Errorf("Error UUID is NULL")
+		return fmt.Errorf("error UUID is NULL")
 	}
 	mainService := &MainService{
 		Srv: map[string]*Service{},
@@ -92,7 +92,7 @@ func (m *ProxyManager) CreateService(srv *api_obj.Service) error {
 func (m *ProxyManager) DelService(uuid string, ip string) error {
 	mainSrc := m.Services[uuid]
 	if mainSrc == nil {
-		return fmt.Errorf("Error No Such Service")
+		return fmt.Errorf("error No Such Service")
 	}
 
 	var e error
@@ -139,10 +139,59 @@ func (m *ProxyManager) delService(srv *Service) error {
 	return nil
 }
 
-//func (m *ProxyManager) AddEndPoint(ep *api_obj.Endpoint) error {
-//
-//}
-//
-//func (m *ProxyManager) DelEndPoint(ep *api_obj.Endpoint) error {
-//
-//}
+func (m *ProxyManager) AddEndPoint(ep *api_obj.Endpoint) error {
+	mainSrv := m.Services[ep.SrvUUID]
+	if mainSrv == nil {
+		return fmt.Errorf("no Such Service UUID %s", ep.SrvUUID)
+	}
+
+	label := fmt.Sprintf("%s:%d", ep.SrvIP, ep.SrvPort)
+	realSrv := mainSrv.Srv[label]
+	if realSrv == nil {
+		return fmt.Errorf("no Such Service UUID %s ip:port %s", ep.SrvUUID, label)
+	}
+
+	port, _ := strconv.Atoi(ep.PodPort)
+	var w int
+
+	dst := &ipvs.Destination{
+		Address:       net.IP(ep.PodIP),
+		Port:          uint16(port),
+		Weight:        w,
+		AddressFamily: nl.FAMILY_V4,
+	}
+	dstLabel := fmt.Sprintf("%s:%d", ep.PodIP, port)
+	err := m.IpvsHandler.NewDestination(realSrv.Service, dst)
+	if err != nil {
+		return fmt.Errorf("create EndPoint Failed: %s", err.Error())
+	}
+	realSrv.EndPoints[dstLabel] = dst
+	return nil
+}
+
+func (m *ProxyManager) DelEndPoint(ep *api_obj.Endpoint) error {
+	mainSrv := m.Services[ep.SrvUUID]
+	if mainSrv == nil {
+		return fmt.Errorf("no Such Service UUID %s", ep.SrvUUID)
+	}
+
+	label := fmt.Sprintf("%s:%d", ep.SrvIP, ep.SrvPort)
+	realSrv := mainSrv.Srv[label]
+	if realSrv == nil {
+		return fmt.Errorf("no Such Service UUID %s ip:port %s", ep.SrvUUID, label)
+	}
+
+	dstLabel := fmt.Sprintf("%s:%s", ep.PodIP, ep.PodPort)
+	dst := realSrv.EndPoints[dstLabel]
+	if dst == nil {
+		return fmt.Errorf("no Such EndPoint Srv is %s, Ep is %s", label, dstLabel)
+	}
+
+	err := m.IpvsHandler.DelDestination(realSrv.Service, dst)
+	if err != nil {
+		return fmt.Errorf("del EndPoint Failed, Err is %s", err.Error())
+	}
+
+	delete(realSrv.EndPoints, dstLabel)
+	return nil
+}
