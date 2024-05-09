@@ -17,6 +17,6 @@ type Endpoint struct {
 
 	PodUUID string `json:"PodUUID"`
 	PodIP   string `json:"PodIP"`
-	PodPort string `json:"PodPort"`
+	PodPort int32  `json:"PodPort"`
 	Weight  int    `json:"Weight"`
 }
