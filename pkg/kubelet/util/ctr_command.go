@@ -65,6 +65,16 @@ func RunContainer(namespace string, name string) (string, error) {
 	//return res, nil
 }
 
+func StartContainer(namespace string, name string) (string, error) {
+	cmd := []string{"start", name}
+	PrintCmd(namespace, cmd...)
+	res, err := Exec(namespace, cmd...)
+	if err != nil {
+		return "", err
+	}
+	return res, nil
+}
+
 func GetContainerInfo(namespace string, info string, containerId string) (string, error) {
 	cmd := []string{"inspect", "-f", fmt.Sprintf("{{%s}}", info), containerId}
 	res, err := Exec(namespace, cmd...)

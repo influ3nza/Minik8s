@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-var manageLocks = sync.Mutex{}
+var manageLocks = sync.RWMutex{}
 var podLocks = sync.Map{}
 
 func generateKey(podName string, namespace string) string {
@@ -14,7 +14,7 @@ func generateKey(podName string, namespace string) string {
 
 func RegisterPod(podName string, namespace string) {
 	manageLocks.Lock()
-	mtx := &sync.Mutex{}
+	mtx := &sync.RWMutex{}
 	key := generateKey(podName, namespace)
 	podLocks.Store(key, mtx)
 	manageLocks.Unlock()
@@ -28,7 +28,7 @@ func UnRegisterPod(podName string, namespace string) int {
 	if ok {
 		res := false
 		for i := 0; i < 100; i++ {
-			res = mutex.(*sync.Mutex).TryLock()
+			res = mutex.(*sync.RWMutex).TryLock()
 			if res == true {
 				break
 			}
@@ -40,17 +40,17 @@ func UnRegisterPod(podName string, namespace string) int {
 		return 2 // not found
 	}
 	podLocks.Delete(key)
-	mutex.(*sync.Mutex).Unlock()
+	mutex.(*sync.RWMutex).Unlock()
 	return 0
 }
 
 func Lock(podName string, namespace string) bool {
 	key := generateKey(podName, namespace)
-	manageLocks.Lock()
+	manageLocks.RLock()
 	mutex, ok := podLocks.Load(key)
-	defer manageLocks.Unlock()
+	defer manageLocks.RUnlock()
 	if ok {
-		mutex.(*sync.Mutex).Lock()
+		mutex.(*sync.RWMutex).Lock()
 		return true
 	} else {
 		return false
@@ -59,11 +59,37 @@ func Lock(podName string, namespace string) bool {
 
 func UnLock(podName string, namespace string) bool {
 	key := generateKey(podName, namespace)
-	manageLocks.Lock()
+	manageLocks.RLock()
 	mutex, ok := podLocks.Load(key)
-	defer manageLocks.Unlock()
+	defer manageLocks.RUnlock()
 	if ok {
-		mutex.(*sync.Mutex).Unlock()
+		mutex.(*sync.RWMutex).Unlock()
+		return true
+	} else {
+		return false
+	}
+}
+
+func RLock(podName string, namespace string) bool {
+	key := generateKey(podName, namespace)
+	manageLocks.RLock()
+	mutex, ok := podLocks.Load(key)
+	defer manageLocks.RUnlock()
+	if ok {
+		mutex.(*sync.RWMutex).RLock()
+		return true
+	} else {
+		return false
+	}
+}
+
+func RUnLock(podName string, namespace string) bool {
+	key := generateKey(podName, namespace)
+	manageLocks.RLock()
+	mutex, ok := podLocks.Load(key)
+	defer manageLocks.RUnlock()
+	if ok {
+		mutex.(*sync.RWMutex).RUnlock()
 		return true
 	} else {
 		return false

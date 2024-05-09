@@ -79,7 +79,7 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 	if container.VolumeMounts != nil {
 		mounts, e := convertMounts(podVolumes, container)
 		if e != nil {
-			fmt.Println("At CreateK8sContainer line 80 ", e.Error())
+			fmt.Println("At CreateK8sContainer line 82 ", e.Error())
 			return nil, "", e
 		}
 		if mounts != nil && len(mounts) > 0 {
@@ -152,7 +152,7 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 
 	containerId, err := GenerateUUIDForContainer()
 	if err != nil {
-		fmt.Println("Failed At CreateK8sContainer line 154 ", err.Error())
+		fmt.Println("Failed At CreateK8sContainer line 155 ", err.Error())
 		return nil, "", err
 	}
 
@@ -190,23 +190,52 @@ func StartContainer(ctx context.Context, container containerd.Container) (uint32
 	return newTask.Pid(), nil
 }
 
+func StopContainer(namespace string, name string) {
+	_, err := util.StopContainer(namespace, name)
+	if err != nil {
+		fmt.Println("At Func StopAndRmContainer line 172 ", err.Error())
+	}
+}
+
+func StopContainerInPod(ctx context.Context, client *containerd.Client, namespace string, podName string) error {
+	walker := &ContainerWalker{
+		Client: client,
+		OnFound: func(ctx context.Context, found Found) error {
+			// fmt.Println(found.Container.ID())
+			StopContainer(namespace, found.Container.ID())
+			return nil
+		},
+	}
+
+	filter := map[string]string{
+		"podName": podName,
+	}
+
+	_, err := walker.Walk(ctx, filter)
+	if err != nil {
+		fmt.Println("Failed At DeleteContainerInPod line 216 ", err.Error())
+		return err
+	}
+	return nil
+}
+
 func StopAndRmContainer(namespace string, name string, ifForce bool) error {
 	if ifForce == false {
 		_, err := util.StopContainer(namespace, name)
 		if err != nil {
-			fmt.Println("At Func StopAndRmContainer line 172 ", err.Error())
+			fmt.Println("At Func StopAndRmContainer line 226 ", err.Error())
 			//return err
 		}
 
 		_, err = util.RemoveContainer(namespace, name)
 		if err != nil {
-			fmt.Println("At Func StopAndRmContainer line 178 ", err.Error())
+			fmt.Println("At Func StopAndRmContainer line 232 ", err.Error())
 			return err
 		}
 	} else {
 		_, err := util.RmForce(namespace, name)
 		if err != nil {
-			fmt.Println("At Func StopAndRmContainer line 184 ", err.Error())
+			fmt.Println("At Func StopAndRmContainer line 238 ", err.Error())
 			return err
 		}
 	}
@@ -220,7 +249,7 @@ func DeleteContainerInPod(ctx context.Context, client *containerd.Client, podNam
 			// fmt.Println(found.Container.ID())
 			err := StopAndRmContainer(podNamespace, found.Container.ID(), ifForce)
 			if err != nil {
-				fmt.Println("Stop Rm Container in Walker Failed at line 221 ", err.Error())
+				fmt.Println("Stop Rm Container in Walker Failed at line 252 ", err.Error())
 			}
 			return nil
 		},
@@ -231,7 +260,7 @@ func DeleteContainerInPod(ctx context.Context, client *containerd.Client, podNam
 	}
 	_, err := walker.Walk(ctx, filter)
 	if err != nil {
-		fmt.Println("Failed At DeleteContainerInPod line 228 ", err.Error())
+		fmt.Println("Failed At DeleteContainerInPod line 263 ", err.Error())
 		return err
 	}
 	return nil
@@ -244,7 +273,7 @@ func CreatePauseContainer(ctx context.Context, client *containerd.Client, namesp
 	}
 	_, err := image_manager.GetImage(client, &img, ctx)
 	if err != nil {
-		fmt.Println("Pull Pause Image Failed At CreatePauseContainer line 224, ", err.Error())
+		fmt.Println("Pull Pause Image Failed At CreatePauseContainer line 276, ", err.Error())
 		return "", err
 	}
 
@@ -254,6 +283,15 @@ func CreatePauseContainer(ctx context.Context, client *containerd.Client, namesp
 	}
 	fmt.Println("res is :", res)
 	return res, nil
+}
+
+func ReStartPauseContainer(namespace string, id string) error {
+	res, err := util.StartContainer(namespace, id)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Restart res is ", res)
+	return nil
 }
 
 func DeletePauseContainer(namespace string, id string) error {
@@ -321,7 +359,7 @@ func CollectContainerMetrics(ctx context.Context, collection *metricsCollection,
 	task := collection.task
 	metrics, err := task.Metrics(ctx)
 	if err != nil {
-		fmt.Println("CollectContainerMetrics Failed At line 338 ", err.Error())
+		fmt.Println("CollectContainerMetrics Failed At line 353 ", err.Error())
 		return nil
 	}
 	curTime = time.Now()
@@ -345,7 +383,7 @@ func CollectContainerMetrics(ctx context.Context, collection *metricsCollection,
 	task = collection.task
 	metrics, err = task.Metrics(ctx)
 	if err != nil {
-		fmt.Println("CollectContainerMetrics Failed At line 362 ", err.Error())
+		fmt.Println("CollectContainerMetrics Failed At line 377 ", err.Error())
 		return nil
 	}
 	curTime = time.Now()

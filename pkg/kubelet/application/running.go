@@ -101,7 +101,7 @@ func (server *Kubelet) DelPod(c *gin.Context) {
 	})
 
 	go func() {
-		var ok int = 1
+		var ok = 1
 		for {
 			if ok = util.UnRegisterPod(name, namespace); ok == 0 || ok == 2 {
 				break
@@ -135,7 +135,7 @@ func (server *Kubelet) GetPodMatrix(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 
-	ok := util.Lock(name, namespace)
+	ok := util.RLock(name, namespace)
 	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "[kubectl/GetPodMatrix] Pod Not Exist",
@@ -149,24 +149,24 @@ func (server *Kubelet) GetPodMatrix(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "[kubelet/GetPodMatrix] Marshal Error",
 		})
-		util.UnLock(name, namespace)
+		util.RUnLock(name, namespace)
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": string(matrix),
 	})
-	util.UnLock(name, namespace)
+	util.RUnLock(name, namespace)
 	return
 }
 
 func (server *Kubelet) GetPodStatus() {
 	for {
-		time.Sleep(20 * time.Second)
+		time.Sleep(2 * time.Second)
 		request, err := network.GetRequest(server.ApiServerAddress + "/pods/getAll")
 		if err != nil {
 			fmt.Println("Send Get RequestErr ", err.Error())
-			return
+			continue
 		}
 
 		list := gjson.Parse(request).Array()
@@ -177,7 +177,7 @@ func (server *Kubelet) GetPodStatus() {
 				fmt.Println("Unmarshal Error At GetPodStatus line 179 ", err.Error())
 				continue
 			}
-			if !util.Lock(pod.MetaData.Name, pod.MetaData.NameSpace) {
+			if !util.RLock(pod.MetaData.Name, pod.MetaData.NameSpace) {
 				fmt.Println("Pod not Exist ", "Name is : ", pod.MetaData.Name, " Ns is : ", pod.MetaData.NameSpace)
 				continue
 			}
@@ -193,7 +193,7 @@ func (server *Kubelet) GetPodStatus() {
 				}
 				server.Producer.Produce(message.TOPIC_ApiServer_FromNode, msg)
 			}
-			util.UnLock(pod.MetaData.Name, pod.MetaData.NameSpace)
+			util.RUnLock(pod.MetaData.Name, pod.MetaData.NameSpace)
 		}
 	}
 }

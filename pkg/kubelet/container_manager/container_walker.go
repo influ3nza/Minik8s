@@ -55,6 +55,33 @@ func (walker *ContainerWalker) Walk(ctx context.Context, filter map[string]strin
 	return matchCount, nil
 }
 
+func (walker *ContainerWalker) WalkRestart(ctx context.Context, filter map[string]string) (int, error) {
+	var filters []string
+	for label, value := range filter {
+		filters = append(filters, fmt.Sprintf("labels.%q==%s", label, value))
+	}
+	res, err := ListContainers(walker.Client, ctx, filters...)
+	if err != nil {
+		return -1, err
+	}
+	matchCount := len(res)
+	for i, c := range res {
+		f := Found{
+			Container: c,
+			Filter:    filter,
+			Idx:       i,
+			Count:     matchCount,
+		}
+		if label, _ := f.Container.Labels(ctx); label["nerdctl/name"] != "" {
+			continue
+		}
+		if e := walker.OnFound(ctx, f); e != nil {
+			return -1, e
+		}
+	}
+	return matchCount, nil
+}
+
 func (walker *ContainerWalker) WalkStatus(ctx context.Context, filter map[string]string) (string, error) {
 	var filters []string
 	for label, value := range filter {
@@ -70,7 +97,7 @@ func (walker *ContainerWalker) WalkStatus(ctx context.Context, filter map[string
 		return obj_inner.Pending, nil
 	}
 
-	founds := []Found{}
+	var founds []Found
 	for i, c := range res {
 		f := Found{
 			Container: c,

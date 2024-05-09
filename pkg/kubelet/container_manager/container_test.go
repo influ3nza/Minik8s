@@ -81,7 +81,7 @@ func TestCreateK8sContainer(t *testing.T) {
 		t.Fatal("There should be no containers in \"test\"")
 	}
 
-	createdContainer, err := CreateK8sContainer(ctx, client, &container, "test", volumes, "")
+	createdContainer, err, _ := CreateK8sContainer(ctx, client, &container, "test", volumes, "")
 	if createdContainer == nil {
 		t.Fatal("Create Container Failed ", err.Error())
 	}
