@@ -11,6 +11,7 @@ type Endpoint struct {
 	Kind       string               `json:"kind" yaml:"kind"`
 	MetaData   obj_inner.ObjectMeta `json:"metaData" yaml:"metadata"`
 
+	SrvUUID string `json:"srvUUID" yaml:"srvUUID"`
 	SrvIP   string `json:"srvIP" yaml:"srvIP"`
 	SrvPort int32  `json:"srvPort" yaml:"srvPort"`
 
