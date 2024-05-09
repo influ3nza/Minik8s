@@ -1,8 +1,9 @@
 package api_obj
 
 import (
-	"github.com/containerd/containerd"
 	"minik8s/pkg/api_obj/obj_inner"
+
+	"github.com/containerd/containerd"
 )
 
 type Pod struct {
@@ -35,6 +36,8 @@ type PodStatus struct {
 	PodIP          string              `json:"podIP" yaml:"podIP"`
 	Phase          string              `json:"phase" yaml:"phase"`
 	ContainerTypes []containerd.Status `json:"containerTypes" yaml:"containerTypes"`
+	CreateTime     string              `json:"createTime" yaml:"createTime"`
+	Restarts       int32               `json:"restarts" yaml:"restarts"`
 }
 
 type PodList struct {
