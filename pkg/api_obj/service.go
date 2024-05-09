@@ -34,6 +34,7 @@ type ServiceSpec struct {
 	Selector  map[string]string `json:"selector" yaml:"selector"`
 	ClusterIP string            `json:"clusterIP" yaml:"clusterIP"`
 	Type      ServiceExportType `json:"type" yaml:"type"`
+	NodePort  int32             `json:"nodePort" yaml:"nodePort"`
 }
 
 type Service struct {
