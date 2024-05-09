@@ -13,6 +13,11 @@ const (
 	ClusterIP    ServiceExportType = "ClusterIP"
 )
 
+const (
+	SERVICE_PENDING string = "service_pending"
+	SERVICE_CREATED string = "service_created"
+)
+
 type ServiceStatus struct {
 	Condition string     `json:"condition" yaml:"condition"`
 	Endpoints []Endpoint `json:"endpoints" yaml:"endpoints"`

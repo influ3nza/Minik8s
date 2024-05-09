@@ -11,7 +11,10 @@ type Endpoint struct {
 	Kind       string               `json:"kind" yaml:"kind"`
 	MetaData   obj_inner.ObjectMeta `json:"metaData" yaml:"metadata"`
 
-	PodUUID string `json:"PodUUID"`
-	PodIP   string `json:"PodIP"`
-	PodPort string `json:"PodPort"`
+	SrvIP   string `json:"srvIP" yaml:"srvIP"`
+	SrvPort int32  `json:"srvPort" yaml:"srvPort"`
+
+	PodUUID  string   `json:"PodUUID"`
+	PodIP    string   `json:"PodIP"`
+	PodPorts []string `json:"PodPort"`
 }
