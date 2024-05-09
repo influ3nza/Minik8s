@@ -36,6 +36,8 @@ type PodStatus struct {
 	PodIP          string              `json:"podIP" yaml:"podIP"`
 	Phase          string              `json:"phase" yaml:"phase"`
 	ContainerTypes []containerd.Status `json:"containerTypes" yaml:"containerTypes"`
+	CreateTime     string              `json:"createTime" yaml:"createTime"`
+	Restarts       int32               `json:"restarts" yaml:"restarts"`
 }
 
 type PodList struct {

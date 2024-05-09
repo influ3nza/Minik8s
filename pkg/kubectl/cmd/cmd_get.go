@@ -2,11 +2,16 @@ package cmd
 
 import (
 	"fmt"
-	"minik8s/pkg/api_obj"
-	"minik8s/pkg/apiserver/config"
-	"minik8s/pkg/network"
+	"os"
+	"strconv"
 	"strings"
+	"time"
 
+	"minik8s/pkg/api_obj"
+	"minik8s/pkg/config/apiserver"
+	"minik8s/pkg/network"
+
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 )
 
@@ -66,20 +71,23 @@ func GetHandler(cmd *cobra.Command, args []string) {
 
 func GetPodHandler(namespace string, name string) {
 	//获取pod(范围取决于两个参数)，整理之后输出必要的信息。
-	//NAME  READY  STATUS  RESTARTS  AGE
-	uri := ""
+	uri := apiserver.API_server_prefix
 	pods := []api_obj.Pod{}
 	if namespace == "" && name == "" {
-		uri = config.API_server_prefix + config.API_get_pods
-		err := network.GetRequestAndParse(uri, &pods)
-		if err != nil {
-			fmt.Printf("[ERR/GetPodHandler] %v\n", err)
-		}
+		uri += apiserver.API_get_pods
 	} else if name == "" {
-		uri = config.API_server_prefix + config.API_get_pods_by_namespace_prefix + namespace
+		uri += apiserver.API_get_pods_by_namespace_prefix + namespace
 	} else {
-		uri = config.API_server_prefix +
+		uri += namespace + "/" + name
 	}
+
+	err := network.GetRequestAndParse(uri, &pods)
+	if err != nil {
+		fmt.Printf("[ERR/GetPodHandler] %v\n", err)
+		return
+	}
+
+	PrintPodHandler(pods)
 }
 
 func GetNodeHandler(namespace string, name string) {
@@ -100,4 +108,19 @@ func GetHpaHandler(namespace string, name string) {
 
 func PrintPodHandler(pods []api_obj.Pod) {
 	//打印相关信息
+	layout := "2000-11-11 11:11:11"
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"NAMESPACE", "NAME", "STATUS", "RESTARTS", "AGE"})
+	for _, pod := range pods {
+		up_time, _ := time.Parse(layout, pod.PodStatus.CreateTime)
+		now_time := time.Now()
+		delta := now_time.Sub(up_time)
+		table.Append([]string{
+			pod.MetaData.NameSpace,
+			pod.MetaData.Name,
+			pod.PodStatus.Phase,
+			strconv.Itoa(int(pod.PodStatus.Restarts)),
+			delta.String()})
+	}
+	table.Render()
 }

@@ -24,7 +24,7 @@ func init() {
 	ApplyCmd.PersistentFlags().StringSliceVarP(&ApplyFiles, "file", "f", []string{}, "put your config files")
 	err := ApplyCmd.MarkPersistentFlagRequired("file")
 	if err != nil {
-		fmt.Println("[ERR] Init Apply Failed.\n", err.Error())
+		fmt.Println("[ERR] Init Apply Failed.", err.Error())
 		return
 	}
 }

@@ -1,4 +1,4 @@
-package config
+package apiserver
 
 import (
 	"time"
@@ -14,6 +14,8 @@ const (
 
 	API_update_pod                   string = "/pods/update"
 	API_add_pod                      string = "/pods/add"
+	API_get_pod_prefix               string = "/pods/"
+	API_get_pod                      string = "/pods/:namespace/:name"
 	API_get_pods                     string = "/pods/getAll"
 	API_get_pods_by_node_prefix      string = "/pods/getByNode"
 	API_get_pods_by_node             string = "/pods/getByNode/:nodename"

@@ -28,6 +28,7 @@ type ServicePort struct {
 	Protocol   string `json:"protocol" yaml:"protocol"`
 	Port       string `json:"port" yaml:"port"`
 	TargetPort string `json:"targetPort" yaml:"targetPort"`
+	NodePort   int32  `json:"nodePort" yaml:"nodePort"`
 }
 
 type ServiceSpec struct {
