@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
+	"minik8s/pkg/config/kubelet"
 	"minik8s/pkg/kubelet/util"
 	"minik8s/pkg/message"
 	"minik8s/pkg/network"
@@ -62,9 +63,9 @@ func (server *Kubelet) register() {
 }
 
 func (server *Kubelet) registerHandler() {
-	server.Router.GET(util.GetMatrix, server.GetPodMatrix)
-	server.Router.DELETE(util.DelPod, server.DelPod)
-	server.Router.POST(util.AddPod, server.AddPod)
+	server.Router.GET(kubelet.GetMatrix, server.GetPodMatrix)
+	server.Router.DELETE(kubelet.DelPod, server.DelPod)
+	server.Router.POST(kubelet.AddPod, server.AddPod)
 }
 
 func InitKubeletDefault() *Kubelet {
