@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"minik8s/pkg/api_obj"
 	"minik8s/pkg/apiserver/config"
+	"minik8s/pkg/network"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -66,8 +68,17 @@ func GetPodHandler(namespace string, name string) {
 	//获取pod(范围取决于两个参数)，整理之后输出必要的信息。
 	//NAME  READY  STATUS  RESTARTS  AGE
 	uri := ""
+	pods := []api_obj.Pod{}
 	if namespace == "" && name == "" {
 		uri = config.API_server_prefix + config.API_get_pods
+		err := network.GetRequestAndParse(uri, &pods)
+		if err != nil {
+			fmt.Printf("[ERR/GetPodHandler] %v\n", err)
+		}
+	} else if name == "" {
+		uri = config.API_server_prefix + config.API_get_pods_by_namespace_prefix + namespace
+	} else {
+		uri = config.API_server_prefix +
 	}
 }
 
@@ -85,4 +96,8 @@ func GetReplicasetHandler(namespace string, name string) {
 
 func GetHpaHandler(namespace string, name string) {
 
+}
+
+func PrintPodHandler(pods []api_obj.Pod) {
+	//打印相关信息
 }
