@@ -1,4 +1,4 @@
-package config
+package apiserver
 
 const (
 	ETCD_node_prefix = "/registry/nodes/"
