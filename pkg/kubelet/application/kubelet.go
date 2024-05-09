@@ -39,7 +39,7 @@ func (server *Kubelet) register() {
 		NodeStatus: api_obj.NodeStatus{
 			Addresses: api_obj.Address{
 				HostName:   hostName,
-				ExternalIp: "",
+				ExternalIp: "10.119.13.178",
 				InternalIp: server.IpAddress,
 			},
 			Condition: api_obj.Ready,
