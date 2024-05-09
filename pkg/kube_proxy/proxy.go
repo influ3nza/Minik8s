@@ -49,7 +49,7 @@ func (m *ProxyManager) CreateService(srv *api_obj.Service) error {
 	mainService := &MainService{
 		Srv: map[string]*Service{},
 	}
-	for _, miniSrv := range srv.Spec.Ports {
+	for idx, miniSrv := range srv.Spec.Ports {
 		label := fmt.Sprintf("%s:%s", srv.Spec.ClusterIP, miniSrv.Port)
 		srcPort, _ := strconv.Atoi(miniSrv.Port)
 		ipvsSrv := &ipvs.Service{
@@ -63,7 +63,7 @@ func (m *ProxyManager) CreateService(srv *api_obj.Service) error {
 
 		err := m.IpvsHandler.NewService(ipvsSrv)
 		if err != nil {
-			fmt.Println("Create Service Failed At line 71 ", err.Error())
+			fmt.Println("Create Service Failed At line 66 ", err.Error())
 			return err
 		}
 		args := []string{"-t", "nat", "-A", "POSTROUTING", "-m", "ipvs", "--vaddr", srv.Spec.ClusterIP, "--vport", miniSrv.Port, "-j", "MASQUERADE"}
@@ -71,15 +71,55 @@ func (m *ProxyManager) CreateService(srv *api_obj.Service) error {
 		if err != nil {
 			fmt.Println("Failed Add iptables At line 79 ", err.Error())
 		}
-
+		fmt.Println(srv.Spec.Type)
 		switch srv.Spec.Type {
-
+		case api_obj.NodePort:
+			{
+				ip, _ := GetLocalIP()
+				var nodePort int32 = 0
+				if miniSrv.NodePort != 0 {
+					nodePort = miniSrv.NodePort
+				} else {
+					p, _ := GetFreePort()
+					nodePort = int32(p)
+				}
+				fmt.Printf("Select NodePort is %d", nodePort)
+				clusterLabel := fmt.Sprintf("%s:%s", srv.Spec.ClusterIP, miniSrv.Port)
+				fmt.Println("Label is ", clusterLabel)
+				cmd := []string{"-t", "nat", "-A", "PREROUTING", "-p", "tcp", "-d", ip, "--dport", fmt.Sprintf("%d", nodePort), "-j", "DNAT", "--to-destination", clusterLabel}
+				_, err = exec.Command("iptables", cmd...).CombinedOutput()
+				fmt.Println("iptables ", cmd)
+				if err != nil {
+					fmt.Println("Failed Add iptables NodePort At line 91 ", err.Error())
+				}
+				mySrv := &Service{
+					Service:   ipvsSrv,
+					EndPoints: map[string]*ipvs.Destination{},
+					NodePort:  nodePort,
+				}
+				srv.Spec.Ports[idx].NodePort = nodePort
+				mainService.Srv[label] = mySrv
+			}
+		case api_obj.ClusterIP:
+			{
+				mySrv := &Service{
+					Service:   ipvsSrv,
+					EndPoints: map[string]*ipvs.Destination{},
+					NodePort:  0,
+				}
+				mainService.Srv[label] = mySrv
+			}
+		default:
+			{
+				mySrv := &Service{
+					Service:   ipvsSrv,
+					EndPoints: map[string]*ipvs.Destination{},
+					NodePort:  0,
+				}
+				mainService.Srv[label] = mySrv
+			}
 		}
-		mySrv := &Service{
-			Service:   ipvsSrv,
-			EndPoints: map[string]*ipvs.Destination{},
-		}
-		mainService.Srv[label] = mySrv
+		fmt.Println("Here")
 	}
 
 	m.Services[srv.MetaData.UUID] = mainService
@@ -92,36 +132,51 @@ func (m *ProxyManager) CreateService(srv *api_obj.Service) error {
 	return err
 }
 
-func (m *ProxyManager) DelService(uuid string, ip string) error {
-	mainSrc := m.Services[uuid]
+func (m *ProxyManager) DelService(srv *api_obj.Service) error {
+	mainSrc := m.Services[srv.MetaData.UUID]
 	if mainSrc == nil {
 		return fmt.Errorf("error No Such Service")
 	}
 
 	var e error
-	for _, srv := range mainSrc.Srv {
-		if realIp := srv.Service.Address.String(); realIp != ip {
-			return fmt.Errorf("real srv ip %s is not equal to ip %s", realIp, ip)
+	for _, miniSrv := range mainSrc.Srv {
+		if realIp := miniSrv.Service.Address.String(); realIp != srv.Spec.ClusterIP {
+			return fmt.Errorf("real srv ip %s is not equal to ip %s", realIp, srv.Spec.ClusterIP)
 		}
 
-		if err := m.delService(srv); err != nil {
+		if err := m.delService(miniSrv); err != nil {
 			e = err
 			fmt.Println("Del Srv Failed ", err.Error())
 		}
-		args := []string{"-t", "nat", "-D", "POSTROUTING", "-m", "ipvs", "--vaddr", ip, "--vport", strconv.Itoa(int(srv.Service.Port)), "-j", "MASQUERADE"}
+		args := []string{"-t", "nat", "-D", "POSTROUTING", "-m", "ipvs", "--vaddr", srv.Spec.ClusterIP, "--vport", strconv.Itoa(int(miniSrv.Service.Port)), "-j", "MASQUERADE"}
 		_, err := exec.Command("iptables", args...).CombinedOutput()
 		if err != nil {
-			fmt.Println("Failed Add iptables At line 107 ", err.Error())
+			fmt.Println("Failed Add iptables At line 150 ", err.Error())
+		}
+
+		switch srv.Spec.Type {
+		case api_obj.NodePort:
+			{
+				ip, _ := GetLocalIP()
+				clusterLabel := fmt.Sprintf("%s:%d", srv.Spec.ClusterIP, miniSrv.Service.Port)
+				args = []string{"-t", "nat", "-D", "PREROUTING", "-p", "tcp", "-d", ip, "--dport", fmt.Sprintf("%d", miniSrv.NodePort), "-j", "DNAT", "--to-destination", clusterLabel}
+				_, err = exec.Command("iptables", args...).CombinedOutput()
+				if err != nil {
+					fmt.Println("Failed Add iptables At line 161 ", err.Error())
+				}
+			}
+		case api_obj.ClusterIP:
+		default:
 		}
 	}
 
-	args := []string{"addr", "del", ip + "/24", "dev", "flannel.1"}
+	args := []string{"addr", "del", srv.Spec.ClusterIP + "/24", "dev", "flannel.1"}
 	_, err := exec.Command("ip", args...).CombinedOutput()
 	if err != nil {
 		fmt.Println("Error Bind Net At Line 109 ", err.Error())
 	}
 
-	delete(m.Services, uuid)
+	delete(m.Services, srv.MetaData.UUID)
 	return e
 }
 
@@ -154,12 +209,14 @@ func (m *ProxyManager) AddEndPoint(ep *api_obj.Endpoint) error {
 		return fmt.Errorf("no Such Service UUID %s ip:port %s", ep.SrvUUID, label)
 	}
 
-	var w int
+	if ep.Weight == 0 {
+		ep.Weight = 1
+	}
 
 	dst := &ipvs.Destination{
-		Address:       net.IP(ep.PodIP),
+		Address:       net.ParseIP(ep.PodIP),
 		Port:          uint16(ep.PodPort),
-		Weight:        w,
+		Weight:        ep.Weight,
 		AddressFamily: nl.FAMILY_V4,
 	}
 	dstLabel := fmt.Sprintf("%s:%d", ep.PodIP, ep.PodPort)
@@ -183,7 +240,7 @@ func (m *ProxyManager) DelEndPoint(ep *api_obj.Endpoint) error {
 		return fmt.Errorf("no Such Service UUID %s ip:port %s", ep.SrvUUID, label)
 	}
 
-	dstLabel := fmt.Sprintf("%s:%s", ep.PodIP, ep.PodPort)
+	dstLabel := fmt.Sprintf("%s:%d", ep.PodIP, ep.PodPort)
 	dst := realSrv.EndPoints[dstLabel]
 	if dst == nil {
 		return fmt.Errorf("no Such EndPoint Srv is %s, Ep is %s", label, dstLabel)

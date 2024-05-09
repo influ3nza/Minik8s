@@ -41,19 +41,22 @@ func main() {
 		Spec: api_obj.ServiceSpec{
 			Type:      api_obj.NodePort,
 			Selector:  map[string]string{},
-			ClusterIP: "10.20.0.1",
+			ClusterIP: "172.20.0.1",
 			Ports: []api_obj.ServicePort{
 				{
 					Name:       "testname",
 					Protocol:   "tcp",
-					Port:       "80",
-					TargetPort: "80",
-				}, {
-					Name:       "testname",
-					Protocol:   "tcp",
-					Port:       "890",
-					TargetPort: "890",
+					Port:       "7840",
+					TargetPort: "7840",
+					NodePort:   30000,
 				},
+				//}, {
+				//	Name:       "testname",
+				//	Protocol:   "tcp",
+				//	Port:       "890",
+				//	TargetPort: "890",
+				//	NodePort:   0,
+				//},
 			},
 		},
 		Status: api_obj.ServiceStatus{},
@@ -73,7 +76,50 @@ func main() {
 	for _, r := range res {
 		fmt.Println("Ip: ", r.Address, " Port: ", r.Port)
 	}
-	err_ := manager.DelService(serv.MetaData.UUID, serv.Spec.ClusterIP)
+
+	//out, err := exec.Command("ipvsadm", "-Ln").CombinedOutput()
+	//fmt.Printf("%s\n", string(out))
+	//
+	//out, err = exec.Command("iptables-save").CombinedOutput()
+	//fmt.Printf("%s\n", string(out))
+	//
+	//out, err = exec.Command("ip", "addr").CombinedOutput()
+	//fmt.Printf("%s\n", string(out))
+
+	ep := &api_obj.Endpoint{
+		ApiVersion: "v1",
+		Kind:       "ep",
+		MetaData: obj_inner.ObjectMeta{
+			Name:        "testep",
+			NameSpace:   "test",
+			Labels:      nil,
+			Annotations: nil,
+			UUID:        "",
+		},
+		SrvUUID: "TESTUUID",
+		SrvIP:   "172.20.0.1",
+		SrvPort: 7840,
+		PodUUID: "UUID",
+		PodIP:   "10.2.3.3",
+		PodPort: 80,
+		Weight:  2,
+	}
+	err = manager.AddEndPoint(ep)
+	out, err := exec.Command("ipvsadm", "-Ln").CombinedOutput()
+	fmt.Printf("%s\n", string(out))
+
+	out, err = exec.Command("curl", "172.20.0.1:7840").CombinedOutput()
+	fmt.Printf("%s\n", string(out))
+
+	err = manager.DelEndPoint(ep)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	out, err = exec.Command("ipvsadm", "-Ln").CombinedOutput()
+	fmt.Printf("%s\n", string(out))
+
+	//time.Sleep(60 * time.Second)
+	err_ := manager.DelService(serv)
 	if err_ != nil {
 		fmt.Println("delete failed at main line 73, ", err_.Error())
 		return
