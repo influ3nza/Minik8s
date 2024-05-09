@@ -86,7 +86,19 @@ func (m *ProxyManager) CreateService(srv *api_obj.Service) error {
 		fmt.Println("Error Bind Net At Line 88 ", err.Error())
 	}
 
-	return err
+	switch srv.Spec.Type {
+	case api_obj.NodePort:
+		{
+			ipv4, _ := GetLocalIP()
+
+		}
+	case api_obj.ClusterIP:
+		{
+			return err
+		}
+	default:
+		return err
+	}
 }
 
 func (m *ProxyManager) DelService(uuid string, ip string) error {
@@ -151,16 +163,15 @@ func (m *ProxyManager) AddEndPoint(ep *api_obj.Endpoint) error {
 		return fmt.Errorf("no Such Service UUID %s ip:port %s", ep.SrvUUID, label)
 	}
 
-	port, _ := strconv.Atoi(ep.PodPort)
 	var w int
 
 	dst := &ipvs.Destination{
 		Address:       net.IP(ep.PodIP),
-		Port:          uint16(port),
+		Port:          uint16(ep.PodPort),
 		Weight:        w,
 		AddressFamily: nl.FAMILY_V4,
 	}
-	dstLabel := fmt.Sprintf("%s:%d", ep.PodIP, port)
+	dstLabel := fmt.Sprintf("%s:%d", ep.PodIP, ep.PodPort)
 	err := m.IpvsHandler.NewDestination(realSrv.Service, dst)
 	if err != nil {
 		return fmt.Errorf("create EndPoint Failed: %s", err.Error())
