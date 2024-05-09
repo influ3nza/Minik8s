@@ -72,6 +72,9 @@ func (m *ProxyManager) CreateService(srv *api_obj.Service) error {
 			fmt.Println("Failed Add iptables At line 79 ", err.Error())
 		}
 
+		switch srv.Spec.Type {
+
+		}
 		mySrv := &Service{
 			Service:   ipvsSrv,
 			EndPoints: map[string]*ipvs.Destination{},
@@ -86,19 +89,7 @@ func (m *ProxyManager) CreateService(srv *api_obj.Service) error {
 		fmt.Println("Error Bind Net At Line 88 ", err.Error())
 	}
 
-	switch srv.Spec.Type {
-	case api_obj.NodePort:
-		{
-			ipv4, _ := GetLocalIP()
-
-		}
-	case api_obj.ClusterIP:
-		{
-			return err
-		}
-	default:
-		return err
-	}
+	return err
 }
 
 func (m *ProxyManager) DelService(uuid string, ip string) error {
