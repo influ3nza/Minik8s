@@ -23,6 +23,19 @@ func InitEnv() error {
 	return nil
 }
 
+func Run() {
+	if err := InitEnv(); err != nil {
+		fmt.Println("Init Env Failed")
+		return
+	}
+	m := kube_proxy.InitManager()
+	if m == nil {
+		fmt.Println("Init Manager Failed")
+		return
+	}
+	go m.Consumer.Consume([]string{"proxy"}, m.HandleMsg)
+}
+
 func main() {
 	if err := InitEnv(); err != nil {
 		return
@@ -46,8 +59,8 @@ func main() {
 				{
 					Name:       "testname",
 					Protocol:   "tcp",
-					Port:       "7840",
-					TargetPort: "7840",
+					Port:       7840,
+					TargetPort: 7840,
 					NodePort:   30000,
 				},
 				//}, {

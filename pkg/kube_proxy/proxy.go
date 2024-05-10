@@ -147,8 +147,9 @@ func (m *ProxyManager) DelService(srv *api_obj.Service) error {
 			e = err
 			fmt.Println("Del Srv Failed ", err.Error())
 		}
-		args := []string{"-t", "nat", "-D", "POSTROUTING", "-m", "ipvs", "--vaddr", srv.Spec.ClusterIP, "--vport", strconv.Itoa(int(miniSrv.Service.Port)), "-j", "MASQUERADE"}
+		args := []string{"-t", "nat", "-D", "POSTROUTING", "-m", "ipvs", "--vaddr", srv.Spec.ClusterIP, "--vport", fmt.Sprintf("%d", miniSrv.Service.Port), "-j", "MASQUERADE"}
 		_, err := exec.Command("iptables", args...).CombinedOutput()
+		fmt.Println("iptables ", args)
 		if err != nil {
 			fmt.Println("Failed Add iptables At line 150 ", err.Error())
 		}
