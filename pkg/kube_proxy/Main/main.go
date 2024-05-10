@@ -121,8 +121,8 @@ func main() {
 	out, err := exec.Command("ipvsadm", "-Ln").CombinedOutput()
 	fmt.Printf("%s\n", string(out))
 
-	out, err = exec.Command("curl", "172.20.0.1:7840").CombinedOutput()
-	fmt.Printf("%s\n", string(out))
+	//out, err = exec.Command("curl", "172.20.0.1:7840").CombinedOutput()
+	//fmt.Printf("%s\n", string(out))
 
 	err = manager.DelEndPoint(ep)
 	if err != nil {
