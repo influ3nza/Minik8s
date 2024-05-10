@@ -5,23 +5,24 @@ import (
 	"sync"
 )
 
+var RestartingLock = sync.Map{}
 var manageLocks = sync.RWMutex{}
 var podLocks = sync.Map{}
 
-func generateKey(podName string, namespace string) string {
+func GenerateKey(podName string, namespace string) string {
 	return fmt.Sprintf("%s:%s", namespace, podName)
 }
 
 func RegisterPod(podName string, namespace string) {
 	manageLocks.Lock()
 	mtx := &sync.RWMutex{}
-	key := generateKey(podName, namespace)
+	key := GenerateKey(podName, namespace)
 	podLocks.Store(key, mtx)
 	manageLocks.Unlock()
 }
 
 func UnRegisterPod(podName string, namespace string) int {
-	key := generateKey(podName, namespace)
+	key := GenerateKey(podName, namespace)
 	manageLocks.Lock()
 	defer manageLocks.Unlock()
 	mutex, ok := podLocks.Load(key)
@@ -45,7 +46,7 @@ func UnRegisterPod(podName string, namespace string) int {
 }
 
 func Lock(podName string, namespace string) bool {
-	key := generateKey(podName, namespace)
+	key := GenerateKey(podName, namespace)
 	manageLocks.RLock()
 	mutex, ok := podLocks.Load(key)
 	defer manageLocks.RUnlock()
@@ -58,7 +59,7 @@ func Lock(podName string, namespace string) bool {
 }
 
 func UnLock(podName string, namespace string) bool {
-	key := generateKey(podName, namespace)
+	key := GenerateKey(podName, namespace)
 	manageLocks.RLock()
 	mutex, ok := podLocks.Load(key)
 	defer manageLocks.RUnlock()
@@ -71,7 +72,7 @@ func UnLock(podName string, namespace string) bool {
 }
 
 func RLock(podName string, namespace string) bool {
-	key := generateKey(podName, namespace)
+	key := GenerateKey(podName, namespace)
 	manageLocks.RLock()
 	mutex, ok := podLocks.Load(key)
 	defer manageLocks.RUnlock()
@@ -84,7 +85,7 @@ func RLock(podName string, namespace string) bool {
 }
 
 func RUnLock(podName string, namespace string) bool {
-	key := generateKey(podName, namespace)
+	key := GenerateKey(podName, namespace)
 	manageLocks.RLock()
 	mutex, ok := podLocks.Load(key)
 	defer manageLocks.RUnlock()

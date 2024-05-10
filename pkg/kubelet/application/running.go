@@ -99,6 +99,7 @@ func (server *Kubelet) DelPod(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": "[kubectl/DelPod] deleting pod",
 	})
+	key := util.GenerateKey(name, namespace)
 
 	go func() {
 		var ok = 1
@@ -106,6 +107,9 @@ func (server *Kubelet) DelPod(c *gin.Context) {
 			if ok = util.UnRegisterPod(name, namespace); ok == 0 || ok == 2 {
 				break
 			}
+		}
+		if _, l := util.RestartingLock.Load(key); l {
+			util.RestartingLock.Delete(l)
 		}
 		msg := &message.Message{
 			Type: message.POD_DELETE,
@@ -162,7 +166,7 @@ func (server *Kubelet) GetPodMatrix(c *gin.Context) {
 
 func (server *Kubelet) GetPodStatus() {
 	for {
-		time.Sleep(2 * time.Second)
+		time.Sleep(5 * time.Second)
 		request, err := network.GetRequest(server.ApiServerAddress + "/pods/getAll")
 		if err != nil {
 			fmt.Println("Send Get RequestErr ", err.Error())
@@ -181,19 +185,105 @@ func (server *Kubelet) GetPodStatus() {
 				fmt.Println("Pod not Exist ", "Name is : ", pod.MetaData.Name, " Ns is : ", pod.MetaData.NameSpace)
 				continue
 			}
+
+			key := util.GenerateKey(pod.MetaData.Name, pod.MetaData.NameSpace)
+			if _, ok := util.RestartingLock.Load(key); ok {
+				continue
+			}
+
 			res := pod_manager.MonitorPodContainers(pod.MetaData.Name, pod.MetaData.NameSpace)
 			if res != obj_inner.Running {
-				pod.PodStatus.Phase = res
-				podJson, _ := json.Marshal(*pod)
-				msg := &message.Message{
-					Type:    message.POD_UPDATE,
-					Content: string(podJson),
-					Backup:  "",
-					Backup2: "",
+				switch {
+				case res == obj_inner.Succeeded || res == obj_inner.Unknown:
+					{
+						pod.PodStatus.Phase = res
+						podJson, _ := json.Marshal(*pod)
+						msg := &message.Message{
+							Type:    message.POD_UPDATE,
+							Content: string(podJson),
+							Backup:  "",
+							Backup2: "",
+						}
+						server.Producer.Produce(message.TOPIC_ApiServer_FromNode, msg)
+					}
+				case res == obj_inner.Failed || res == obj_inner.Terminating || res == obj_inner.Pending:
+					{
+						pod.PodStatus.Phase = obj_inner.Restarting
+						podJson, _ := json.Marshal(pod)
+						util.RestartingLock.Store(key, 1)
+						go server.Restart(*pod, key)
+						msg := &message.Message{
+							Type:    message.POD_UPDATE,
+							Content: string(podJson),
+							Backup:  "",
+							Backup2: "",
+						}
+						server.Producer.Produce(message.TOPIC_ApiServer_FromNode, msg)
+					}
 				}
-				server.Producer.Produce(message.TOPIC_ApiServer_FromNode, msg)
 			}
 			util.RUnLock(pod.MetaData.Name, pod.MetaData.NameSpace)
 		}
 	}
+}
+
+func (server *Kubelet) Restart(pod_ api_obj.Pod, key_ string) {
+	i := 1
+	for ; i < 4; i++ {
+		var t = int64(i * 5)
+		time.Sleep(time.Duration(t * 1000000000))
+		if util.Lock(pod_.MetaData.Name, pod_.MetaData.NameSpace) {
+			err_ := server.PodRestart(&pod_)
+			if err_ != nil {
+				if i == 3 {
+					pod_.PodStatus.Phase = obj_inner.Failed
+					podJson_, _ := json.Marshal(pod_)
+					msg_ := &message.Message{
+						Type:    message.POD_UPDATE,
+						Content: string(podJson_),
+						Backup:  "",
+						Backup2: "",
+					}
+					server.Producer.Produce(message.TOPIC_ApiServer_FromNode, msg_)
+					util.RestartingLock.Delete(key_)
+					util.UnLock(pod_.MetaData.Name, pod_.MetaData.NameSpace)
+					return
+				} else {
+					util.UnLock(pod_.MetaData.Name, pod_.MetaData.NameSpace)
+					continue
+				}
+			} else {
+				pod_.PodStatus.Phase = obj_inner.Running
+				podJson_, _ := json.Marshal(pod_)
+				msg_ := &message.Message{
+					Type:    message.POD_UPDATE,
+					Content: string(podJson_),
+					Backup:  "",
+					Backup2: "",
+				}
+				server.Producer.Produce(message.TOPIC_ApiServer_FromNode, msg_)
+				util.RestartingLock.Delete(key_)
+				util.UnLock(pod_.MetaData.Name, pod_.MetaData.NameSpace)
+				return
+			}
+		} else {
+			if _, ok := util.RestartingLock.Load(key_); ok {
+				util.RestartingLock.Delete(key_)
+			}
+			return
+		}
+	}
+}
+
+func (server *Kubelet) PodRestart(pod *api_obj.Pod) error {
+	err := pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace)
+	if err != nil {
+		return err
+	}
+
+	err = pod_manager.AddPod(pod)
+	if err != nil {
+		return err
+	}
+	return nil
 }
