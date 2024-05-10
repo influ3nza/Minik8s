@@ -9,14 +9,14 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"minik8s/pkg/api_obj"
-	"minik8s/pkg/apiserver/config"
 	"minik8s/tools"
+	"minik8s/pkg/config/apiserver"
 )
 
 func (s *ApiServer) GetNodes(c *gin.Context) {
 	fmt.Printf("[apiserver/GetNodes] Try to get all nodes.\n")
 
-	res, err := s.EtcdWrap.GetByPrefix(config.ETCD_node_prefix)
+	res, err := s.EtcdWrap.GetByPrefix(apiserver.ETCD_node_prefix)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "[apiserver/GetNodes] Failed to get nodes, " + err.Error(),
@@ -49,7 +49,7 @@ func (s *ApiServer) GetNode(c *gin.Context) {
 		})
 		return
 	} else {
-		res, err := s.EtcdWrap.Get(config.ETCD_node_prefix + name)
+		res, err := s.EtcdWrap.Get(apiserver.ETCD_node_prefix + name)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "[apiserver/GetNode] Failed to get node, " + err.Error(),
@@ -105,7 +105,7 @@ func (s *ApiServer) AddNode(c *gin.Context) {
 
 	fmt.Printf("[apiserver/addNode] Node name: %s\n", node_name)
 
-	res, err := s.EtcdWrap.Get(config.ETCD_node_prefix + node_name)
+	res, err := s.EtcdWrap.Get(apiserver.ETCD_node_prefix + node_name)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "[msgHandler/addNode] Get node failed, " + err.Error(),
@@ -136,7 +136,7 @@ func (s *ApiServer) AddNode(c *gin.Context) {
 		return
 	}
 
-	err = s.EtcdWrap.Put(config.ETCD_node_prefix+node_name, node_json)
+	err = s.EtcdWrap.Put(apiserver.ETCD_node_prefix+node_name, node_json)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "[msgHandler/addNode] Failed to write in etcd, " + err.Error(),
@@ -148,7 +148,7 @@ func (s *ApiServer) AddNode(c *gin.Context) {
 	nodeaddr := node.GetInternelIp() + ":" + strconv.Itoa(int(node.NodeStatus.Addresses.Port))
 	s.NodeIPMap[node_name] = nodeaddr
 
-	e_key := config.ETCD_node_ip_prefix + node.NodeMetadata.Name
+	e_key := apiserver.ETCD_node_ip_prefix + node.NodeMetadata.Name
 	err = s.EtcdWrap.Put(e_key, []byte(nodeaddr))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

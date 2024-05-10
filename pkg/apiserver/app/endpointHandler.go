@@ -8,8 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"minik8s/pkg/api_obj"
-	"minik8s/pkg/apiserver/config"
 	"minik8s/tools"
+	"minik8s/pkg/config/apiserver"
 )
 
 func (s *ApiServer) AddEndpoint(c *gin.Context) {
@@ -25,7 +25,7 @@ func (s *ApiServer) AddEndpoint(c *gin.Context) {
 	}
 
 	//存入etcd
-	e_key := config.ETCD_endpoint_prefix + new_ep.MetaData.NameSpace + "/" + new_ep.MetaData.Name
+	e_key := apiserver.ETCD_endpoint_prefix + new_ep.MetaData.NameSpace + "/" + new_ep.MetaData.Name
 	ep_str, err := json.Marshal(new_ep)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -64,7 +64,7 @@ func (s *ApiServer) DeleteEndpoints(c *gin.Context) {
 		return
 	}
 
-	err := s.EtcdWrap.DeleteByPrefix(config.ETCD_endpoint_prefix + namespace + "/" + srvname)
+	err := s.EtcdWrap.DeleteByPrefix(apiserver.ETCD_endpoint_prefix + namespace + "/" + srvname)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "[ERR/handler/DeleteEndpoints] Failed to delete from etcd, " + err.Error(),
@@ -92,7 +92,7 @@ func (s *ApiServer) DeleteEndpoint(c *gin.Context) {
 
 	fmt.Printf("[apiserver/DeleteEndpoint] namespace: %s, name: %s\n", name, namespace)
 
-	err := s.EtcdWrap.Del(config.ETCD_endpoint_prefix + namespace + "/" + name)
+	err := s.EtcdWrap.Del(apiserver.ETCD_endpoint_prefix + namespace + "/" + name)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "[ERR/handler/DeleteEndpoint] Failed to delete from etcd, " + err.Error(),

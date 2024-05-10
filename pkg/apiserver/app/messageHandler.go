@@ -6,7 +6,7 @@ import (
 
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
-	"minik8s/pkg/apiserver/config"
+	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/message"
 )
 
@@ -75,7 +75,7 @@ func (s *ApiServer) HandlePodUpdate(msg string) {
 	}
 
 	//更新pod状态到etcd
-	e_key := config.ETCD_pod_prefix + pod.MetaData.NameSpace + "/" + pod.MetaData.Name
+	e_key := apiserver.ETCD_pod_prefix + pod.MetaData.NameSpace + "/" + pod.MetaData.Name
 	//如果要创建新的pod则在这里创建。
 	if needRestart {
 		err = s.EtcdWrap.Del(e_key)

@@ -7,8 +7,8 @@ import (
 
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
-	"minik8s/pkg/apiserver/config"
 	"minik8s/pkg/network"
+	"minik8s/pkg/config/apiserver"
 )
 
 func (s *ApiServer) PodNeedRestart(pod api_obj.Pod) {
@@ -29,7 +29,7 @@ func (s *ApiServer) PodNeedRestart(pod api_obj.Pod) {
 	}
 
 	//再次模拟一个pod创建请求。
-	uri := config.API_server_prefix + config.API_add_pod
+	uri := apiserver.API_server_prefix + apiserver.API_add_pod
 	_, err = network.PostRequest(uri, pod_str)
 	if err != nil {
 		fmt.Printf("[ERR/Apiserver/PodNeedRestart] Failed to POST request, %v.\n", err)
@@ -39,7 +39,7 @@ func (s *ApiServer) PodNeedRestart(pod api_obj.Pod) {
 }
 
 func (s *ApiServer) UpdatePodPhase(pod api_obj.Pod) (string, error) {
-	e_key := config.ETCD_pod_prefix + pod.MetaData.NameSpace + "/" + pod.MetaData.Name
+	e_key := apiserver.ETCD_pod_prefix + pod.MetaData.NameSpace + "/" + pod.MetaData.Name
 	res, err := s.EtcdWrap.Get(e_key)
 	if err != nil {
 		fmt.Printf("[ERR/Apiserver/UpdatePodPhase] Failed to get from etcd, %v.\n", err)

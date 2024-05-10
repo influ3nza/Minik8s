@@ -6,7 +6,7 @@ import (
 
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
-	"minik8s/pkg/apiserver/config"
+	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/controller/utils"
 	"minik8s/pkg/message"
 	"minik8s/pkg/network"
@@ -24,7 +24,7 @@ func (ec *EndpointController) PrintHandlerWarning() {
 
 func (ec *EndpointController) OnAddService(pack string) {
 	//拿到所有的pod
-	uri := config.API_server_prefix + config.API_get_pods
+	uri := apiserver.API_server_prefix + apiserver.API_get_pods
 	dataStr, err := network.GetRequest(uri)
 	if err != nil {
 		fmt.Printf("[ERR/EndpointController/OnAddService] GET request failed, %v.\n", err)
@@ -106,7 +106,7 @@ func (ec *EndpointController) OnCreatePod(pack string) {
 	}
 
 	//拿到所有service
-	uri := config.API_server_prefix + config.API_get_services
+	uri := apiserver.API_server_prefix + apiserver.API_get_services
 	dataStr, err := network.GetRequest(uri)
 	if err != nil {
 		fmt.Printf("[ERR/EndpointController/OnCreatePod] GET request failed, %v.\n", err)
@@ -157,7 +157,7 @@ func (ec *EndpointController) OnDeletePod(pack string) {
 	}
 
 	//拿到所有service
-	uri := config.API_server_prefix + config.API_get_services
+	uri := apiserver.API_server_prefix + apiserver.API_get_services
 	dataStr, err := network.GetRequest(uri)
 	if err != nil {
 		fmt.Printf("[ERR/EndpointController/OnDeletePod] GET request failed, %v.\n", err)

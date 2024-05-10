@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
-	"minik8s/pkg/apiserver/config"
+	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/network"
 )
 
@@ -46,7 +46,7 @@ func CreateEndpoint(srv api_obj.Service, pod api_obj.Pod) error {
 
 		fmt.Printf("[Controller/Utils/Endpoint] Try to create endpoint %s.\n", ep.MetaData.Name)
 
-		uri := config.API_server_prefix + config.API_add_endpoint
+		uri := apiserver.API_server_prefix + apiserver.API_add_endpoint
 		_, err = network.PostRequest(uri, ep_str)
 		if err != nil {
 			fmt.Printf("[ERR/Controller/Utils/Endpoint] GET request failed, %v.\n", err)
@@ -68,9 +68,9 @@ func DeleteEndpoint(batch bool, suffix string) error {
 	uri := ""
 
 	if batch {
-		uri = config.API_server_prefix + config.API_delete_endpoints_prefix + suffix
+		uri = apiserver.API_server_prefix + apiserver.API_delete_endpoints_prefix + suffix
 	} else {
-		uri = config.API_server_prefix + config.API_delete_endpoint_prefix + suffix
+		uri = apiserver.API_server_prefix + apiserver.API_delete_endpoint_prefix + suffix
 	}
 
 	_, err := network.DelRequest(uri)

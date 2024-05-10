@@ -6,10 +6,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"minik8s/pkg/apiserver/config"
 	"minik8s/pkg/etcd"
 	"minik8s/pkg/message"
 	"minik8s/tools"
+	"minik8s/pkg/config/apiserver"
 )
 
 type ApiServer struct {
@@ -22,7 +22,7 @@ type ApiServer struct {
 }
 
 // 在进行测试/实际运行时，第1步调用此函数。
-func CreateApiServerInstance(c *config.ServerConfig) (*ApiServer, error) {
+func CreateApiServerInstance(c *apiserver.ServerConfig) (*ApiServer, error) {
 	router := gin.Default()
 	router.SetTrustedProxies(c.TrustedProxy)
 
@@ -60,21 +60,21 @@ func serverHelloWorld(c *gin.Context) {
 func (s *ApiServer) Bind() {
 	s.router.GET("/hello", serverHelloWorld)
 
-	s.router.GET(config.API_get_nodes, s.GetNodes)
-	s.router.GET(config.API_get_node, s.GetNode)
-	s.router.POST(config.API_add_node, s.AddNode)
+	s.router.GET(apiserver.API_get_nodes, s.GetNodes)
+	s.router.GET(apiserver.API_get_node, s.GetNode)
+	s.router.POST(apiserver.API_add_node, s.AddNode)
 
-	s.router.GET(config.API_get_pods, s.GetPods)
-	s.router.POST(config.API_update_pod, s.UpdatePod)
-	s.router.POST(config.API_add_pod, s.AddPod)
-	s.router.GET(config.API_get_pods_by_node, s.GetPodsByNode)
+	s.router.GET(apiserver.API_get_pods, s.GetPods)
+	s.router.POST(apiserver.API_update_pod, s.UpdatePod)
+	s.router.POST(apiserver.API_add_pod, s.AddPod)
+	s.router.GET(apiserver.API_get_pods_by_node, s.GetPodsByNode)
 
-	s.router.POST(config.API_add_service, s.AddService)
-	s.router.GET(config.API_get_services, s.GetServices)
+	s.router.POST(apiserver.API_add_service, s.AddService)
+	s.router.GET(apiserver.API_get_services, s.GetServices)
 
-	s.router.POST(config.API_add_endpoint, s.AddEndpoint)
-	s.router.DELETE(config.API_delete_endpoints, s.DeleteEndpoints)
-	s.router.DELETE(config.API_delete_endpoint, s.DeleteEndpoint)
+	s.router.POST(apiserver.API_add_endpoint, s.AddEndpoint)
+	s.router.DELETE(apiserver.API_delete_endpoints, s.DeleteEndpoints)
+	s.router.DELETE(apiserver.API_delete_endpoint, s.DeleteEndpoint)
 }
 
 // 在进行测试/实际运行时，第2步调用此函数。默认端口为8080

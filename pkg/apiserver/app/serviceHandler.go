@@ -8,15 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"minik8s/pkg/api_obj"
-	"minik8s/pkg/apiserver/config"
 	"minik8s/pkg/message"
 	"minik8s/tools"
+	"minik8s/pkg/config/apiserver"
 )
 
 func (s *ApiServer) GetServices(c *gin.Context) {
 	fmt.Printf("[apiserver/GetServices] Try to add all services.\n")
 
-	res, err := s.EtcdWrap.GetByPrefix(config.ETCD_service_prefix)
+	res, err := s.EtcdWrap.GetByPrefix(apiserver.ETCD_service_prefix)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "[apiserver/GetServices] Failed to get services, " + err.Error(),
@@ -63,7 +63,7 @@ func (s *ApiServer) AddService(c *gin.Context) {
 
 	fmt.Printf("[apiserver/AddService] Service name: %s\n", service_name)
 
-	e_key := config.ETCD_service_prefix + service_namespace + "/" + service_name
+	e_key := apiserver.ETCD_service_prefix + service_namespace + "/" + service_name
 	res, err := s.EtcdWrap.Get(e_key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -107,7 +107,7 @@ func (s *ApiServer) AddService(c *gin.Context) {
 		Type:    message.SRV_CREATE,
 		Content: string(service_str),
 	}
-	
+
 	s.Producer.Produce(message.TOPIC_EndpointController, msg)
 
 	//返回200

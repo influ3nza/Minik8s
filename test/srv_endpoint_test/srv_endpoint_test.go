@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"minik8s/pkg/apiserver/app"
-	"minik8s/pkg/apiserver/config"
+	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/controller"
 	"minik8s/pkg/kubectl/api"
 	"minik8s/tools"
@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 	tools.Test_enabled = true
 
 	var err error
-	apiServerDummy, err = app.CreateApiServerInstance(config.DefaultServerConfig())
+	apiServerDummy, err = app.CreateApiServerInstance(apiserver.DefaultServerConfig())
 	if err != nil {
 		_ = fmt.Errorf("[ERR/srv_endpoint_test] Failed to create apiserver instance\n")
 		return
