@@ -36,6 +36,33 @@ func GetRequest(uri string) (string, error) {
 	return dataStr, err
 }
 
+func GetRequestAndParse(uri string, pack interface{}) error {
+	resp, err := http.Get(uri)
+
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	var result map[string]interface{}
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&result)
+
+	data := result["data"]
+	if data != nil {
+		dataStr := fmt.Sprint(data)
+		return json.Unmarshal([]byte(dataStr), pack)
+	}
+
+	errs := result["error"]
+	if errs != nil {
+		return errors.New(fmt.Sprint(errs))
+	}
+
+	return errors.New("[ERR/GetRequestAndParse] Shall not reach here")
+}
+
 func PostRequest(uri string, req_body []byte) (string, error) {
 	body := bytes.NewReader(req_body)
 	resp, err := http.Post(uri, "application/json", body)
@@ -63,6 +90,34 @@ func PostRequest(uri string, req_body []byte) (string, error) {
 	}
 
 	return dataStr, err
+}
+
+func PostRequestAndParse(uri string, req_body []byte, pack interface{}) error {
+	body := bytes.NewReader(req_body)
+	resp, err := http.Post(uri, "application/json", body)
+
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	var result map[string]interface{}
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&result)
+
+	data := result["data"]
+	if data != nil {
+		dataStr := fmt.Sprint(data)
+		return json.Unmarshal([]byte(dataStr), pack)
+	}
+
+	errs := result["error"]
+	if errs != nil {
+		return errors.New(fmt.Sprint(errs))
+	}
+
+	return errors.New("[ERR/PostRequestAndParse] Shall not reach here")
 }
 
 func DelRequest(uri string) (string, error) {
