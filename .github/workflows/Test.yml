@@ -1,0 +1,33 @@
+name: Test in pkg
+
+on: [push, pull_request]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.22.x']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Install dependencies
+        run: |
+          go mod init minik8s
+          go mod tidy
+      - name: Install softwares
+        run: |
+          sudo chmod 777 ./tools/setup_scripts/setup.sh
+          sudo ./tools/setup_scripts/setup.sh
+
+      - name: Build
+        run: go build ./pkg/kube_proxy/Main/main.go
+
+      - name: Test
+        run: ./main
