@@ -50,12 +50,11 @@ func (m *ProxyManager) CreateService(srv *api_obj.Service) error {
 		Srv: map[string]*Service{},
 	}
 	for idx, miniSrv := range srv.Spec.Ports {
-		label := fmt.Sprintf("%s:%s", srv.Spec.ClusterIP, miniSrv.Port)
-		srcPort, _ := strconv.Atoi(miniSrv.Port)
+		label := fmt.Sprintf("%s:%d", srv.Spec.ClusterIP, miniSrv.Port)
 		ipvsSrv := &ipvs.Service{
 			Address:       net.ParseIP(srv.Spec.ClusterIP),
 			Protocol:      unix.IPPROTO_TCP,
-			Port:          uint16(srcPort),
+			Port:          uint16(miniSrv.Port),
 			SchedName:     ipvs.RoundRobin,
 			Netmask:       0xFFFFFFFF,
 			AddressFamily: nl.FAMILY_V4,
@@ -66,7 +65,7 @@ func (m *ProxyManager) CreateService(srv *api_obj.Service) error {
 			fmt.Println("Create Service Failed At line 66 ", err.Error())
 			return err
 		}
-		args := []string{"-t", "nat", "-A", "POSTROUTING", "-m", "ipvs", "--vaddr", srv.Spec.ClusterIP, "--vport", miniSrv.Port, "-j", "MASQUERADE"}
+		args := []string{"-t", "nat", "-A", "POSTROUTING", "-m", "ipvs", "--vaddr", srv.Spec.ClusterIP, "--vport", strconv.Itoa(int(miniSrv.Port)), "-j", "MASQUERADE"}
 		_, err = exec.Command("iptables", args...).CombinedOutput()
 		if err != nil {
 			fmt.Println("Failed Add iptables At line 79 ", err.Error())
@@ -84,7 +83,7 @@ func (m *ProxyManager) CreateService(srv *api_obj.Service) error {
 					nodePort = int32(p)
 				}
 				fmt.Printf("Select NodePort is %d", nodePort)
-				clusterLabel := fmt.Sprintf("%s:%s", srv.Spec.ClusterIP, miniSrv.Port)
+				clusterLabel := fmt.Sprintf("%s:%d", srv.Spec.ClusterIP, miniSrv.Port)
 				fmt.Println("Label is ", clusterLabel)
 				cmd := []string{"-t", "nat", "-A", "PREROUTING", "-p", "tcp", "-d", ip, "--dport", fmt.Sprintf("%d", nodePort), "-j", "DNAT", "--to-destination", clusterLabel}
 				_, err = exec.Command("iptables", cmd...).CombinedOutput()
