@@ -6,10 +6,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/etcd"
 	"minik8s/pkg/message"
 	"minik8s/tools"
-	"minik8s/pkg/config/apiserver"
 )
 
 type ApiServer struct {
@@ -68,13 +68,21 @@ func (s *ApiServer) Bind() {
 	s.router.POST(apiserver.API_update_pod, s.UpdatePod)
 	s.router.POST(apiserver.API_add_pod, s.AddPod)
 	s.router.GET(apiserver.API_get_pods_by_node, s.GetPodsByNode)
+	s.router.GET(apiserver.API_get_pod)               //TODO
+	s.router.GET(apiserver.API_get_pods_by_namespace) //TODO
+	s.router.DELETE(apiserver.API_delete_pod)         //TODO
 
 	s.router.POST(apiserver.API_add_service, s.AddService)
 	s.router.GET(apiserver.API_get_services, s.GetServices)
+	s.router.GET(apiserver.API_get_service)       //TODO
+	s.router.DELETE(apiserver.API_delete_service) //TODO
 
 	s.router.POST(apiserver.API_add_endpoint, s.AddEndpoint)
 	s.router.DELETE(apiserver.API_delete_endpoints, s.DeleteEndpoints)
 	s.router.DELETE(apiserver.API_delete_endpoint, s.DeleteEndpoint)
+
+	s.router.GET(apiserver.API_get_replicasets)       //TODO
+	s.router.DELETE(apiserver.API_delete_replicasets) //TODO
 }
 
 // 在进行测试/实际运行时，第2步调用此函数。默认端口为8080
