@@ -113,10 +113,65 @@ func (s *ApiServer) GetEndpoint(c *gin.Context) {
 
 	if epname == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[ERR/handler/DeleteEndpoint] Service name and namespace shall not be null.",
+			"error": "[ERR/handler/GetEndpoint] Endpoint name shall not be null.",
 		})
 		return
 	}
 
-	e_key := apiserver.ETCD_endpoint_prefix + 
+	e_key := apiserver.ETCD_endpoint_prefix + epname
+	res, err := s.EtcdWrap.Get(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/GetEndpoint] Failed to get from etcd, " + err.Error(),
+		})
+		return
+	}
+
+	if len(res) != 1 {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/GetEndpoint] Found zero or more than one endpoint.\n",
+		})
+		return
+	}
+
+	//返回200
+	c.JSON(http.StatusOK, gin.H{
+		"data": res[0].Value,
+	})
+}
+
+func (s *ApiServer) GetEndpointsByService(c *gin.Context) {
+	fmt.Printf("[apiserver/GetEndpointByService] Try to get endpoints by service.\n")
+
+	srvname := c.Param("srvname")
+
+	if srvname == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/GetEndpointByService] Service name shall not be null.",
+		})
+		return
+	}
+
+	e_key := apiserver.ETCD_endpoint_prefix + srvname
+	res, err := s.EtcdWrap.GetByPrefix(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/GetEndpoint] Failed to get from etcd, " + err.Error(),
+		})
+		return
+	}
+
+	var eps []string
+	for id, ep := range res {
+		eps = append(eps, ep.Value)
+
+		//返回值以逗号隔开
+		if id < len(res)-1 {
+			eps = append(eps, ",")
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": eps,
+	})
 }

@@ -79,7 +79,7 @@ func (ec *EndpointController) OnDeleteService(pack string) {
 		return
 	}
 
-	err = utils.DeleteEndpoint(true, srv.MetaData.NameSpace+"/"+srv.MetaData.Name)
+	err = utils.DeleteEndpoints(true, srv.MetaData.NameSpace+"/"+srv.MetaData.Name)
 	if err != nil {
 		fmt.Printf("[ERR/EndpointController/OnDeleteService] Failed to delete endpoint, " + err.Error())
 		ec.PrintHandlerWarning()
@@ -182,7 +182,7 @@ func (ec *EndpointController) OnDeletePod(pack string) {
 			//删除对应的endpoint
 			suffix := srv.MetaData.NameSpace + "/" +
 				srv.MetaData.Name + "-" + pod.MetaData.Name
-			err = utils.DeleteEndpoint(false, suffix)
+			err = utils.DeleteEndpoints(false, suffix)
 			if err != nil {
 				fmt.Printf("[ERR/EndpointController/OnDeletePod] Failed to delete endpoint, " + err.Error())
 				ec.PrintHandlerWarning()
