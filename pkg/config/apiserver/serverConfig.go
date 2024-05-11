@@ -38,9 +38,10 @@ const (
 	API_delete_endpoint_prefix  string = "/endpoints/delete/"
 	API_delete_endpoint         string = "/endpoints/delete/:namespace/:name"
 
-	API_get_replicasets           string = "/replicasets/getAll"
-	API_delete_replicasets_prefix string = "/replicasets/delete/"
-	API_delete_replicasets        string = "/replicasets/delete/:namespace/:name"
+	API_get_replicasets          string = "/replicasets/getAll"
+	API_delete_replicaset_prefix string = "/replicasets/delete/"
+	API_delete_replicaset        string = "/replicasets/delete/:namespace/:name"
+	API_update_replicaset        string = "/replicasets/update"
 )
 
 type ServerConfig struct {

@@ -9,8 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"minik8s/pkg/api_obj"
-	"minik8s/tools"
 	"minik8s/pkg/config/apiserver"
+	"minik8s/tools"
 )
 
 func (s *ApiServer) GetNodes(c *gin.Context) {
@@ -78,6 +78,7 @@ func (s *ApiServer) GetNode(c *gin.Context) {
 	}
 }
 
+// WARN:这个函数仅供测试使用，在对接时需要进行修改。
 func (s *ApiServer) AddNode(c *gin.Context) {
 	fmt.Printf("[apiserver/addNode] Try to add a node.\n")
 

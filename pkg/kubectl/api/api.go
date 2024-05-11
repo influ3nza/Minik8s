@@ -10,10 +10,11 @@ import (
 
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
-	"minik8s/pkg/network"
 	"minik8s/pkg/config/apiserver"
+	"minik8s/pkg/network"
 )
 
+// WARN:此函数仅供测试使用。
 func ParsePod(filePath string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -34,7 +35,7 @@ func ParsePod(filePath string) error {
 		return err
 	}
 
-	//TODO: 这里默认为running，便于测试。
+	//WARN: 这里默认为running，便于测试。
 	pod.PodStatus.Phase = obj_inner.Running
 
 	pod_str, err := json.Marshal(pod)
@@ -56,6 +57,7 @@ func ParsePod(filePath string) error {
 	return nil
 }
 
+// WARN:此函数仅供测试使用。
 func ParseNode(filePath string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -95,6 +97,7 @@ func ParseNode(filePath string) error {
 	return nil
 }
 
+// WARN:此函数仅供测试使用。
 func ParseSrv(filePath string) error {
 	file, err := os.Open(filePath)
 	if err != nil {

@@ -9,8 +9,8 @@ import (
 
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
-	"minik8s/tools"
 	"minik8s/pkg/config/apiserver"
+	"minik8s/tools"
 )
 
 func (s *ApiServer) GetPods(c *gin.Context) {
@@ -83,7 +83,7 @@ func (s *ApiServer) AddPod(c *gin.Context) {
 
 	//更新相关状态
 	new_pod.MetaData.UUID = tools.NewUUID()
-	//TODO:（测试专用）
+	//WARN:（测试专用）
 	if !tools.Test_enabled {
 		new_pod.PodStatus.Phase = obj_inner.Pending
 	}
@@ -112,7 +112,7 @@ func (s *ApiServer) AddPod(c *gin.Context) {
 	})
 }
 
-func (s *ApiServer) UpdatePod(c *gin.Context) {
+func (s *ApiServer) UpdatePodScheduled(c *gin.Context) {
 	new_pod := &api_obj.Pod{}
 	err := c.ShouldBind(new_pod)
 	if err != nil {
@@ -164,7 +164,7 @@ func (s *ApiServer) UpdatePod(c *gin.Context) {
 		return
 	}
 
-	//TODO: 更新pod的状态，可能之后需要更新更多东西
+	//更新pod的状态，可能之后需要更新更多东西
 	if new_pod.Spec.NodeName != "" {
 		old_pod.Spec.NodeName = new_pod.Spec.NodeName
 	}

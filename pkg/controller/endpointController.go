@@ -12,7 +12,7 @@ import (
 	"minik8s/pkg/network"
 )
 
-//TODO:需要做的内容：service的创建与删除，pod的创建、删除和修改
+//需要做的内容：service的创建与删除，pod的创建、删除和修改
 
 type EndpointController struct {
 	Consumer *message.MsgConsumer
@@ -25,24 +25,13 @@ func (ec *EndpointController) PrintHandlerWarning() {
 func (ec *EndpointController) OnAddService(pack string) {
 	//拿到所有的pod
 	uri := apiserver.API_server_prefix + apiserver.API_get_pods
-	dataStr, err := network.GetRequest(uri)
+
+	var allPods []api_obj.Pod
+	err := network.GetRequestAndParse(uri, &allPods)
 	if err != nil {
 		fmt.Printf("[ERR/EndpointController/OnAddService] GET request failed, %v.\n", err)
 		ec.PrintHandlerWarning()
 		return
-	}
-
-	var allPods []api_obj.Pod
-	if dataStr == "" {
-		fmt.Printf("[ERR/EndpointController/OnAddService] Not any pod available.\n")
-		ec.PrintHandlerWarning()
-	} else {
-		err = json.Unmarshal([]byte(dataStr), &allPods)
-		if err != nil {
-			fmt.Printf("[ERR/EndpointController/OnAddService] Failed to unmarshal data, %s.\n", err)
-			ec.PrintHandlerWarning()
-			return
-		}
 	}
 
 	//从msg中读取service
@@ -55,18 +44,21 @@ func (ec *EndpointController) OnAddService(pack string) {
 	}
 
 	//比对每一个pod
+	ep_pod_list := []api_obj.Pod{}
 	for _, pod := range allPods {
 		if pod.PodStatus.Phase == obj_inner.Running &&
 			utils.CompareLabels(srv.Spec.Selector, pod.MetaData.Labels) &&
 			pod.MetaData.NameSpace == srv.MetaData.NameSpace {
-			//创建一个endpoint
-			err = utils.CreateEndpoint(*srv, pod)
-			if err != nil {
-				fmt.Printf("[ERR/EndpointController/OnAddService] Failed to create endpoint, " + err.Error())
-				ec.PrintHandlerWarning()
-				return
-			}
+			ep_pod_list = append(ep_pod_list, pod)
 		}
+	}
+
+	//创建endpoints
+	err = utils.CreateEndpoints([]api_obj.Service{*srv}, ep_pod_list)
+	if err != nil {
+		fmt.Printf("[ERR/EndpointController/OnAddService] Failed to create endpoint, " + err.Error())
+		ec.PrintHandlerWarning()
+		return
 	}
 
 	//仅供测试使用
@@ -128,22 +120,28 @@ func (ec *EndpointController) OnCreatePod(pack string) {
 	}
 
 	//遍历service，寻找所在的所有service并且添加
+	ep_srv_list := []api_obj.Service{}
 	for _, srv := range allSrvs {
 		if utils.CompareLabels(srv.MetaData.Labels, pod.MetaData.Labels) &&
 			pod.MetaData.NameSpace == srv.MetaData.NameSpace {
-			//创建一个endpoint
-			err = utils.CreateEndpoint(srv, *pod)
-			if err != nil {
-				fmt.Printf("[ERR/EndpointController/OnCreatePod] Failed to create endpoint, " + err.Error())
-				ec.PrintHandlerWarning()
-				return
-			}
+			ep_srv_list = append(ep_srv_list, srv)
 		}
+	}
+
+	//创建endpoints
+	err = utils.CreateEndpoints(ep_srv_list, []api_obj.Pod{*pod})
+	if err != nil {
+		fmt.Printf("[ERR/EndpointController/OnCreatePod] Failed to create endpoint, " + err.Error())
+		ec.PrintHandlerWarning()
+		return
 	}
 }
 
 func (ec *EndpointController) OnUpdatePod(pack string) {
-	//TODO:待讨论，update可以不做
+	//此处必定发生ip地址修改。相当于先删除pod对应的所有endpoints再添加。
+	//pack的内容为新的pod结构体。
+	ec.OnDeletePod(pack)
+	ec.OnCreatePod(pack)
 }
 
 func (ec *EndpointController) OnDeletePod(pack string) {

@@ -40,12 +40,13 @@ func CreateApiServerInstance(c *apiserver.ServerConfig) (*ApiServer, error) {
 	}
 
 	return &ApiServer{
-		router:    router,
-		EtcdWrap:  wrap,
-		port:      c.Port,
-		Producer:  producer,
-		Consumer:  consumer,
-		NodeIPMap: make(map[string]string, c.MaxNodeCount),
+		router:   router,
+		EtcdWrap: wrap,
+		port:     c.Port,
+		Producer: producer,
+		Consumer: consumer,
+		//TODO: 这些数据都是易失数据，在做容错的时候需要考虑到这一点。
+		//TODO: 心跳更新。 -> 不考虑
 	}, nil
 }
 
@@ -65,7 +66,7 @@ func (s *ApiServer) Bind() {
 	s.router.POST(apiserver.API_add_node, s.AddNode)
 
 	s.router.GET(apiserver.API_get_pods, s.GetPods)
-	s.router.POST(apiserver.API_update_pod, s.UpdatePod)
+	s.router.POST(apiserver.API_update_pod, s.UpdatePodScheduled)
 	s.router.POST(apiserver.API_add_pod, s.AddPod)
 	s.router.GET(apiserver.API_get_pods_by_node, s.GetPodsByNode)
 	s.router.GET(apiserver.API_get_pod)               //TODO
@@ -81,8 +82,9 @@ func (s *ApiServer) Bind() {
 	s.router.DELETE(apiserver.API_delete_endpoints, s.DeleteEndpoints)
 	s.router.DELETE(apiserver.API_delete_endpoint, s.DeleteEndpoint)
 
-	s.router.GET(apiserver.API_get_replicasets)       //TODO
-	s.router.DELETE(apiserver.API_delete_replicasets) //TODO
+	s.router.GET(apiserver.API_get_replicasets)      //TODO
+	s.router.DELETE(apiserver.API_delete_replicaset) //TODO
+	s.router.GET(apiserver.API_update_replicaset)    //TODO
 }
 
 // 在进行测试/实际运行时，第2步调用此函数。默认端口为8080

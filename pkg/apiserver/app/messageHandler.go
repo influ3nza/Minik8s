@@ -14,17 +14,20 @@ func (s *ApiServer) MsgHandler(msg *message.Message) {
 	fmt.Printf("[Apiserver/MsgHandler] Apiserver received message!\n")
 
 	switch msg.Type {
-	case message.POD_CREATE: //kubelet创建完pod之后，发送消息给apiserver
+	case message.POD_CREATE: //kubelet创建完pod或者srv之后，发送消息给apiserver
 		s.HandlePodCreate(msg.Content)
 	case message.POD_UPDATE:
 		s.HandlePodUpdate(msg.Content)
 	case message.POD_DELETE:
 		s.HandlePodDelete(msg.Content)
+	case message.SRV_CREATE:
+		s.HandleSrvCreate(msg.Content)
+	case message.SRV_DELETE:
+		s.HandleSrvDelete(msg.Content)
 	}
 }
 
 func (s *ApiServer) HandlePodCreate(msg string) {
-
 	pod := &api_obj.Pod{}
 	err := json.Unmarshal([]byte(msg), pod)
 	if err != nil {
@@ -33,7 +36,7 @@ func (s *ApiServer) HandlePodCreate(msg string) {
 	}
 
 	//更新部分信息
-	old_str, err := s.UpdatePodPhase(*pod)
+	old_str, err := s.UpdatePodPhase(*pod, false)
 	if err != nil {
 		fmt.Printf("[ERR/Apiserver/MsgHandler/PodCreate] Failed to update pod phase, %v.\n", err)
 		return
@@ -45,7 +48,7 @@ func (s *ApiServer) HandlePodCreate(msg string) {
 		Content: string(old_str),
 	}
 	s.Producer.Produce(message.TOPIC_EndpointController, p_msg)
-	//TODO:思考如果返回的消息是pod创建失败的消息应该怎么办
+	//WARN:思考如果返回的消息是pod创建失败的消息应该怎么办
 }
 
 func (s *ApiServer) HandlePodUpdate(msg string) {
@@ -58,20 +61,20 @@ func (s *ApiServer) HandlePodUpdate(msg string) {
 	}
 
 	needRestart := false
+	needCheckRestart := false
 
+	//只有phase改变了才会发消息
 	switch pod.PodStatus.Phase {
 	case obj_inner.Running:
-		//break
 	case obj_inner.Pending:
-		//break
 	case obj_inner.Succeeded:
-		//break
 	case obj_inner.Terminating:
 		needRestart = true
 	case obj_inner.Failed:
 		needRestart = true
 	case obj_inner.Unknown:
-		//break
+	case obj_inner.Restarting:
+		needCheckRestart = true
 	}
 
 	//更新pod状态到etcd
@@ -85,7 +88,7 @@ func (s *ApiServer) HandlePodUpdate(msg string) {
 		}
 		s.PodNeedRestart(*pod)
 	} else {
-		_, err := s.UpdatePodPhase(*pod)
+		_, err := s.UpdatePodPhase(*pod, needCheckRestart)
 		if err != nil {
 			fmt.Printf("[ERR/Apiserver/MsgHandler/PodUpdate] Failed to update pod phase, %v.\n", err)
 			return
@@ -96,6 +99,34 @@ func (s *ApiServer) HandlePodUpdate(msg string) {
 }
 
 func (s *ApiServer) HandlePodDelete(msg string) {
-	//TODO:这里默认发送的是"podnamespace/podname"
+	//这里默认发送的是"podnamespace/podname"
+	//do nothing
+}
+
+func (s *ApiServer) HandleSrvCreate(msg string) {
+	//将etcd中的srv对象的status修改为available
+	//参数：srv结构体
+	srv := &api_obj.Service{}
+	err := json.Unmarshal([]byte(msg), srv)
+	if err != nil {
+		fmt.Printf("[ERR/Apiserver/MsgHandler/SrvCreate] Failed to unmarshal data, %v.\n", err)
+		return
+	}
+
+	err = s.UpdateSrvCondition(srv.MetaData.NameSpace, srv.MetaData.Name)
+	if err != nil {
+		fmt.Printf("[ERR/Apiserver/MsgHandler/SrvCreate] Failed to update srv condition, %v.\n", err)
+		return
+	}
+
+	//然后通知endpoint controller
+	ep_msg := &message.Message{
+		Type:    message.SRV_CREATE,
+		Content: msg,
+	}
+	s.Producer.Produce(message.TOPIC_EndpointController, ep_msg)
+}
+
+func (s *ApiServer) HandleSrvDelete(msg string) {
 	//do nothing
 }
