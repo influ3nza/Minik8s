@@ -40,7 +40,7 @@ const (
 	API_get_endpoint_prefix            string = "/endpoints/"
 	API_get_endpoint                   string = "/endpoints/:epname"
 	API_get_endpoint_by_service_prefix string = "/endpoints/"
-	API_get_endpoint_by_service        string = "/endpoints/:srvname"
+	API_get_endpoint_by_service        string = "/endpoints/getBySrv/:srvname"
 
 	API_get_replicasets          string = "/replicasets/getAll"
 	API_delete_replicaset_prefix string = "/replicasets/delete/"
