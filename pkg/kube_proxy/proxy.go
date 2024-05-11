@@ -68,7 +68,13 @@ func (m *ProxyManager) CreateService(srv *api_obj.Service) error {
 		args := []string{"-t", "nat", "-A", "POSTROUTING", "-m", "ipvs", "--vaddr", srv.Spec.ClusterIP, "--vport", strconv.Itoa(int(miniSrv.Port)), "-j", "MASQUERADE"}
 		_, err = exec.Command("iptables", args...).CombinedOutput()
 		if err != nil {
-			fmt.Println("Failed Add iptables At line 79 ", err.Error())
+			fmt.Println("Failed Add iptables At line 70 ", err.Error())
+		}
+
+		args = []string{"-t", "nat", "-I", "POSTROUTING", "-m", "ipvs", "--vaddr", srv.Spec.ClusterIP, "--vport", strconv.Itoa(int(miniSrv.Port)), "-j", "MASQUERADE"}
+		_, err = exec.Command("iptables", args...).CombinedOutput()
+		if err != nil {
+			fmt.Println("Failed Add iptables At line 76 ", err.Error())
 		}
 		fmt.Println(srv.Spec.Type)
 		switch srv.Spec.Type {
@@ -148,10 +154,12 @@ func (m *ProxyManager) DelService(srv *api_obj.Service) error {
 			fmt.Println("Del Srv Failed ", err.Error())
 		}
 		args := []string{"-t", "nat", "-D", "POSTROUTING", "-m", "ipvs", "--vaddr", srv.Spec.ClusterIP, "--vport", fmt.Sprintf("%d", miniSrv.Service.Port), "-j", "MASQUERADE"}
-		_, err := exec.Command("iptables", args...).CombinedOutput()
-		fmt.Println("iptables ", args)
-		if err != nil {
-			fmt.Println("Failed Add iptables At line 150 ", err.Error())
+		for i := 0; i < 2; i++ {
+			_, err := exec.Command("iptables", args...).CombinedOutput()
+			fmt.Println("iptables ", args)
+			if err != nil {
+				fmt.Println("Failed Add iptables At line 150 ", err.Error())
+			}
 		}
 
 		switch srv.Spec.Type {
@@ -160,7 +168,7 @@ func (m *ProxyManager) DelService(srv *api_obj.Service) error {
 				ip, _ := GetLocalIP()
 				clusterLabel := fmt.Sprintf("%s:%d", srv.Spec.ClusterIP, miniSrv.Service.Port)
 				args = []string{"-t", "nat", "-D", "PREROUTING", "-p", "tcp", "-d", ip, "--dport", fmt.Sprintf("%d", miniSrv.NodePort), "-j", "DNAT", "--to-destination", clusterLabel}
-				_, err = exec.Command("iptables", args...).CombinedOutput()
+				_, err := exec.Command("iptables", args...).CombinedOutput()
 				if err != nil {
 					fmt.Println("Failed Add iptables At line 161 ", err.Error())
 				}
