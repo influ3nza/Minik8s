@@ -198,25 +198,25 @@ func testReStart() {
 	util.RegisterPod(pod.MetaData.Name, pod.MetaData.NameSpace)
 	fmt.Println("Register success")
 
-	err = pod_manager.StopPod(pod.MetaData.Name, pod.MetaData.NameSpace)
-	if err != nil {
-		fmt.Println("Stopped Failed At Main ", err.Error())
-	}
-
-	for i := 0; i < 3; i++ {
-		err = pod_manager.ReStartPod(pod.MetaData.Name, pod.MetaData.NameSpace)
-		if err != nil {
-			fmt.Println(err.Error())
-			continue
-		} else {
-			break
-		}
-	}
-
-	if err != nil {
-		_ = pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace)
-		fmt.Println("Restart Failed")
-	}
+	//err = pod_manager.StopPod(pod.MetaData.Name, pod.MetaData.NameSpace)
+	//if err != nil {
+	//	fmt.Println("Stopped Failed At Main ", err.Error())
+	//}
+	//
+	//for i := 0; i < 3; i++ {
+	//	err = pod_manager.ReStartPod(pod.MetaData.Name, pod.MetaData.NameSpace)
+	//	if err != nil {
+	//		fmt.Println(err.Error())
+	//		continue
+	//	} else {
+	//		break
+	//	}
+	//}
+	//
+	//if err != nil {
+	//	_ = pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace)
+	//	fmt.Println("Restart Failed")
+	//}
 }
 
 func testCreateMonitor() {
