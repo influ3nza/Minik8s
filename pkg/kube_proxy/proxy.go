@@ -88,6 +88,9 @@ func (m *ProxyManager) CreateService(srv *api_obj.Service) error {
 				cmd := []string{"-t", "nat", "-A", "PREROUTING", "-p", "tcp", "-d", ip, "--dport", fmt.Sprintf("%d", nodePort), "-j", "DNAT", "--to-destination", clusterLabel}
 				_, err = exec.Command("iptables", cmd...).CombinedOutput()
 				fmt.Println("iptables ", cmd)
+				cmd = []string{"-t", "nat", "-A", "OUTPUT", "-d", ip + "/32", "-p", "tcp", "-m", "tcp", "--dport", fmt.Sprintf("%d", nodePort), "-j", "DNAT", "--to-destination", clusterLabel}
+				_, err = exec.Command("iptables", cmd...).CombinedOutput()
+				fmt.Println("iptables ", cmd)
 				if err != nil {
 					fmt.Println("Failed Add iptables NodePort At line 91 ", err.Error())
 				}
@@ -163,6 +166,10 @@ func (m *ProxyManager) DelService(srv *api_obj.Service) error {
 				clusterLabel := fmt.Sprintf("%s:%d", srv.Spec.ClusterIP, miniSrv.Service.Port)
 				args = []string{"-t", "nat", "-D", "PREROUTING", "-p", "tcp", "-d", ip, "--dport", fmt.Sprintf("%d", miniSrv.NodePort), "-j", "DNAT", "--to-destination", clusterLabel}
 				_, err := exec.Command("iptables", args...).CombinedOutput()
+				fmt.Println("iptables ", args)
+				args = []string{"-t", "nat", "-D", "OUTPUT", "-d", ip + "/32", "-p", "tcp", "-m", "tcp", "--dport", fmt.Sprintf("%d", miniSrv.NodePort), "-j", "DNAT", "--to-destination", clusterLabel}
+				_, err = exec.Command("iptables", args...).CombinedOutput()
+				fmt.Println("iptables ", args)
 				if err != nil {
 					fmt.Println("Failed Add iptables At line 161 ", err.Error())
 				}
