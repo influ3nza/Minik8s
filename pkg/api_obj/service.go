@@ -25,7 +25,7 @@ type ServiceStatus struct {
 type ServicePort struct {
 	Name       string `json:"name" yaml:"name"`
 	Protocol   string `json:"protocol" yaml:"protocol"`
-	Port       int32 `json:"port" yaml:"port"`
+	Port       int32  `json:"port" yaml:"port"`
 	TargetPort int32  `json:"targetPort" yaml:"targetPort"`
 	NodePort   int32  `json:"nodePort" yaml:"nodePort"`
 }

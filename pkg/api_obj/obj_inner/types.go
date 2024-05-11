@@ -71,4 +71,5 @@ const (
 	Unknown = "PodUnknown"
 	// 优雅退出（仅这个容器挂掉）
 	Terminating = "PodTerminating"
+	Restarting  = "PodRestarting"
 )
