@@ -93,8 +93,8 @@ func main() {
 	//out, err := exec.Command("ipvsadm", "-Ln").CombinedOutput()
 	//fmt.Printf("%s\n", string(out))
 	//
-	//out, err = exec.Command("iptables-save").CombinedOutput()
-	//fmt.Printf("%s\n", string(out))
+	out, err := exec.Command("iptables-save").CombinedOutput()
+	fmt.Printf("%s\n", string(out))
 	//
 	//out, err = exec.Command("ip", "addr").CombinedOutput()
 	//fmt.Printf("%s\n", string(out))
@@ -118,9 +118,11 @@ func main() {
 		Weight:  2,
 	}
 	err = manager.AddEndPoint(ep)
-	out, err := exec.Command("ipvsadm", "-Ln").CombinedOutput()
+	out, err = exec.Command("ipvsadm", "-Ln").CombinedOutput()
 	fmt.Printf("%s\n", string(out))
 
+	out, err = exec.Command("iptables-save").CombinedOutput()
+	fmt.Printf("%s\n", string(out))
 	//out, err = exec.Command("curl", "172.20.0.1:7840").CombinedOutput()
 	//fmt.Printf("%s\n", string(out))
 
