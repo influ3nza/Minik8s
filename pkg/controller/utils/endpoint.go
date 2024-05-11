@@ -93,22 +93,45 @@ func GetMatchPort(srvPort int32, cons []api_obj.Container) int32 {
 	return 10
 }
 
-func DeleteEndpoint(batch bool, suffix string) error {
+func DeleteEndpoints(batch bool, suffix string) error {
 	uri := ""
+	getListUri := apiserver.API_server_prefix
 
 	if batch {
 		uri = apiserver.API_server_prefix + apiserver.API_delete_endpoints_prefix + suffix
+		getListUri += apiserver.API_get_endpoint_by_service_prefix + suffix
 	} else {
 		uri = apiserver.API_server_prefix + apiserver.API_delete_endpoint_prefix + suffix
+		getListUri += apiserver.API_get_endpoint_prefix + suffix
 	}
 
-	_, err := network.DelRequest(uri)
+	ep_list := []api_obj.Endpoint{}
+	err := network.GetRequestAndParse(getListUri, &ep_list)
+	if err != nil {
+		fmt.Printf("[ERR/EP Controller/Utils/DeleteEndpoint] Failed to send GET request, %v.\n", err)
+		return err
+	}
+	ep_list_str, err := json.Marshal(ep_list)
+	if err != nil {
+		fmt.Printf("[ERR/Controller/Utils/DeleteEndpoint] Failed to marshal data, %v.\n", err)
+		return err
+	}
+
+	_, err = network.DelRequest(uri)
 	if err != nil {
 		fmt.Printf("[ERR/EP Controller/Utils/DeleteEndpoint] DEL request failed, %v.\n", err)
 		return err
 	}
 
-	//TODO: 向proxy发送删除的消息请求。分为批量和非批量。
+	//向proxy发送删除的消息请求。分为批量和非批量。
+	for _, ip := range tools.NodesIpMap {
+		uri := ip + strconv.Itoa(int(kube_proxy.Port)) + kube_proxy.DeleteEndpoint
+		_, err = network.PostRequest(uri, ep_list_str)
+		if err != nil {
+			fmt.Printf("[ERR/Controller/Utils/DeleteEndpoint] Failed to send POST request, %v.\n", err)
+			return err
+		}
+	}
 
 	return nil
 }
