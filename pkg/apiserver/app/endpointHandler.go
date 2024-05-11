@@ -8,8 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"minik8s/pkg/api_obj"
-	"minik8s/tools"
 	"minik8s/pkg/config/apiserver"
+	"minik8s/tools"
 )
 
 func (s *ApiServer) AddEndpoint(c *gin.Context) {
@@ -104,4 +104,19 @@ func (s *ApiServer) DeleteEndpoint(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": "[handler/DeleteEndpoint] Delete endpoint success",
 	})
+}
+
+func (s *ApiServer) GetEndpoint(c *gin.Context) {
+	fmt.Printf("[apiserver/GetEndpoint] Try to get an endpoint.\n")
+
+	epname := c.Param("epname")
+
+	if epname == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/DeleteEndpoint] Service name and namespace shall not be null.",
+		})
+		return
+	}
+
+	e_key := apiserver.ETCD_endpoint_prefix + 
 }

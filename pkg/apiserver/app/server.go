@@ -81,6 +81,7 @@ func (s *ApiServer) Bind() {
 	s.router.POST(apiserver.API_add_endpoint, s.AddEndpoint)
 	s.router.DELETE(apiserver.API_delete_endpoints, s.DeleteEndpoints)
 	s.router.DELETE(apiserver.API_delete_endpoint, s.DeleteEndpoint)
+	s.router.GET(apiserver.API_get_endpoint, s.GetEndpoint)
 
 	s.router.GET(apiserver.API_get_replicasets)      //TODO
 	s.router.DELETE(apiserver.API_delete_replicaset) //TODO

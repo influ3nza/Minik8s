@@ -7,7 +7,7 @@ import (
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/config/apiserver"
-	kube_proxy "minik8s/pkg/config/kube-proxy"
+	"minik8s/pkg/config/kube_proxy"
 	"minik8s/pkg/network"
 	"minik8s/tools"
 	"strconv"
