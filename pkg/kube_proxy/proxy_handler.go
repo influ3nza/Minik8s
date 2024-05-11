@@ -1,97 +1,85 @@
 package kube_proxy
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"minik8s/pkg/api_obj"
-	"minik8s/pkg/message"
+	kube_proxy "minik8s/pkg/config/kube-proxy"
 )
 
-func (m *ProxyManager) HandleMsg(msg *message.Message) {
-	switch msg.Type {
-	case message.SRV_CREATE:
-		{
-			err := m.handleSrvCreate(msg.Content)
-			if err != nil {
-
-			} else {
-
-			}
-		}
-	case message.SRV_DELETE:
-		{
-			err := m.handleSrvDelete(msg.Content)
-			if err != nil {
-
-			} else {
-
-			}
-		}
-	case message.EP_ADD:
-		{
-			err := m.handleEndpointAdd(msg.Content)
-			if err != nil {
-
-			} else {
-
-			}
-		}
-	case message.EP_DELETE:
-	}
-}
-
-func (m *ProxyManager) handleSrvCreate(content string) error {
+func (m *ProxyManager) handleSrvCreate(c *gin.Context) {
 	srv := &api_obj.Service{}
-	err := json.Unmarshal([]byte(content), srv)
+	err := c.ShouldBind(srv)
 	if err != nil {
-		return fmt.Errorf("[KubeProxy/Service Create] Failed to unmarshal service")
+		fmt.Printf("[KubeProxy/Service Create] Failed to unmarshal service")
+		return
 	}
 
 	err = m.CreateService(srv)
 	if err != nil {
-		return fmt.Errorf("[KubeProxy/Service Create] Failed to create service rules")
+		fmt.Printf("[KubeProxy/Service Create] Failed to create service rules")
+		return
 	}
-	return nil
+	return
 }
 
-func (m *ProxyManager) handleSrvDelete(content string) error {
+func (m *ProxyManager) handleSrvDelete(c *gin.Context) {
 	srv := &api_obj.Service{}
-	err := json.Unmarshal([]byte(content), srv)
+	err := c.ShouldBind(srv)
 	if err != nil {
-		return fmt.Errorf("[KubeProxy/Service Delete] Failed to unmarshal service")
+		fmt.Printf("[KubeProxy/Service Delete] Failed to unmarshal service")
+		return
 	}
 
 	err = m.DelService(srv)
 	if err != nil {
-		return fmt.Errorf("[KubeProxy/Service Delete] Failed to del service rules")
+		fmt.Printf("[KubeProxy/Service Delete] Failed to del service rules")
+		return
 	}
-	return nil
+	return
 }
 
-func (m *ProxyManager) handleEndpointAdd(content string) error {
-	ep := &api_obj.Endpoint{}
-	err := json.Unmarshal([]byte(content), ep)
+func (m *ProxyManager) handleEndpointAdd(c *gin.Context) {
+	var list []api_obj.Endpoint
+	err := c.ShouldBind(list)
 	if err != nil {
-		return fmt.Errorf("[KubeProxy/Endpoint Add] Failed to unmarshal endpoint")
+		fmt.Printf("[KubeProxy/Endpoint Add] Failed to bind endpoint")
+		return
 	}
 
-	err = m.AddEndPoint(ep)
-	if err != nil {
-		return fmt.Errorf("[KubeProxy/Endpoint Add] Failed to add endpoint rules")
+	for _, ep := range list {
+		err = m.AddEndPoint(&ep)
+		if err != nil {
+			fmt.Printf("[KubeProxy/Endpoint Add] Failed to add endpoint rules")
+			return
+		}
 	}
-	return nil
+
+	return
 }
 
-func (m *ProxyManager) handleEndpointDelete(content string) error {
-	ep := &api_obj.Endpoint{}
-	err := json.Unmarshal([]byte(content), ep)
+func (m *ProxyManager) handleEndpointDelete(c *gin.Context) {
+	var list []api_obj.Endpoint
+	err := c.ShouldBind(list)
 	if err != nil {
-		return fmt.Errorf("[KubeProxy/Endpoint Delete] Failed to unmarshal endpoint")
+		fmt.Printf("[KubeProxy/Endpoint Delete] Failed to bind endpoint")
+		return
 	}
 
-	err = m.DelEndPoint(ep)
-	if err != nil {
-		return fmt.Errorf("[KubeProxy/Endpoint Delete] Failed to delete endpoint rules")
+	for _, ep := range list {
+		err = m.DelEndPoint(&ep)
+		if err != nil {
+			fmt.Printf("[KubeProxy/Endpoint Delete] Failed to delete endpoint rules")
+			return
+		}
 	}
-	return nil
+
+	return
+}
+
+func (m *ProxyManager) RegisterHandler() {
+	m.Router.POST(kube_proxy.CreateService, m.handleSrvCreate)
+	m.Router.POST(kube_proxy.DeleteService, m.handleSrvDelete)
+	m.Router.POST(kube_proxy.AddEndpoint, m.handleEndpointAdd)
+	m.Router.POST(kube_proxy.DeleteEndpoint, m.handleEndpointDelete)
 }

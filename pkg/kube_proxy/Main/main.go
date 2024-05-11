@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
+	kubeproxy2 "minik8s/pkg/config/kube_proxy"
 	"minik8s/pkg/kube_proxy"
 	"os/exec"
 )
@@ -33,7 +34,12 @@ func Run() {
 		fmt.Println("Init Manager Failed")
 		return
 	}
-	go m.Consumer.Consume([]string{"proxy"}, m.HandleMsg)
+	m.RegisterHandler()
+	err := m.Router.Run(fmt.Sprintf(":%d", kubeproxy2.Port))
+	if err != nil {
+		fmt.Println("Server Run Failed")
+		return
+	}
 }
 
 func main() {

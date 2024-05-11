@@ -2,10 +2,10 @@ package kube_proxy
 
 import (
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/vishvananda/netlink/nl"
 	"golang.org/x/sys/unix"
 	"minik8s/pkg/api_obj"
-	"minik8s/pkg/message"
 	"net"
 	"os/exec"
 	"strconv"
@@ -14,18 +14,12 @@ import (
 )
 
 type ProxyManager struct {
-	Consumer    *message.MsgConsumer
 	IpvsHandler *ipvs.Handle
+	Router      *gin.Engine
 	Services    map[string]*MainService
 }
 
 func InitManager() *ProxyManager {
-	consumer, err := message.NewConsumer("proxy", "proxy")
-	if err != nil {
-		fmt.Println("Error At Proxy line 25 ", err.Error())
-		return nil
-	}
-
 	handler, err := ipvs.New("")
 	if err != nil {
 		fmt.Println("Error At Proxy line 31 ", err.Error())
@@ -35,7 +29,7 @@ func InitManager() *ProxyManager {
 	services := map[string]*MainService{}
 
 	manager := &ProxyManager{
-		Consumer:    consumer,
+		Router:      gin.Default(),
 		IpvsHandler: handler,
 		Services:    services,
 	}
