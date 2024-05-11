@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"minik8s/pkg/api_obj"
-	kube_proxy "minik8s/pkg/config/kube-proxy"
+	kube_proxy "minik8s/pkg/config/kube_proxy"
 )
 
 func (m *ProxyManager) handleSrvCreate(c *gin.Context) {
