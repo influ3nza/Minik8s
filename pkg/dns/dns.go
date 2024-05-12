@@ -2,35 +2,26 @@ package dns
 
 import (
 	"fmt"
-	"minik8s/pkg/api_obj"
-	"os/exec"
-	"strings"
+	"minik8s/pkg/dns/dns_op"
+	"minik8s/pkg/etcd"
+	"time"
 )
 
-func StartDns(configPath string) error {
-	cmd := []string{"-conf", configPath}
-	res, err := exec.Command("coredns", cmd...).CombinedOutput()
+func InitDnsService(filePath string) *dns_op.DnsService {
+	srv := &dns_op.DnsService{
+		ConfigFile: filePath,
+	}
+
+	err := srv.StartDns(srv.ConfigFile)
 	if err != nil {
-		fmt.Println("Start Dns Server Failed ", err.Error())
-		return err
+		fmt.Println(err.Error())
+		return nil
 	}
-	fmt.Println("Start Dns ", res)
+
+	client, err := etcd.CreateEtcdInstance([]string{"http://192.168.1.13:2379"}, 5*time.Second)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	srv.EtcdClient = client
 	return nil
-}
-
-func AddDns(dns *api_obj.Dns) error {
-	for
-}
-
-func DeleteDns(dns *api_obj.Dns) error {
-
-}
-
-func parseDns(host string, path string) string {
-	if strings.HasSuffix(host, ".") {
-		host = strings.TrimSuffix(host, ".")
-	}
-
-	fullPath := fmt.Sprintf("%s.%s", host, path)
-	return fullPath
 }

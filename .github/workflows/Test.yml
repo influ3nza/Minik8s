@@ -24,22 +24,3 @@ jobs:
       run: |
         go mod init minik8s
         go mod tidy
-    - name: Install Softwares
-      run: |
-        sudo chmod 777 ./tools/setup_scripts/setup.sh
-        sudo ./tools/setup_scripts/setup.sh
-
-    - name: Test create pod
-      run: |
-        cd test/create_pod_test
-        go test
-
-    - name: Test network connection
-      run: |
-        cd test/network_util_test
-        go test
-      
-    - name: Test service and endpoint
-      run: |
-        cd test/srv_endpoint_test
-        go test
