@@ -1,0 +1,99 @@
+package app
+
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+
+	"minik8s/pkg/config/apiserver"
+	"minik8s/pkg/etcd"
+	"minik8s/pkg/message"
+	"minik8s/tools"
+)
+
+type ApiServer struct {
+	router    *gin.Engine
+	EtcdWrap  *etcd.EtcdWrap
+	port      int32
+	Producer  *message.MsgProducer
+	Consumer  *message.MsgConsumer
+	NodeIPMap map[string]string
+}
+
+// 在进行测试/实际运行时，第1步调用此函数。
+func CreateApiServerInstance(c *apiserver.ServerConfig) (*ApiServer, error) {
+	router := gin.Default()
+	router.SetTrustedProxies(c.TrustedProxy)
+
+	wrap, err := etcd.CreateEtcdInstance(c.EtcdEndpoints, c.EtcdTimeout)
+	if err != nil {
+		fmt.Printf("[ERR/Apiserver] create etcd instance failed, err:%v\n", err)
+		return nil, err
+	}
+
+	producer := message.NewProducer()
+	consumer, err := message.NewConsumer(message.TOPIC_ApiServer_FromNode, message.TOPIC_ApiServer_FromNode)
+	if err != nil {
+		fmt.Printf("[ERR/Apiserver] create kafka consumer instance failed, err:%v\n", err)
+		return nil, err
+	}
+
+	return &ApiServer{
+		router:   router,
+		EtcdWrap: wrap,
+		port:     c.Port,
+		Producer: producer,
+		Consumer: consumer,
+		//TODO: 这些数据都是易失数据，在做容错的时候需要考虑到这一点。
+		//TODO: 心跳更新。 -> 不考虑
+	}, nil
+}
+
+// 建议放在其他的包内，使项目结构更整齐
+func serverHelloWorld(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "hello world from apiserver!",
+	})
+}
+
+// 将所有的接口在此函数内进行绑定
+func (s *ApiServer) Bind() {
+	s.router.GET("/hello", serverHelloWorld)
+
+	s.router.GET(apiserver.API_get_nodes, s.GetNodes)
+	s.router.GET(apiserver.API_get_node, s.GetNode)
+	s.router.POST(apiserver.API_add_node, s.AddNode)
+
+	s.router.GET(apiserver.API_get_pods, s.GetPods)
+	s.router.POST(apiserver.API_update_pod, s.UpdatePodScheduled)
+	s.router.POST(apiserver.API_add_pod, s.AddPod)
+	s.router.GET(apiserver.API_get_pods_by_node, s.GetPodsByNode)
+	s.router.GET(apiserver.API_get_pod)               //TODO
+	s.router.GET(apiserver.API_get_pods_by_namespace) //TODO
+	s.router.DELETE(apiserver.API_delete_pod)         //TODO
+
+	s.router.POST(apiserver.API_add_service, s.AddService)
+	s.router.GET(apiserver.API_get_services, s.GetServices)
+	s.router.GET(apiserver.API_get_service)       //TODO
+	s.router.DELETE(apiserver.API_delete_service) //TODO
+
+	s.router.POST(apiserver.API_add_endpoint, s.AddEndpoint)
+	s.router.DELETE(apiserver.API_delete_endpoints, s.DeleteEndpoints)
+	s.router.DELETE(apiserver.API_delete_endpoint, s.DeleteEndpoint)
+	s.router.GET(apiserver.API_get_endpoint, s.GetEndpoint)
+	s.router.GET(apiserver.API_get_endpoint_by_service, s.GetEndpointsByService)
+
+	s.router.GET(apiserver.API_get_replicasets)      //TODO
+	s.router.DELETE(apiserver.API_delete_replicaset) //TODO
+	s.router.GET(apiserver.API_update_replicaset)    //TODO
+}
+
+// 在进行测试/实际运行时，第2步调用此函数。默认端口为8080
+func (s *ApiServer) Run() error {
+	s.Bind()
+	go s.Consumer.Consume([]string{message.TOPIC_ApiServer_FromNode}, s.MsgHandler)
+	tools.Apiserver_boot_finished = true
+	err := s.router.Run(fmt.Sprintf(":%d", s.port))
+	return err
+}

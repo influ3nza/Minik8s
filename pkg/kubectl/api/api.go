@@ -1,0 +1,161 @@
+package api
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+
+	"gopkg.in/yaml.v3"
+
+	"minik8s/pkg/api_obj"
+	"minik8s/pkg/api_obj/obj_inner"
+	"minik8s/pkg/config/apiserver"
+	"minik8s/pkg/network"
+)
+
+// WARN:此函数仅供测试使用。
+func ParsePod(filePath string) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parsePod] Failed to open file, err:%v\n", err)
+		return err
+	}
+
+	content, err := io.ReadAll(file)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parsePod] Failed to read file, err:%v\n", err)
+		return err
+	}
+	pod := &api_obj.Pod{}
+
+	err = yaml.Unmarshal(content, pod)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parsePod] Failed to unmarshal yaml, err:%v\n", err)
+		return err
+	}
+
+	//WARN: 这里默认为running，便于测试。
+	pod.PodStatus.Phase = obj_inner.Running
+
+	pod_str, err := json.Marshal(pod)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parsePod] Failed to marshal pod, err:%v\n", err)
+		return err
+	}
+
+	//将请求发送给apiserver
+	uri := apiserver.API_server_prefix + apiserver.API_add_pod
+	_, err = network.PostRequest(uri, pod_str)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parsePod] Failed to post request, err:%v\n", err)
+		return err
+	}
+
+	fmt.Printf("[kubectl/parsePod] Send add pod request success!\n")
+
+	return nil
+}
+
+// WARN:此函数仅供测试使用。
+func ParseNode(filePath string) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parseNode] Failed to open file, err:%v\n", err)
+		return err
+	}
+
+	content, err := io.ReadAll(file)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parseNode] Failed to read file, err:%v\n", err)
+		return err
+	}
+
+	node := &api_obj.Node{}
+	err = yaml.Unmarshal(content, node)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parseNode] Failed to unmarshal yaml, err:%v\n", err)
+		return err
+	}
+
+	node_str, err := json.Marshal(node)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parseNode] Failed to marshal pod, err:%v\n", err)
+		return err
+	}
+
+	//将请求发送给apiserver
+	uri := apiserver.API_server_prefix + apiserver.API_add_node
+	_, err = network.PostRequest(uri, node_str)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parseNode] Failed to post request, err:%v\n", err)
+		return err
+	}
+
+	fmt.Printf("[kubectl/parseNode] Send add node request success!\n")
+
+	return nil
+}
+
+// WARN:此函数仅供测试使用。
+func ParseSrv(filePath string) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parseSrv] Failed to open file, err:%v\n", err)
+		return err
+	}
+
+	content, err := io.ReadAll(file)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parseSrv] Failed to read file, err:%v\n", err)
+		return err
+	}
+
+	srv := &api_obj.Service{}
+	err = yaml.Unmarshal(content, srv)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parseSrv] Failed to unmarshal yaml, err:%v\n", err)
+		return err
+	}
+
+	srv_str, err := json.Marshal(srv)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parseSrv] Failed to marshal pod, err:%v\n", err)
+		return err
+	}
+
+	//将请求发送给apiserver
+	uri := apiserver.API_server_prefix + apiserver.API_add_service
+	_, err = network.PostRequest(uri, srv_str)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parseSrv] Failed to post request, err:%v\n", err)
+		return err
+	}
+
+	fmt.Printf("[kubectl/parseSrv] Send add srv request success!\n")
+
+	return nil
+}
+
+func SendObjectTo(jsonStr []byte, kind string) error {
+	var suffix string
+	switch kind {
+	case "pod":
+		suffix = apiserver.API_add_pod
+	case "node":
+		suffix = apiserver.API_add_node
+	case "service":
+		suffix = apiserver.API_add_service
+	}
+
+	uri := apiserver.API_server_prefix + suffix
+	_, err := network.PostRequest(uri, jsonStr)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/apply"+kind+"] Failed to send request, err: %s\n", err.Error())
+		return err
+	}
+
+	fmt.Printf("[kubectl/apply" + kind + "] Send add " + kind + " request success!\n")
+
+	return nil
+}
