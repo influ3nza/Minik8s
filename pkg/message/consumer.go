@@ -19,7 +19,7 @@ func NewConsumer(topic, groupId string) (*MsgConsumer, error) {
 	config.Consumer.Return.Errors = true
 
 	// 创建消费者组
-	consumer, err := sarama.NewConsumerGroup([]string{"localhost:9092"}, groupId, config)
+	consumer, err := sarama.NewConsumerGroup([]string{"192.168.1.13:9092"}, groupId, config)
 	if err != nil {
 		return nil, err
 	}

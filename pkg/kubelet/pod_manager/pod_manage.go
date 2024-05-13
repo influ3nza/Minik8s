@@ -10,6 +10,7 @@ import (
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/kubelet/container_manager"
+	"strings"
 	"time"
 )
 
@@ -25,12 +26,16 @@ func AddPod(pod *api_obj.Pod) error {
 	res, err := container_manager.CreatePauseContainer(ctx, client, pod.MetaData.NameSpace,
 		/*fmt.Sprintf("%s-pause", pod.MetaData.Name)*/ pod.MetaData.Name)
 	containerPauseId := ""
-	fmt.Println("Create Pause At AddPod line 23 ", res)
 	if err != nil {
 		fmt.Println("Create Pause Failed At line 20")
 		return err
 	}
-	containerPauseId = res[:12]
+	containerPauseId = strings.TrimSuffix(res, "\n")
+	// 截取后面64个字母
+	if len(containerPauseId) > 64 {
+		containerPauseId = containerPauseId[len(containerPauseId)-64:]
+	}
+	fmt.Println("Create Pause At AddPod line 23 ", containerPauseId)
 
 	files, err := GetPodNetConfFile(pod.MetaData.NameSpace, containerPauseId)
 	if err != nil {

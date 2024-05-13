@@ -69,6 +69,11 @@ func CreateEndpoints(srvs []api_obj.Service, pods []api_obj.Pod) error {
 		}
 	}
 
+	if len(ep_list) == 0 {
+		fmt.Printf("[Controller/Utils/Endpoint] No endpoints to create, return.\n")
+		return nil
+	}
+
 	//以数组的形式向proxy发送创建请求。
 	ep_list_str, err := json.Marshal(ep_list)
 	if err != nil {

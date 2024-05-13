@@ -2,19 +2,21 @@ package test
 
 import (
 	"fmt"
-	"minik8s/pkg/apiserver/app"
-	"minik8s/pkg/kubectl/api"
-	"minik8s/pkg/scheduler"
-	"minik8s/pkg/config/apiserver"
-	"minik8s/tools"
-
-	"strconv"
 	"testing"
 	"time"
+
+	"minik8s/pkg/apiserver/app"
+	"minik8s/pkg/config/apiserver"
+	"minik8s/pkg/controller"
+	"minik8s/pkg/kubectl/api"
+	"minik8s/pkg/network"
+	"minik8s/pkg/scheduler"
+	"minik8s/tools"
 )
 
 var apiServerDummy *app.ApiServer = nil
 var schedulerDummy *scheduler.Scheduler = nil
+var endpointCtrlDummy *controller.EndpointController = nil
 
 func TestMain(m *testing.M) {
 	tools.Apiserver_boot_finished = false
@@ -30,13 +32,17 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		_ = fmt.Errorf("Failed to create instance!")
 	}
+	endpointCtrlDummy, err = controller.CreateEndpointControllerInstance()
+	if err != nil {
+		_ = fmt.Errorf("Failed to create instance!")
+	}
 	go apiServerDummy.Run()
 	go schedulerDummy.Run()
+	go endpointCtrlDummy.Run()
 	m.Run()
 }
 
-// 测试apiserver向scheduler发送消息
-func TestCreatePod(t *testing.T) {
+func TestConnection(t *testing.T) {
 	tools.Test_finished = false
 	for {
 		if tools.Apiserver_boot_finished == false {
@@ -47,22 +53,33 @@ func TestCreatePod(t *testing.T) {
 	}
 
 	//清除所有记录
-	apiServerDummy.EtcdWrap.DelAll()
+	apiServerDummy.EtcdWrap.DeleteByPrefix("/registry")
 
-	for i := 1; i < 3; i++ {
-		err := api.ParseNode("../../pkg/etcd/testfile/Node-" + strconv.Itoa(i) + ".yaml")
-		if err != nil {
-			tools.Test_finished = true
-			t.Errorf("[ERR/create_pod_test] Test failed.\n")
+	//读取yaml文件
+	err := api.ParseNode("./Node-1.yaml")
+	if err != nil {
+		tools.Test_finished = true
+		t.Errorf("[ERR/connection_test] Test failed.\n")
+		return
+	}
+
+	err = api.ParsePod("./Pod-1.yaml")
+	if err != nil {
+		tools.Test_finished = true
+		t.Errorf("[ERR/connection_test] Test failed.\n")
+		return
+	}
+
+	for {
+		if tools.Test_finished == false {
+			time.Sleep(10 * time.Millisecond)
+		} else {
+			tools.Test_finished = false
+			break
 		}
 	}
 
-	//读取yaml文件
-	err := api.ParsePod("../../pkg/etcd/testfile/Pod-1.yaml")
-	if err != nil {
-		tools.Test_finished = true
-		t.Errorf("[ERR/create_pod_test] Test failed.\n")
-	}
+	_, _ = network.DelRequest(apiserver.API_server_prefix + apiserver.API_delete_pod_prefix + "defaulttest/pod-example1")
 
 	for {
 		if tools.Test_finished == false {
@@ -71,9 +88,11 @@ func TestCreatePod(t *testing.T) {
 			close(schedulerDummy.Consumer.Sig)
 			close(schedulerDummy.Producer.Sig)
 			close(apiServerDummy.Producer.Sig)
+			close(endpointCtrlDummy.Consumer.Sig)
 			schedulerDummy.Consumer.Consumer.Close()
 			schedulerDummy.Producer.Producer.Close()
 			apiServerDummy.Producer.Producer.Close()
+			endpointCtrlDummy.Consumer.Consumer.Close()
 			break
 		}
 	}

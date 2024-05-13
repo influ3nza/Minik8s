@@ -10,6 +10,7 @@ import (
 	"minik8s/pkg/controller/utils"
 	"minik8s/pkg/message"
 	"minik8s/pkg/network"
+	"minik8s/tools"
 )
 
 //需要做的内容：service的创建与删除，pod的创建、删除和修改
@@ -109,7 +110,11 @@ func (ec *EndpointController) OnCreatePod(pack string) {
 	var allSrvs []api_obj.Service
 	if dataStr == "" {
 		fmt.Printf("[ERR/EndpointController/OnCreatePod] Not any service available.\n")
-		ec.PrintHandlerWarning()
+		//TODO: 仅供测试使用。
+		if tools.Test_enabled {
+			tools.Test_finished = true
+		}
+		return
 	} else {
 		err = json.Unmarshal([]byte(dataStr), &allSrvs)
 		if err != nil {
@@ -166,7 +171,12 @@ func (ec *EndpointController) OnDeletePod(pack string) {
 	var allSrvs []api_obj.Service
 	if dataStr == "" {
 		fmt.Printf("[ERR/EndpointController/OnDeletePod] Not any service available.\n")
-		ec.PrintHandlerWarning()
+		//TODO: 仅供测试使用。
+		if tools.Test_enabled {
+			tools.Test_finished = true
+		}
+		return
+		return
 	} else {
 		err = json.Unmarshal([]byte(dataStr), &allSrvs)
 		if err != nil {

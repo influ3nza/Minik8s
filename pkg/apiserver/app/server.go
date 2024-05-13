@@ -71,7 +71,7 @@ func (s *ApiServer) Bind() {
 	s.router.GET(apiserver.API_get_pods_by_node, s.GetPodsByNode)
 	s.router.GET(apiserver.API_get_pod)               //TODO
 	s.router.GET(apiserver.API_get_pods_by_namespace) //TODO
-	s.router.DELETE(apiserver.API_delete_pod)         //TODO
+	s.router.DELETE(apiserver.API_delete_pod, s.DeletePod)
 
 	s.router.POST(apiserver.API_add_service, s.AddService)
 	s.router.GET(apiserver.API_get_services, s.GetServices)
@@ -92,6 +92,7 @@ func (s *ApiServer) Bind() {
 // 在进行测试/实际运行时，第2步调用此函数。默认端口为8080
 func (s *ApiServer) Run() error {
 	s.Bind()
+	tools.NodesIpMap = make(map[string]string)
 	go s.Consumer.Consume([]string{message.TOPIC_ApiServer_FromNode}, s.MsgHandler)
 	tools.Apiserver_boot_finished = true
 	err := s.router.Run(fmt.Sprintf(":%d", s.port))

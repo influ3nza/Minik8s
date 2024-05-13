@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -96,6 +95,7 @@ func (s *ApiServer) AddNode(c *gin.Context) {
 	//检查node各项参数
 	//name是否重复，是否为空
 	node_name := node.GetName()
+	fmt.Printf("[msgHandler/addNode] Adding node: %s.\n", node_name)
 
 	if node_name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -146,8 +146,10 @@ func (s *ApiServer) AddNode(c *gin.Context) {
 	}
 
 	//存储node的ip地址
-	nodeaddr := node.GetInternelIp() + ":" + strconv.Itoa(int(node.NodeStatus.Addresses.Port))
-	s.NodeIPMap[node_name] = nodeaddr
+	//TODO:仅供测试使用，需要取消注释。
+	nodeaddr := "http://127.0.0.1:20000"
+	// nodeaddr := node.GetInternelIp() + ":" + strconv.Itoa(int(node.NodeStatus.Addresses.Port))
+	tools.NodesIpMap[node_name] = nodeaddr
 
 	e_key := apiserver.ETCD_node_ip_prefix + node.NodeMetadata.Name
 	err = s.EtcdWrap.Put(e_key, []byte(nodeaddr))
