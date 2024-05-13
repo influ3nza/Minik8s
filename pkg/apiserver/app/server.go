@@ -84,10 +84,10 @@ func (s *ApiServer) Bind() {
 	s.router.GET(apiserver.API_get_endpoint, s.GetEndpoint)
 	s.router.GET(apiserver.API_get_endpoint_by_service, s.GetEndpointsByService)
 
-	s.router.GET(apiserver.API_get_replicasets)      //TODO
-	s.router.DELETE(apiserver.API_delete_replicaset, s.DeleteReplicaSet) //TODO
+	s.router.GET(apiserver.API_get_replicasets, s.GetReplicaSets)      //need check, in replicasetHandler
+	s.router.DELETE(apiserver.API_delete_replicaset, s.DeleteReplicaSet) //need check,in replicasetHandler
 	s.router.GET(apiserver.API_update_replicaset)    //TODO
-	s.router.POST(apiserver.API_add_replicaset, s.AddReplicaSet)		 //TODO
+	s.router.POST(apiserver.API_add_replicaset, s.AddReplicaSet)  //need check,in replicasetHandler
 }
 
 // 在进行测试/实际运行时，第2步调用此函数。默认端口为8080
