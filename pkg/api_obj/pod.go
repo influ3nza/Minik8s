@@ -9,9 +9,9 @@ import (
 type Pod struct {
 	ApiVersion string               `json:"apiVersion" yaml:"apiVersion"`
 	Kind       string               `json:"kind" yaml:"kind"`
-	MetaData   obj_inner.ObjectMeta `json:"metaData" yaml:"metadata"`
+	MetaData   obj_inner.ObjectMeta `json:"metaData" yaml:"metaData"`
 	Spec       PodSpec              `json:"spec" yaml:"spec"`
-	PodStatus  PodStatus
+	PodStatus  PodStatus            `json:"podStatus"`
 }
 
 type PodSpec struct {
@@ -36,6 +36,8 @@ type PodStatus struct {
 	PodIP          string              `json:"podIP" yaml:"podIP"`
 	Phase          string              `json:"phase" yaml:"phase"`
 	ContainerTypes []containerd.Status `json:"containerTypes" yaml:"containerTypes"`
+	CreateTime     string              `json:"createTime" yaml:"createTime"`
+	Restarts       int32               `json:"restarts" yaml:"restarts"`
 }
 
 type PodList struct {

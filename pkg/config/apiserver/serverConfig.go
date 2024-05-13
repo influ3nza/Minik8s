@@ -1,0 +1,68 @@
+package apiserver
+
+import (
+	"time"
+)
+
+const (
+	API_server_prefix string = "http://127.0.0.1:50000"
+
+	API_get_nodes       string = "/nodes/getAll"
+	API_get_node_prefix string = "/nodes/"
+	API_get_node        string = "/nodes/:name"
+	API_add_node        string = "/nodes/add"
+
+	API_update_pod                   string = "/pods/update"
+	API_add_pod                      string = "/pods/add"
+	API_get_pod_prefix               string = "/pods/"
+	API_get_pod                      string = "/pods/:namespace/:name"
+	API_get_pods                     string = "/pods/getAll"
+	API_get_pods_by_node_prefix      string = "/pods/getByNode"
+	API_get_pods_by_node             string = "/pods/getByNode/:nodename"
+	API_get_pods_by_namespace_prefix string = "/pods/getByNamespace"
+	API_get_pods_by_namespace        string = "/pods/getByNamespace/:namespace"
+	API_delete_pod_prefix            string = "/pods/delete/"
+	API_delete_pod                   string = "/pods/delete/:namespace/:name"
+
+	API_add_service           string = "/services/add"
+	API_get_services          string = "/services/getAll"
+	API_get_service_prefix    string = "/services/"
+	API_get_service           string = "/services/:namespace/:name"
+	API_delete_service_prefix string = "/services/delete"
+	API_delete_service        string = "/services/delete/:namespace/:name"
+
+	API_add_endpoint string = "/endpoints/add"
+	//所有endpoint的名字{srvname}-{podname}
+	API_delete_endpoints_prefix        string = "/endpoints/deleteBatch/"
+	API_delete_endpoints               string = "/endpoints/deleteBatch/:namespace/:srvname"
+	API_delete_endpoint_prefix         string = "/endpoints/delete/"
+	API_delete_endpoint                string = "/endpoints/delete/:namespace/:name"
+	API_get_endpoint_prefix            string = "/endpoints/"
+	API_get_endpoint                   string = "/endpoints/:namespace/:name"
+	API_get_endpoint_by_service_prefix string = "/endpoints/"
+	API_get_endpoint_by_service        string = "/endpoints/:srvname"
+
+	API_get_replicasets          string = "/replicasets/getAll"
+	API_delete_replicaset_prefix string = "/replicasets/delete/"
+	API_delete_replicaset        string = "/replicasets/delete/:namespace/:name"
+	API_update_replicaset        string = "/replicasets/update"
+	API_add_replicaset           string = "/replicasets/add"
+)
+
+type ServerConfig struct {
+	Port          int32
+	TrustedProxy  []string
+	EtcdEndpoints []string
+	EtcdTimeout   time.Duration
+	MaxNodeCount  int32
+}
+
+func DefaultServerConfig() *ServerConfig {
+	return &ServerConfig{
+		Port:          50000,
+		TrustedProxy:  []string{"127.0.0.1"},
+		EtcdEndpoints: []string{"localhost:2379"},
+		EtcdTimeout:   5 * time.Second,
+		MaxNodeCount:  10,
+	}
+}
