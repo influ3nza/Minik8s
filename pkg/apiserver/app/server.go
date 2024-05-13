@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"minik8s/pkg/apiserver/config"
+	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/etcd"
 	"minik8s/pkg/message"
 	"minik8s/tools"
@@ -22,7 +22,7 @@ type ApiServer struct {
 }
 
 // 在进行测试/实际运行时，第1步调用此函数。
-func CreateApiServerInstance(c *config.ServerConfig) (*ApiServer, error) {
+func CreateApiServerInstance(c *apiserver.ServerConfig) (*ApiServer, error) {
 	router := gin.Default()
 	router.SetTrustedProxies(c.TrustedProxy)
 
@@ -40,12 +40,13 @@ func CreateApiServerInstance(c *config.ServerConfig) (*ApiServer, error) {
 	}
 
 	return &ApiServer{
-		router:    router,
-		EtcdWrap:  wrap,
-		port:      c.Port,
-		Producer:  producer,
-		Consumer:  consumer,
-		NodeIPMap: make(map[string]string, c.MaxNodeCount),
+		router:   router,
+		EtcdWrap: wrap,
+		port:     c.Port,
+		Producer: producer,
+		Consumer: consumer,
+		//TODO: 这些数据都是易失数据，在做容错的时候需要考虑到这一点。
+		//TODO: 心跳更新。 -> 不考虑
 	}, nil
 }
 
@@ -60,21 +61,32 @@ func serverHelloWorld(c *gin.Context) {
 func (s *ApiServer) Bind() {
 	s.router.GET("/hello", serverHelloWorld)
 
-	s.router.GET(config.API_get_nodes, s.GetNodes)
-	s.router.GET(config.API_get_node, s.GetNode)
-	s.router.POST(config.API_add_node, s.AddNode)
+	s.router.GET(apiserver.API_get_nodes, s.GetNodes)
+	s.router.GET(apiserver.API_get_node, s.GetNode)
+	s.router.POST(apiserver.API_add_node, s.AddNode)
 
-	s.router.GET(config.API_get_pods, s.GetPods)
-	s.router.POST(config.API_update_pod, s.UpdatePod)
-	s.router.POST(config.API_add_pod, s.AddPod)
-	s.router.GET(config.API_get_pods_by_node, s.GetPodsByNode)
+	s.router.GET(apiserver.API_get_pods, s.GetPods)
+	s.router.POST(apiserver.API_update_pod, s.UpdatePodScheduled)
+	s.router.POST(apiserver.API_add_pod, s.AddPod)
+	s.router.GET(apiserver.API_get_pods_by_node, s.GetPodsByNode)
+	s.router.GET(apiserver.API_get_pod)               //TODO
+	s.router.GET(apiserver.API_get_pods_by_namespace) //TODO
+	s.router.DELETE(apiserver.API_delete_pod)         //TODO
 
-	s.router.POST(config.API_add_service, s.AddService)
-	s.router.GET(config.API_get_services, s.GetServices)
+	s.router.POST(apiserver.API_add_service, s.AddService)
+	s.router.GET(apiserver.API_get_services, s.GetServices)
+	s.router.GET(apiserver.API_get_service)       //TODO
+	s.router.DELETE(apiserver.API_delete_service) //TODO
 
-	s.router.POST(config.API_add_endpoint, s.AddEndpoint)
-	s.router.DELETE(config.API_delete_endpoints, s.DeleteEndpoints)
-	s.router.DELETE(config.API_delete_endpoint, s.DeleteEndpoint)
+	s.router.POST(apiserver.API_add_endpoint, s.AddEndpoint)
+	s.router.DELETE(apiserver.API_delete_endpoints, s.DeleteEndpoints)
+	s.router.DELETE(apiserver.API_delete_endpoint, s.DeleteEndpoint)
+	s.router.GET(apiserver.API_get_endpoint, s.GetEndpoint)
+	s.router.GET(apiserver.API_get_endpoint_by_service, s.GetEndpointsByService)
+
+	s.router.GET(apiserver.API_get_replicasets)      //TODO
+	s.router.DELETE(apiserver.API_delete_replicaset) //TODO
+	s.router.GET(apiserver.API_update_replicaset)    //TODO
 }
 
 // 在进行测试/实际运行时，第2步调用此函数。默认端口为8080

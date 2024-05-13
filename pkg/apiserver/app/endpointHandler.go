@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"minik8s/pkg/api_obj"
-	"minik8s/pkg/apiserver/config"
+	"minik8s/pkg/config/apiserver"
 	"minik8s/tools"
 )
 
@@ -25,7 +25,7 @@ func (s *ApiServer) AddEndpoint(c *gin.Context) {
 	}
 
 	//存入etcd
-	e_key := config.ETCD_endpoint_prefix + new_ep.MetaData.NameSpace + "/" + new_ep.MetaData.Name
+	e_key := apiserver.ETCD_endpoint_prefix + new_ep.MetaData.NameSpace + "/" + new_ep.MetaData.Name
 	ep_str, err := json.Marshal(new_ep)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -64,7 +64,7 @@ func (s *ApiServer) DeleteEndpoints(c *gin.Context) {
 		return
 	}
 
-	err := s.EtcdWrap.DeleteByPrefix(config.ETCD_endpoint_prefix + namespace + "/" + srvname)
+	err := s.EtcdWrap.DeleteByPrefix(apiserver.ETCD_endpoint_prefix + namespace + "/" + srvname)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "[ERR/handler/DeleteEndpoints] Failed to delete from etcd, " + err.Error(),
@@ -92,7 +92,7 @@ func (s *ApiServer) DeleteEndpoint(c *gin.Context) {
 
 	fmt.Printf("[apiserver/DeleteEndpoint] namespace: %s, name: %s\n", name, namespace)
 
-	err := s.EtcdWrap.Del(config.ETCD_endpoint_prefix + namespace + "/" + name)
+	err := s.EtcdWrap.Del(apiserver.ETCD_endpoint_prefix + namespace + "/" + name)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "[ERR/handler/DeleteEndpoint] Failed to delete from etcd, " + err.Error(),
@@ -103,5 +103,75 @@ func (s *ApiServer) DeleteEndpoint(c *gin.Context) {
 	//返回200
 	c.JSON(http.StatusOK, gin.H{
 		"data": "[handler/DeleteEndpoint] Delete endpoint success",
+	})
+}
+
+func (s *ApiServer) GetEndpoint(c *gin.Context) {
+	fmt.Printf("[apiserver/GetEndpoint] Try to get an endpoint.\n")
+
+	epname := c.Param("epname")
+
+	if epname == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/GetEndpoint] Endpoint name shall not be null.",
+		})
+		return
+	}
+
+	e_key := apiserver.ETCD_endpoint_prefix + epname
+	res, err := s.EtcdWrap.Get(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/GetEndpoint] Failed to get from etcd, " + err.Error(),
+		})
+		return
+	}
+
+	if len(res) != 1 {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/GetEndpoint] Found zero or more than one endpoint.\n",
+		})
+		return
+	}
+
+	//返回200
+	c.JSON(http.StatusOK, gin.H{
+		"data": res[0].Value,
+	})
+}
+
+func (s *ApiServer) GetEndpointsByService(c *gin.Context) {
+	fmt.Printf("[apiserver/GetEndpointByService] Try to get endpoints by service.\n")
+
+	srvname := c.Param("srvname")
+
+	if srvname == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/GetEndpointByService] Service name shall not be null.",
+		})
+		return
+	}
+
+	e_key := apiserver.ETCD_endpoint_prefix + srvname
+	res, err := s.EtcdWrap.GetByPrefix(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/GetEndpoint] Failed to get from etcd, " + err.Error(),
+		})
+		return
+	}
+
+	var eps []string
+	for id, ep := range res {
+		eps = append(eps, ep.Value)
+
+		//返回值以逗号隔开
+		if id < len(res)-1 {
+			eps = append(eps, ",")
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": eps,
 	})
 }

@@ -10,10 +10,11 @@ import (
 
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
-	"minik8s/pkg/apiserver/config"
+	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/network"
 )
 
+// WARN:此函数仅供测试使用。
 func ParsePod(filePath string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -34,7 +35,7 @@ func ParsePod(filePath string) error {
 		return err
 	}
 
-	//TODO: 这里默认为running，便于测试。
+	//WARN: 这里默认为running，便于测试。
 	pod.PodStatus.Phase = obj_inner.Running
 
 	pod_str, err := json.Marshal(pod)
@@ -44,7 +45,7 @@ func ParsePod(filePath string) error {
 	}
 
 	//将请求发送给apiserver
-	uri := config.API_server_prefix + config.API_add_pod
+	uri := apiserver.API_server_prefix + apiserver.API_add_pod
 	_, err = network.PostRequest(uri, pod_str)
 	if err != nil {
 		fmt.Printf("[ERR/kubectl/parsePod] Failed to post request, err:%v\n", err)
@@ -56,6 +57,7 @@ func ParsePod(filePath string) error {
 	return nil
 }
 
+// WARN:此函数仅供测试使用。
 func ParseNode(filePath string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -83,7 +85,7 @@ func ParseNode(filePath string) error {
 	}
 
 	//将请求发送给apiserver
-	uri := config.API_server_prefix + config.API_add_node
+	uri := apiserver.API_server_prefix + apiserver.API_add_node
 	_, err = network.PostRequest(uri, node_str)
 	if err != nil {
 		fmt.Printf("[ERR/kubectl/parseNode] Failed to post request, err:%v\n", err)
@@ -95,6 +97,7 @@ func ParseNode(filePath string) error {
 	return nil
 }
 
+// WARN:此函数仅供测试使用。
 func ParseSrv(filePath string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -122,7 +125,7 @@ func ParseSrv(filePath string) error {
 	}
 
 	//将请求发送给apiserver
-	uri := config.API_server_prefix + config.API_add_service
+	uri := apiserver.API_server_prefix + apiserver.API_add_service
 	_, err = network.PostRequest(uri, srv_str)
 	if err != nil {
 		fmt.Printf("[ERR/kubectl/parseSrv] Failed to post request, err:%v\n", err)
@@ -138,14 +141,14 @@ func SendObjectTo(jsonStr []byte, kind string) error {
 	var suffix string
 	switch kind {
 	case "pod":
-		suffix = config.API_add_pod
+		suffix = apiserver.API_add_pod
 	case "node":
-		suffix = config.API_add_node
+		suffix = apiserver.API_add_node
 	case "service":
-		suffix = config.API_add_service
+		suffix = apiserver.API_add_service
 	}
 
-	uri := config.API_server_prefix + suffix
+	uri := apiserver.API_server_prefix + suffix
 	_, err := network.PostRequest(uri, jsonStr)
 	if err != nil {
 		fmt.Printf("[ERR/kubectl/apply"+kind+"] Failed to send request, err: %s\n", err.Error())

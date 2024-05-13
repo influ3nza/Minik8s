@@ -3,9 +3,9 @@ package test
 import (
 	"fmt"
 	"minik8s/pkg/apiserver/app"
-	"minik8s/pkg/apiserver/config"
 	"minik8s/pkg/kubectl/api"
 	"minik8s/pkg/scheduler"
+	"minik8s/pkg/config/apiserver"
 	"minik8s/tools"
 
 	"strconv"
@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 	tools.Test_enabled = true
 
 	var err error
-	apiServerDummy, err = app.CreateApiServerInstance(config.DefaultServerConfig())
+	apiServerDummy, err = app.CreateApiServerInstance(apiserver.DefaultServerConfig())
 	if err != nil {
 		_ = fmt.Errorf("Failed to create instance!")
 	}

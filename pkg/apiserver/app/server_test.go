@@ -6,13 +6,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"minik8s/pkg/apiserver/config"
+	"minik8s/pkg/config/apiserver"
 )
 
 var apiServerDummy *ApiServer = nil
 
 func TestMain(m *testing.M) {
-	server, err := CreateApiServerInstance(config.DefaultServerConfig())
+	server, err := CreateApiServerInstance(apiserver.DefaultServerConfig())
 	if err != nil {
 		_ = fmt.Errorf("[ERR/server_test/main] Failed to create apiserver instance.\n")
 		return

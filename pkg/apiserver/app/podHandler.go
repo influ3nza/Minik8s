@@ -9,14 +9,14 @@ import (
 
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
-	"minik8s/pkg/apiserver/config"
+	"minik8s/pkg/config/apiserver"
 	"minik8s/tools"
 )
 
 func (s *ApiServer) GetPods(c *gin.Context) {
 	fmt.Printf("[apiserver/GetPods] Try to get all pods.\n")
 
-	res, err := s.EtcdWrap.GetByPrefix(config.ETCD_pod_prefix)
+	res, err := s.EtcdWrap.GetByPrefix(apiserver.ETCD_pod_prefix)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "[apiserver/GetPods] Failed to get pods, " + err.Error(),
@@ -66,7 +66,7 @@ func (s *ApiServer) AddPod(c *gin.Context) {
 
 	//存入etcd
 	//是否已经有同名pod
-	e_key := config.ETCD_pod_prefix + new_pod_namespace + "/" + new_pod_name
+	e_key := apiserver.ETCD_pod_prefix + new_pod_namespace + "/" + new_pod_name
 	res, err := s.EtcdWrap.Get(e_key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -83,7 +83,7 @@ func (s *ApiServer) AddPod(c *gin.Context) {
 
 	//更新相关状态
 	new_pod.MetaData.UUID = tools.NewUUID()
-	//TODO:（测试专用）
+	//WARN:（测试专用）
 	if !tools.Test_enabled {
 		new_pod.PodStatus.Phase = obj_inner.Pending
 	}
@@ -112,7 +112,7 @@ func (s *ApiServer) AddPod(c *gin.Context) {
 	})
 }
 
-func (s *ApiServer) UpdatePod(c *gin.Context) {
+func (s *ApiServer) UpdatePodScheduled(c *gin.Context) {
 	new_pod := &api_obj.Pod{}
 	err := c.ShouldBind(new_pod)
 	if err != nil {
@@ -134,7 +134,7 @@ func (s *ApiServer) UpdatePod(c *gin.Context) {
 		return
 	}
 
-	e_key := config.ETCD_pod_prefix + pod_namespace + "/" + pod_name
+	e_key := apiserver.ETCD_pod_prefix + pod_namespace + "/" + pod_name
 	res, err := s.EtcdWrap.Get(e_key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -164,7 +164,7 @@ func (s *ApiServer) UpdatePod(c *gin.Context) {
 		return
 	}
 
-	//TODO: 更新pod的状态，可能之后需要更新更多东西
+	//更新pod的状态，可能之后需要更新更多东西
 	if new_pod.Spec.NodeName != "" {
 		old_pod.Spec.NodeName = new_pod.Spec.NodeName
 	}
@@ -188,7 +188,7 @@ func (s *ApiServer) UpdatePod(c *gin.Context) {
 	}
 
 	//返回node的ip地址
-	e_key = config.ETCD_node_ip_prefix + new_pod.Spec.NodeName
+	e_key = apiserver.ETCD_node_ip_prefix + new_pod.Spec.NodeName
 	res, err = s.EtcdWrap.Get(e_key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -223,7 +223,7 @@ func (s *ApiServer) UpdatePod(c *gin.Context) {
 func (s *ApiServer) GetPodsByNode(c *gin.Context) {
 	//fmt.Printf("[apiserver/GetPodsByNode] Try to get all pods from a node.\n")
 	nodename := c.Param("nodename")
-	e_key := config.ETCD_pod_prefix
+	e_key := apiserver.ETCD_pod_prefix
 
 	res, err := s.EtcdWrap.GetByPrefix(e_key)
 	if err != nil {

@@ -8,15 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"minik8s/pkg/api_obj"
-	"minik8s/pkg/apiserver/config"
-	"minik8s/pkg/message"
+	"minik8s/pkg/config/apiserver"
+	"minik8s/pkg/network"
 	"minik8s/tools"
 )
 
 func (s *ApiServer) GetServices(c *gin.Context) {
 	fmt.Printf("[apiserver/GetServices] Try to add all services.\n")
 
-	res, err := s.EtcdWrap.GetByPrefix(config.ETCD_service_prefix)
+	res, err := s.EtcdWrap.GetByPrefix(apiserver.ETCD_service_prefix)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "[apiserver/GetServices] Failed to get services, " + err.Error(),
@@ -63,7 +63,7 @@ func (s *ApiServer) AddService(c *gin.Context) {
 
 	fmt.Printf("[apiserver/AddService] Service name: %s\n", service_name)
 
-	e_key := config.ETCD_service_prefix + service_namespace + "/" + service_name
+	e_key := apiserver.ETCD_service_prefix + service_namespace + "/" + service_name
 	res, err := s.EtcdWrap.Get(e_key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -80,6 +80,7 @@ func (s *ApiServer) AddService(c *gin.Context) {
 	}
 
 	//TODO:分配IP（检查IP）
+	new_service.Spec.ClusterIP = "10.0.0.12"
 	new_service.MetaData.UUID = tools.NewUUID()
 	new_service.Status = api_obj.ServiceStatus{
 		Condition: api_obj.SERVICE_PENDING,
@@ -102,18 +103,27 @@ func (s *ApiServer) AddService(c *gin.Context) {
 		return
 	}
 
-	//创建endpoints -> 向endpointController发送消息。
-	msg := &message.Message{
-		Type:    message.SRV_CREATE,
-		Content: string(service_str),
+	//这里先不给endpoint controller发送srv create的消息。因为我们要保证
+	//ep一定要创建在srv之后。
+
+	//通知proxy，service已经创建，这里使用http过去，消息队列回来的方式。
+	//循环遍历所有node上的proxy：
+	//TODO:需要拿到所有proxy的地址。
+	proxyipdummy := []string{}
+	for _, proxyAddr := range proxyipdummy {
+		//TODO: 需要对接路径。
+		uri := proxyAddr + "/service/AddService"
+		_, err := network.PostRequest(uri, service_str)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "[ERR/handler/AddService] Failed to send POST request, " + err.Error(),
+			})
+			return
+		}
 	}
-	
-	s.Producer.Produce(message.TOPIC_EndpointController, msg)
 
 	//返回200
 	c.JSON(http.StatusOK, gin.H{
 		"data": "[handler/AddService] Add service success",
 	})
-
-	//TODO:通知proxy，service已经创建
 }
