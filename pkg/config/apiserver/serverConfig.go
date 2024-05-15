@@ -45,7 +45,8 @@ const (
 	API_get_replicasets          string = "/replicasets/getAll"
 	API_delete_replicaset_prefix string = "/replicasets/delete/"
 	API_delete_replicaset        string = "/replicasets/delete/:namespace/:name"
-	API_update_replcaset         string = "/replicasets/update"
+	API_update_replicaset        string = "/replicasets/update"
+	API_add_replicaset           string = "/replicasets/add"
 )
 
 type ServerConfig struct {
