@@ -15,6 +15,8 @@ func GetPodIp(namespace string, containerName string) (string, error) {
 		fmt.Println("Failed At GetPodIp line 11 ", err.Error())
 		return "", err
 	}
+
+	res = strings.TrimSuffix(res, "\n")
 	return res, nil
 }
 

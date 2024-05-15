@@ -100,9 +100,9 @@ func InitKubelet(config util.KubeConfig) *Kubelet {
 }
 
 func (server *Kubelet) Run() {
-	server.register()
+	//server.register()
 	server.registerHandler()
-	go server.GetPodStatus()
+	//go server.GetPodStatus()
 	err := server.Router.Run(fmt.Sprintf(":%d", server.Port))
 	if err != nil {
 		return
