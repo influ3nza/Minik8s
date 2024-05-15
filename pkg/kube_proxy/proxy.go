@@ -6,6 +6,7 @@ import (
 	"github.com/vishvananda/netlink/nl"
 	"golang.org/x/sys/unix"
 	"minik8s/pkg/api_obj"
+	"minik8s/pkg/message"
 	"net"
 	"os/exec"
 	"strconv"
@@ -17,6 +18,7 @@ type ProxyManager struct {
 	IpvsHandler *ipvs.Handle
 	Router      *gin.Engine
 	Services    map[string]*MainService
+	Producer    *message.MsgProducer
 }
 
 func InitManager() *ProxyManager {
@@ -26,12 +28,15 @@ func InitManager() *ProxyManager {
 		return nil
 	}
 
+	producer := message.NewProducer()
+
 	services := map[string]*MainService{}
 
 	manager := &ProxyManager{
 		Router:      gin.Default(),
 		IpvsHandler: handler,
 		Services:    services,
+		Producer:    producer,
 	}
 	return manager
 }
@@ -218,6 +223,7 @@ func (m *ProxyManager) AddEndPoint(ep *api_obj.Endpoint) error {
 		return fmt.Errorf("no Such Service UUID %s ip:port %s", ep.SrvUUID, label)
 	}
 
+	fmt.Println(*ep)
 	if ep.Weight == 0 {
 		ep.Weight = 1
 	}
@@ -228,6 +234,7 @@ func (m *ProxyManager) AddEndPoint(ep *api_obj.Endpoint) error {
 		Weight:        ep.Weight,
 		AddressFamily: nl.FAMILY_V4,
 	}
+	fmt.Println(*dst)
 	dstLabel := fmt.Sprintf("%s:%d", ep.PodIP, ep.PodPort)
 	err := m.IpvsHandler.NewDestination(realSrv.Service, dst)
 	if err != nil {

@@ -43,6 +43,11 @@ func Run() {
 }
 
 func main() {
+	//main1()
+	Run()
+}
+
+func main1() {
 	if err := InitEnv(); err != nil {
 		return
 	}
