@@ -106,6 +106,7 @@ func (s *ApiServer) DeleteEndpoint(c *gin.Context) {
 	})
 }
 
+// 返回一个数组。
 func (s *ApiServer) GetEndpoint(c *gin.Context) {
 	fmt.Printf("[apiserver/GetEndpoint] Try to get an endpoint.\n")
 
@@ -135,9 +136,12 @@ func (s *ApiServer) GetEndpoint(c *gin.Context) {
 		return
 	}
 
+	var arr []string
+	arr = append(arr, res[0].Value)
+
 	//返回200
 	c.JSON(http.StatusOK, gin.H{
-		"data": res[0].Value,
+		"data": arr,
 	})
 }
 

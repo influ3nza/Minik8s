@@ -126,21 +126,11 @@ func DeleteEndpoints(batch bool, suffix string) error {
 	}
 
 	ep_list := []api_obj.Endpoint{}
-	ep_mono := api_obj.Endpoint{}
-	var err error = nil
-	if batch {
-		err = network.GetRequestAndParse(getListUri, &ep_list)
-	} else {
-		err = network.GetRequestAndParse(getListUri, &ep_mono)
-	}
+	err := network.GetRequestAndParse(getListUri, &ep_list)
 
 	if err != nil {
 		fmt.Printf("[ERR/EP Controller/Utils/DeleteEndpoint] Failed to send GET request, %v.\n", err)
 		return err
-	}
-
-	if !batch {
-		ep_list = append(ep_list, ep_mono)
 	}
 
 	if len(ep_list) == 0 {
