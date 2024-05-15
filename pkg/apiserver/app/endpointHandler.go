@@ -109,16 +109,17 @@ func (s *ApiServer) DeleteEndpoint(c *gin.Context) {
 func (s *ApiServer) GetEndpoint(c *gin.Context) {
 	fmt.Printf("[apiserver/GetEndpoint] Try to get an endpoint.\n")
 
-	epname := c.Param("epname")
+	epname := c.Param("name")
+	namespace := c.Param("namespace")
 
-	if epname == "" {
+	if epname == "" || namespace == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "[ERR/handler/GetEndpoint] Endpoint name shall not be null.",
 		})
 		return
 	}
 
-	e_key := apiserver.ETCD_endpoint_prefix + epname
+	e_key := apiserver.ETCD_endpoint_prefix + namespace + "/" + epname
 	res, err := s.EtcdWrap.Get(e_key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

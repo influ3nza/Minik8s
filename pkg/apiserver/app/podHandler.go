@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -216,7 +217,6 @@ func (s *ApiServer) UpdatePodScheduled(c *gin.Context) {
 		"data": "http://127.0.0.1:20000",
 	})
 
-	//测试的终点，到达这里就可以下班了
 	fmt.Printf("[handler/UpdatePod] Update pod success.\n")
 
 	//仅供测试使用。
@@ -320,7 +320,7 @@ func (s *ApiServer) DeletePod(c *gin.Context) {
 
 	//给kubelet发消息。
 	nodeIp := tools.NodesIpMap[old_pod.Spec.NodeName]
-	uri := nodeIp + kubelet.DelPod_prefix + namespace + "/" + name
+	uri := nodeIp + strconv.Itoa(int(kubelet.Port)) + kubelet.DelPod_prefix + namespace + "/" + name
 	_, err = network.DelRequest(uri)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

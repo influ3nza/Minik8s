@@ -58,7 +58,7 @@ func (s *ApiServer) HandlePodCreate(msg string) {
 }
 
 func (s *ApiServer) HandlePodUpdate(msg string) {
-	//这里只能是Phase改变了。所以不需要给endpointController发送消息。
+	//这里只能是Phase改变了。但是如果发现是running且ip地址变化，则需要通知ep controller
 	pod := &api_obj.Pod{}
 	err := json.Unmarshal([]byte(msg), pod)
 	if err != nil {
@@ -92,6 +92,14 @@ func (s *ApiServer) HandlePodUpdate(msg string) {
 			fmt.Printf("[ERR/Apiserver/MsgHandler/PodUpdate] Failed to delete from etcd, %v.\n", err)
 			return
 		}
+
+		//向ep controller发送删除消息。
+		ep_msg := &message.Message{
+			Type:    message.POD_DELETE,
+			Content: msg,
+		}
+		s.Producer.Produce(message.TOPIC_EndpointController, ep_msg)
+
 		s.PodNeedRestart(*pod)
 	} else {
 		_, err := s.UpdatePodPhase(*pod, needCheckRestart)
@@ -106,7 +114,7 @@ func (s *ApiServer) HandlePodUpdate(msg string) {
 
 func (s *ApiServer) HandlePodDelete(msg string) {
 	//这里默认发送的是"podnamespace/podname"
-	//do nothing
+	//do nothing，因为删除pod的时候apiserver会直接向ep controller发送消息。
 }
 
 func (s *ApiServer) HandleSrvCreate(msg string) {
@@ -134,5 +142,6 @@ func (s *ApiServer) HandleSrvCreate(msg string) {
 }
 
 func (s *ApiServer) HandleSrvDelete(msg string) {
+	//kube_proxy会自动将srv下面的所有ep删除。
 	//do nothing
 }

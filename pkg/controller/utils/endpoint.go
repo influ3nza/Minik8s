@@ -39,11 +39,13 @@ func CreateEndpoints(srvs []api_obj.Service, pods []api_obj.Pod) error {
 						Name:      srv.MetaData.Name + "-" + pod.MetaData.Name,
 						NameSpace: srv.MetaData.NameSpace,
 					},
+					SrvUUID: srv.MetaData.UUID,
 					SrvIP:   srv.Spec.ClusterIP,
 					SrvPort: srv.Spec.Ports[0].Port,
 					PodUUID: pod.MetaData.UUID,
 					PodIP:   pod.PodStatus.PodIP,
 					PodPort: port,
+					Weight:  1,
 				}
 
 				ep_list = append(ep_list, *ep)
@@ -90,6 +92,10 @@ func CreateEndpoints(srvs []api_obj.Service, pods []api_obj.Pod) error {
 		}
 	}
 
+	if tools.Test_enabled {
+		tools.Ep_created = true
+	}
+
 	return nil
 }
 
@@ -106,6 +112,7 @@ func GetMatchPort(srvPort int32, cons []api_obj.Container) int32 {
 	return -10000
 }
 
+// TODO: 这里bug有点多。需要完全重新写。
 func DeleteEndpoints(batch bool, suffix string) error {
 	uri := ""
 	getListUri := apiserver.API_server_prefix
@@ -119,11 +126,28 @@ func DeleteEndpoints(batch bool, suffix string) error {
 	}
 
 	ep_list := []api_obj.Endpoint{}
-	err := network.GetRequestAndParse(getListUri, &ep_list)
+	ep_mono := api_obj.Endpoint{}
+	var err error = nil
+	if batch {
+		err = network.GetRequestAndParse(getListUri, &ep_list)
+	} else {
+		err = network.GetRequestAndParse(getListUri, &ep_mono)
+	}
+
 	if err != nil {
 		fmt.Printf("[ERR/EP Controller/Utils/DeleteEndpoint] Failed to send GET request, %v.\n", err)
 		return err
 	}
+
+	if !batch {
+		ep_list = append(ep_list, ep_mono)
+	}
+
+	if len(ep_list) == 0 {
+		fmt.Printf("[Controller/Utils/Endpoint] No endpoints to delete, return.\n")
+		return nil
+	}
+
 	ep_list_str, err := json.Marshal(ep_list)
 	if err != nil {
 		fmt.Printf("[ERR/Controller/Utils/DeleteEndpoint] Failed to marshal data, %v.\n", err)

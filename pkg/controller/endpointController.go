@@ -67,6 +67,7 @@ func (ec *EndpointController) OnAddService(pack string) {
 	// }
 }
 
+// WARN:这个函数不会被使用。
 func (ec *EndpointController) OnDeleteService(pack string) {
 	//需要删除所有的endpoints
 

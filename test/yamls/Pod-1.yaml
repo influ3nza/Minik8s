@@ -4,7 +4,7 @@ metaData:
   labels:
     app: test
   name: pod-example1
-  nameSpace: default
+  nameSpace: qwerty
 spec:
   containers:
     - image: 
@@ -14,7 +14,7 @@ spec:
       entryPoint:
         workingDir: /
       ports:
-        - containerPort: 0
+        - containerPort: 80
           hostIP: 0.0.0.0
           hostPort: 0
           name: no name
@@ -39,7 +39,7 @@ spec:
       entryPoint:
         workingDir: /
       ports:
-        - containerPort: 0
+        - containerPort: 80
           hostIP: 0.0.0.0
           hostPort: 0
           name: no name

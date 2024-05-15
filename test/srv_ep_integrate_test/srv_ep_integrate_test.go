@@ -9,6 +9,7 @@ import (
 	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/controller"
 	"minik8s/pkg/kubectl/api"
+	"minik8s/pkg/network"
 	"minik8s/pkg/scheduler"
 	"minik8s/tools"
 )
@@ -44,6 +45,7 @@ func TestMain(m *testing.M) {
 func TestSrvCreate(t *testing.T) {
 	tools.Test_finished = false
 	tools.Pod_created = false
+	tools.Ep_created = false
 
 	for {
 		if tools.Apiserver_boot_finished == false {
@@ -57,14 +59,14 @@ func TestSrvCreate(t *testing.T) {
 	apiServerDummy.EtcdWrap.DeleteByPrefix("/registry")
 
 	//读取yaml文件
-	err := api.ParseNode("./Node-1.yaml")
+	err := api.ParseNode("../yamls/Node-1.yaml")
 	if err != nil {
 		tools.Test_finished = true
 		t.Errorf("[ERR/connection_test] Test failed.\n")
 		return
 	}
 
-	err = api.ParsePod("./Pod-1.yaml")
+	err = api.ParsePod("../yamls/Pod-1.yaml")
 	if err != nil {
 		tools.Test_finished = true
 		t.Errorf("[ERR/connection_test] Test failed.\n")
@@ -86,6 +88,17 @@ func TestSrvCreate(t *testing.T) {
 		t.Errorf("[ERR/connection_test] Test failed.\n")
 		return
 	}
+
+	for {
+		if tools.Ep_created == false {
+			time.Sleep(10 * time.Millisecond)
+		} else {
+			tools.Ep_created = false
+			break
+		}
+	}
+
+	_, _ = network.DelRequest(apiserver.API_server_prefix + apiserver.API_delete_pod_prefix + "qwerty/pod-example1")
 
 	for {
 		if tools.Test_finished == false {

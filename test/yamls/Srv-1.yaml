@@ -4,13 +4,14 @@ metadata:
   labels:
     app: test
   name: srv-example1
-  nameSpace: default
+  nameSpace: qwerty
 spec:
   ports:
     - name: port1
       protocol: TCP
       port: 10000
-      targetPort: 0
+      targetPort: 80
+      nodePort: 35000
   selector: 
     app: test
   type: NodePort

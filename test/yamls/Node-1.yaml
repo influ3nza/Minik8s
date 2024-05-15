@@ -4,4 +4,4 @@ metadata:
   labels:
     app: test
   name: node-example1
-  nameSpace: default
+  nameSpace: qwerty
