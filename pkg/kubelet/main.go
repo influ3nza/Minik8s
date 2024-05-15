@@ -18,7 +18,7 @@ import (
 var wg sync.WaitGroup
 
 func main() {
-	testReStart()
+	testCreateMonitor()
 }
 
 func testLock() {
