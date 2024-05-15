@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"minik8s/pkg/config/apiserver"
+	"minik8s/pkg/network"
 
 	"github.com/spf13/cobra"
 )
@@ -52,10 +53,18 @@ func DelHandler(cmd *cobra.Command, args []string) {
 
 func DeletePodHandler(namespace string, name string) {
 	uri := apiserver.API_server_prefix + apiserver.API_delete_pod_prefix + namespace + "/" + name
+	_, err := network.DelRequest(uri)
+	if err != nil {
+		fmt.Printf("[ERR/DeletePod] Failed to send DEL request.\n")
+	}
 }
 
 func DeleteServiceHandler(namespace string, name string) {
-
+	uri := apiserver.API_server_prefix + apiserver.API_delete_service_prefix + namespace + "/" + name
+	_, err := network.DelRequest(uri)
+	if err != nil {
+		fmt.Printf("[ERR/DeleteSrv] Failed to send DEL request.\n")
+	}
 }
 
 func DeleteReplicasetHandler(namespace string, name string) {
