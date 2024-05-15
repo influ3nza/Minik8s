@@ -8,6 +8,7 @@ import (
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/message"
+	"minik8s/tools"
 )
 
 func (s *ApiServer) MsgHandler(msg *message.Message) {
@@ -49,6 +50,11 @@ func (s *ApiServer) HandlePodCreate(msg string) {
 	}
 	s.Producer.Produce(message.TOPIC_EndpointController, p_msg)
 	//WARN:思考如果返回的消息是pod创建失败的消息应该怎么办
+
+	//WARN:仅供测试使用。
+	if tools.Test_enabled {
+		tools.Pod_created = true
+	}
 }
 
 func (s *ApiServer) HandlePodUpdate(msg string) {

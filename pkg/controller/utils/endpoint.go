@@ -30,7 +30,7 @@ func CreateEndpoints(srvs []api_obj.Service, pods []api_obj.Pod) error {
 		for _, pod := range pods {
 			for _, pair := range srv.Spec.Ports {
 				port := GetMatchPort(pair.TargetPort, pod.Spec.Containers)
-				if port == 0 {
+				if port < 0 {
 					return errors.New("no matching port")
 				}
 
@@ -94,8 +94,16 @@ func CreateEndpoints(srvs []api_obj.Service, pods []api_obj.Pod) error {
 }
 
 func GetMatchPort(srvPort int32, cons []api_obj.Container) int32 {
-	//TODO:
-	return 10
+	//查找符合的port
+	for _, con := range cons {
+		for _, p := range con.Ports {
+			if p.ContainerPort == srvPort {
+				return srvPort
+			}
+		}
+	}
+
+	return -10000
 }
 
 func DeleteEndpoints(batch bool, suffix string) error {

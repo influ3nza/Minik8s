@@ -79,8 +79,8 @@ func (s *ApiServer) AddService(c *gin.Context) {
 		return
 	}
 
-	//TODO:分配IP（检查IP）
-	new_service.Spec.ClusterIP = "10.0.0.12"
+	//分配IP（检查IP）
+	new_service.Spec.ClusterIP = AllocateClusterIp()
 	new_service.MetaData.UUID = tools.NewUUID()
 	new_service.Status = api_obj.ServiceStatus{
 		Condition: api_obj.SERVICE_PENDING,

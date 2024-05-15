@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/message"
 	"minik8s/pkg/network"
+	"minik8s/tools"
 )
 
 func (s *ApiServer) PodNeedRestart(pod api_obj.Pod) {
@@ -130,4 +132,10 @@ func (s *ApiServer) UpdateSrvCondition(namespace string, name string) error {
 	}
 
 	return nil
+}
+
+func AllocateClusterIp() string {
+	clusterIp := "172.0.0." + strconv.Itoa(int(tools.ClusterIpFlag))
+	tools.ClusterIpFlag += 1
+	return clusterIp
 }

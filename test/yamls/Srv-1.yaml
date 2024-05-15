@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Node
+metadata:
+  labels:
+    app: test
+  name: srv-example1
+  nameSpace: default
+spec:
+  ports:
+    - name: port1
+      protocol: TCP
+      port: 10000
+      targetPort: 0
+  selector: 
+    app: test
+  type: NodePort
