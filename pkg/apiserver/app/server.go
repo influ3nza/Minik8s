@@ -3,6 +3,9 @@ package app
 import (
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/gin-gonic/gin"
 
@@ -69,14 +72,14 @@ func (s *ApiServer) Bind() {
 	s.router.POST(apiserver.API_update_pod, s.UpdatePodScheduled)
 	s.router.POST(apiserver.API_add_pod, s.AddPod)
 	s.router.GET(apiserver.API_get_pods_by_node, s.GetPodsByNode)
-	s.router.GET(apiserver.API_get_pod)               //TODO
-	s.router.GET(apiserver.API_get_pods_by_namespace) //TODO
-	s.router.DELETE(apiserver.API_delete_pod)         //TODO
+	s.router.GET(apiserver.API_get_pod, s.GetPod)
+	s.router.GET(apiserver.API_get_pods_by_namespace, s.GetPodsByNamespace)
+	s.router.DELETE(apiserver.API_delete_pod, s.DeletePod)
 
 	s.router.POST(apiserver.API_add_service, s.AddService)
 	s.router.GET(apiserver.API_get_services, s.GetServices)
-	s.router.GET(apiserver.API_get_service)       //TODO
-	s.router.DELETE(apiserver.API_delete_service) //TODO
+	s.router.GET(apiserver.API_get_service, s.GetService)
+	s.router.DELETE(apiserver.API_delete_service, s.DeleteService)
 
 	s.router.POST(apiserver.API_add_endpoint, s.AddEndpoint)
 	s.router.DELETE(apiserver.API_delete_endpoints, s.DeleteEndpoints)
@@ -93,8 +96,28 @@ func (s *ApiServer) Bind() {
 // 在进行测试/实际运行时，第2步调用此函数。默认端口为8080
 func (s *ApiServer) Run() error {
 	s.Bind()
-	go s.Consumer.Consume([]string{message.TOPIC_ApiServer_FromNode}, s.MsgHandler)
+	tools.NodesIpMap = make(map[string]string)
 	tools.Apiserver_boot_finished = true
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT)
+	go func() {
+		<-sigChan
+		s.Clean()
+	}()
+
+	go s.Consumer.Consume([]string{message.TOPIC_ApiServer_FromNode}, s.MsgHandler)
+
 	err := s.router.Run(fmt.Sprintf(":%d", s.port))
 	return err
+}
+
+func (s *ApiServer) Clean() {
+	fmt.Printf("[apiserver/CLEAN] Apiserver closing...\n")
+
+	close(s.Consumer.Sig)
+	close(s.Producer.Sig)
+	s.Consumer.Consumer.Close()
+	s.Producer.Producer.Close()
+	os.Exit(0)
 }

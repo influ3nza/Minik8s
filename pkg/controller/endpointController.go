@@ -67,6 +67,7 @@ func (ec *EndpointController) OnAddService(pack string) {
 	// }
 }
 
+// WARN:这个函数不会被使用。
 func (ec *EndpointController) OnDeleteService(pack string) {
 	//需要删除所有的endpoints
 
@@ -109,7 +110,11 @@ func (ec *EndpointController) OnCreatePod(pack string) {
 	var allSrvs []api_obj.Service
 	if dataStr == "" {
 		fmt.Printf("[ERR/EndpointController/OnCreatePod] Not any service available.\n")
-		ec.PrintHandlerWarning()
+		//WARN: 仅供测试使用。
+		// if tools.Test_enabled {
+		// 	tools.Test_finished = true
+		// }
+		return
 	} else {
 		err = json.Unmarshal([]byte(dataStr), &allSrvs)
 		if err != nil {
@@ -166,7 +171,11 @@ func (ec *EndpointController) OnDeletePod(pack string) {
 	var allSrvs []api_obj.Service
 	if dataStr == "" {
 		fmt.Printf("[ERR/EndpointController/OnDeletePod] Not any service available.\n")
-		ec.PrintHandlerWarning()
+		//WARN: 仅供测试使用。
+		// if tools.Test_enabled {
+		// 	tools.Test_finished = true
+		// }
+		return
 	} else {
 		err = json.Unmarshal([]byte(dataStr), &allSrvs)
 		if err != nil {

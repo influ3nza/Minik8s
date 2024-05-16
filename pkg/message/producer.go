@@ -16,7 +16,7 @@ func NewProducer() *MsgProducer {
 	config := sarama.NewConfig()
 	config.Producer.Return.Successes = true
 	config.Producer.Return.Errors = true
-	producer, _ := sarama.NewAsyncProducer([]string{"localhost:9092"}, config)
+	producer, _ := sarama.NewAsyncProducer([]string{"192.168.1.13:9092"}, config)
 
 	mp := &MsgProducer{
 		Producer: producer,

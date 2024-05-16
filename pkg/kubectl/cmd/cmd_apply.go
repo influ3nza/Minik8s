@@ -22,16 +22,16 @@ var ApplyCmd = &cobra.Command{
 
 func init() {
 	ApplyCmd.PersistentFlags().StringSliceVarP(&ApplyFiles, "file", "f", []string{}, "put your config files")
-	err := ApplyCmd.MarkFlagRequired("file")
+	err := ApplyCmd.MarkPersistentFlagRequired("file")
 	if err != nil {
-		fmt.Println("[ERR] Init Apply Failed.\n", err.Error())
+		fmt.Println("[ERR] Init Apply Failed.", err.Error())
 		return
 	}
 }
 
 func ApplyHandler(cmd *cobra.Command, args []string) {
 	if ApplyFiles == nil || len(ApplyFiles) == 0 {
-		fmt.Println("[ERR] Input file is empty.\n")
+		fmt.Println("[ERR] Input file is empty.")
 		return
 	}
 
@@ -43,7 +43,7 @@ func ApplyHandler(cmd *cobra.Command, args []string) {
 		} else if strings.HasSuffix(file, ".yaml") {
 			format = "yaml"
 		} else {
-			fmt.Println("[ERR] File must be json or yaml.\n")
+			fmt.Println("[ERR] File must be json or yaml.")
 			return
 		}
 
@@ -52,37 +52,37 @@ func ApplyHandler(cmd *cobra.Command, args []string) {
 		if format == "json" {
 			fileToJson, err = os.ReadFile(file)
 			if err != nil {
-				fmt.Printf("[ERR] Cannot read file %s.\n", file)
+				fmt.Printf("[ERR] Cannot read file %s.", file)
 				return
 			}
 		} else {
 			fileToJson, err = os.ReadFile(file)
 			if err != nil {
-				fmt.Printf("[ERR] Cannot read file %s.\n", file)
+				fmt.Printf("[ERR] Cannot read file %s.", file)
 				return
 			}
 
 			fileToJson, err = yaml.YAMLToJSON(fileToJson)
 			if err != nil {
-				fmt.Printf("[ERR] Cannot convert yaml to json %s.\n", file)
+				fmt.Printf("[ERR] Cannot convert yaml to json %s.", file)
 				return
 			}
 		}
 		err = json.Unmarshal(fileToJson, &readData)
 		if err != nil {
-			fmt.Println("[ERR] Fail to unmarshal json bytes.\n")
+			fmt.Println("[ERR] Fail to unmarshal json bytes.")
 			return
 		}
 
 		kindValue, found := readData["kind"]
 		if !found {
-			fmt.Println("[ERR] Fail to find \"kind\" Keyword.\n")
+			fmt.Println("[ERR] Fail to find \"kind\" Keyword.")
 			return
 		}
 
 		kind, ok := kindValue.(string)
 		if !ok {
-			fmt.Println("[ERR] Failed to get \"kind\" str.\n")
+			fmt.Println("[ERR] Failed to get \"kind\" str.")
 			return
 		}
 

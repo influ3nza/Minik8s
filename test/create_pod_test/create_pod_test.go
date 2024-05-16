@@ -58,7 +58,7 @@ func TestCreatePod(t *testing.T) {
 	}
 
 	//读取yaml文件
-	err := api.ParsePod("../../pkg/etcd/testfile/Node-1.yaml")
+	err := api.ParsePod("../../pkg/etcd/testfile/Pod-1.yaml")
 	if err != nil {
 		tools.Test_finished = true
 		t.Errorf("[ERR/create_pod_test] Test failed.\n")

@@ -30,7 +30,7 @@ func CreateEndpoints(srvs []api_obj.Service, pods []api_obj.Pod) error {
 		for _, pod := range pods {
 			for _, pair := range srv.Spec.Ports {
 				port := GetMatchPort(pair.TargetPort, pod.Spec.Containers)
-				if port == 0 {
+				if port < 0 {
 					return errors.New("no matching port")
 				}
 
@@ -39,11 +39,13 @@ func CreateEndpoints(srvs []api_obj.Service, pods []api_obj.Pod) error {
 						Name:      srv.MetaData.Name + "-" + pod.MetaData.Name,
 						NameSpace: srv.MetaData.NameSpace,
 					},
+					SrvUUID: srv.MetaData.UUID,
 					SrvIP:   srv.Spec.ClusterIP,
 					SrvPort: srv.Spec.Ports[0].Port,
 					PodUUID: pod.MetaData.UUID,
 					PodIP:   pod.PodStatus.PodIP,
 					PodPort: port,
+					Weight:  1,
 				}
 
 				ep_list = append(ep_list, *ep)
@@ -69,6 +71,11 @@ func CreateEndpoints(srvs []api_obj.Service, pods []api_obj.Pod) error {
 		}
 	}
 
+	if len(ep_list) == 0 {
+		fmt.Printf("[Controller/Utils/Endpoint] No endpoints to create, return.\n")
+		return nil
+	}
+
 	//以数组的形式向proxy发送创建请求。
 	ep_list_str, err := json.Marshal(ep_list)
 	if err != nil {
@@ -85,14 +92,27 @@ func CreateEndpoints(srvs []api_obj.Service, pods []api_obj.Pod) error {
 		}
 	}
 
+	if tools.Test_enabled {
+		tools.Ep_created = true
+	}
+
 	return nil
 }
 
 func GetMatchPort(srvPort int32, cons []api_obj.Container) int32 {
-	//TODO:
-	return 10
+	//查找符合的port
+	for _, con := range cons {
+		for _, p := range con.Ports {
+			if p.ContainerPort == srvPort {
+				return srvPort
+			}
+		}
+	}
+
+	return -10000
 }
 
+// TODO: 这里bug有点多。需要完全重新写。
 func DeleteEndpoints(batch bool, suffix string) error {
 	uri := ""
 	getListUri := apiserver.API_server_prefix
@@ -107,10 +127,17 @@ func DeleteEndpoints(batch bool, suffix string) error {
 
 	ep_list := []api_obj.Endpoint{}
 	err := network.GetRequestAndParse(getListUri, &ep_list)
+
 	if err != nil {
 		fmt.Printf("[ERR/EP Controller/Utils/DeleteEndpoint] Failed to send GET request, %v.\n", err)
 		return err
 	}
+
+	if len(ep_list) == 0 {
+		fmt.Printf("[Controller/Utils/Endpoint] No endpoints to delete, return.\n")
+		return nil
+	}
+
 	ep_list_str, err := json.Marshal(ep_list)
 	if err != nil {
 		fmt.Printf("[ERR/Controller/Utils/DeleteEndpoint] Failed to marshal data, %v.\n", err)

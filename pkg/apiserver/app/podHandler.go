@@ -4,12 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/config/apiserver"
+	"minik8s/pkg/config/kubelet"
+	"minik8s/pkg/message"
+	"minik8s/pkg/network"
 	"minik8s/tools"
 )
 
@@ -23,15 +27,17 @@ func (s *ApiServer) GetPods(c *gin.Context) {
 		})
 		return
 	} else {
-		var pods []string
+		var pods = "["
 		for id, pod := range res {
-			pods = append(pods, pod.Value)
+			pods += pod.Value
 
 			//返回值以逗号隔开
 			if id < len(res)-1 {
-				pods = append(pods, ",")
+				pods += ","
 			}
 		}
+
+		pods += "]"
 
 		c.JSON(http.StatusOK, gin.H{
 			"data": pods,
@@ -40,14 +46,14 @@ func (s *ApiServer) GetPods(c *gin.Context) {
 }
 
 func (s *ApiServer) AddPod(c *gin.Context) {
-	fmt.Printf("[apiserver/addPod] Try to add a pod.\n")
+	fmt.Printf("[apiserver/AddPod] Try to add a pod.\n")
 
 	//在etcd中创建一个新的pod对象，内容已从用户yaml文件中读取完毕。
 	new_pod := &api_obj.Pod{}
 	err := c.ShouldBind(new_pod)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[msgHandler/addPod] Failed to parse pod from request, " + err.Error(),
+			"error": "[msgHandler/AddPod] Failed to parse pod from request, " + err.Error(),
 		})
 		return
 	}
@@ -57,12 +63,12 @@ func (s *ApiServer) AddPod(c *gin.Context) {
 
 	if new_pod_name == "" || new_pod_namespace == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[msgHandler/addPod] Empty pod name or namespace",
+			"error": "[msgHandler/AddPod] Empty pod name or namespace",
 		})
 		return
 	}
 
-	fmt.Printf("[apiserver/addPod] Pod name: %s\n", new_pod_name)
+	fmt.Printf("[apiserver/AddPod] Pod name: %s\n", new_pod_name)
 
 	//存入etcd
 	//是否已经有同名pod
@@ -70,13 +76,13 @@ func (s *ApiServer) AddPod(c *gin.Context) {
 	res, err := s.EtcdWrap.Get(e_key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[ERR/handler/addPod] Failed to get pod, " + err.Error(),
+			"error": "[ERR/handler/AddPod] Failed to get pod, " + err.Error(),
 		})
 		return
 	}
 	if len(res) != 0 {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[ERR/handler/addPod] Pod already exists",
+			"error": "[ERR/handler/AddPod] Pod already exists",
 		})
 		return
 	}
@@ -90,7 +96,7 @@ func (s *ApiServer) AddPod(c *gin.Context) {
 	new_pod_str, err := json.Marshal(new_pod)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[ERR/msgHandler/addPod] Failed to marshal pod, " + err.Error(),
+			"error": "[ERR/msgHandler/AddPod] Failed to marshal pod, " + err.Error(),
 		})
 		return
 	}
@@ -98,7 +104,7 @@ func (s *ApiServer) AddPod(c *gin.Context) {
 	err = s.EtcdWrap.Put(e_key, new_pod_str)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[ERR/msgHandler/addPod] Failed to write into etcd, " + err.Error(),
+			"error": "[ERR/msgHandler/AddPod] Failed to write into etcd, " + err.Error(),
 		})
 		return
 	}
@@ -108,7 +114,7 @@ func (s *ApiServer) AddPod(c *gin.Context) {
 
 	//成功返回
 	c.JSON(http.StatusCreated, gin.H{
-		"data": "[msgHandler/addPod] Create pod success",
+		"data": "[msgHandler/AddPod] Create pod success",
 	})
 }
 
@@ -117,7 +123,7 @@ func (s *ApiServer) UpdatePodScheduled(c *gin.Context) {
 	err := c.ShouldBind(new_pod)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[ERR/handler/updatePod] Failed to parse pod, " + err.Error(),
+			"error": "[ERR/handler/UpdatePod] Failed to parse pod, " + err.Error(),
 		})
 		return
 	}
@@ -125,11 +131,11 @@ func (s *ApiServer) UpdatePodScheduled(c *gin.Context) {
 	//获取etcd中的原pod
 	pod_name := new_pod.MetaData.Name
 	pod_namespace := new_pod.MetaData.NameSpace
-	fmt.Printf("[handler/updatePod] Try to get the original pod: %s/%s\n", pod_namespace, pod_name)
+	fmt.Printf("[handler/UpdatePod] Try to get the original pod: %s/%s\n", pod_namespace, pod_name)
 
 	if pod_name == "" || pod_namespace == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[ERR/handler/updatePod] Empty pod name or namespace",
+			"error": "[ERR/handler/UpdatePod] Empty pod name or namespace",
 		})
 		return
 	}
@@ -138,19 +144,19 @@ func (s *ApiServer) UpdatePodScheduled(c *gin.Context) {
 	res, err := s.EtcdWrap.Get(e_key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[ERR/handler/updatePod] Failed to get pod, " + err.Error(),
+			"error": "[ERR/handler/UpdatePod] Failed to get pod, " + err.Error(),
 		})
 		return
 	}
 	if len(res) == 0 {
 		c.JSON(http.StatusNotFound, gin.H{
-			"error": "[ERR/handler/updatePod] Failed to find pod",
+			"error": "[ERR/handler/UpdatePod] Failed to find pod",
 		})
 		return
 	}
 	if len(res) != 1 {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[ERR/handler/updatePod] Found more than one pod",
+			"error": "[ERR/handler/UpdatePod] Found more than one pod",
 		})
 		return
 	}
@@ -159,7 +165,7 @@ func (s *ApiServer) UpdatePodScheduled(c *gin.Context) {
 	err = json.Unmarshal([]byte(res[0].Value), old_pod)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[ERR/handler/updatePod] Failed to unmarshal pod, " + err.Error(),
+			"error": "[ERR/handler/UpdatePod] Failed to unmarshal pod, " + err.Error(),
 		})
 		return
 	}
@@ -173,7 +179,7 @@ func (s *ApiServer) UpdatePodScheduled(c *gin.Context) {
 	modified_pod, err := json.Marshal(old_pod)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[ERR/handler/updatePod] Failed to marshall pod, " + err.Error(),
+			"error": "[ERR/handler/UpdatePod] Failed to marshall pod, " + err.Error(),
 		})
 		return
 	}
@@ -182,12 +188,13 @@ func (s *ApiServer) UpdatePodScheduled(c *gin.Context) {
 	err = s.EtcdWrap.Put(e_key, modified_pod)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[ERR/handler/updatePod] Failed to write back etcd, " + err.Error(),
+			"error": "[ERR/handler/UpdatePod] Failed to write back etcd, " + err.Error(),
 		})
 		return
 	}
 
 	//返回node的ip地址
+	//TODO: 仅供测试使用！！！需要取消注释。
 	e_key = apiserver.ETCD_node_ip_prefix + new_pod.Spec.NodeName
 	res, err = s.EtcdWrap.Get(e_key)
 	if err != nil {
@@ -197,27 +204,27 @@ func (s *ApiServer) UpdatePodScheduled(c *gin.Context) {
 		return
 	} else if len(res) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[ERR/handler/GetNodeIp] Specified node not available.",
+			"error": "[ERR/handler/UpdatePod] Specified node not available.",
 		})
 		return
 	} else if len(res) > 1 {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[ERR/handler/GetNodeIp] Found more than one node.",
+			"error": "[ERR/handler/UpdatePod] Found more than one node.",
 		})
 		return
 	}
 
+	//TODO:仅供测试使用，需要修改。
 	c.JSON(http.StatusCreated, gin.H{
-		"data": res[0].Value,
+		"data": "http://127.0.0.1:20000",
 	})
 
-	//测试的终点，到达这里就可以下班了
-	fmt.Printf("[handler/updatePod] Update pod success.\n")
+	fmt.Printf("[handler/UpdatePod] Update pod success.\n")
 
 	//仅供测试使用。
-	if tools.Test_enabled {
-		tools.Test_finished = true
-	}
+	// if tools.Test_enabled {
+	// 	tools.Test_finished = true
+	// }
 }
 
 func (s *ApiServer) GetPodsByNode(c *gin.Context) {
@@ -249,7 +256,7 @@ func (s *ApiServer) GetPodsByNode(c *gin.Context) {
 		}
 	}
 
-	data := ""
+	data := "["
 	for id, p := range pack {
 		p_str, err := json.Marshal(p)
 		if err != nil {
@@ -264,6 +271,148 @@ func (s *ApiServer) GetPodsByNode(c *gin.Context) {
 			data += ","
 		}
 	}
+
+	data += "]"
+
+	c.JSON(http.StatusCreated, gin.H{
+		"data": data,
+	})
+}
+
+func (s *ApiServer) DeletePod(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+
+	if name == "" || namespace == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/DeletePod] Empty name or namespace.",
+		})
+		return
+	}
+
+	e_key := apiserver.ETCD_pod_prefix + namespace + "/" + name
+	res, err := s.EtcdWrap.Get(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/DeletePod] Failed to get from etcd, " + err.Error(),
+		})
+		return
+	}
+	if len(res) != 1 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/DeletePod] Found zero or more than one pod.",
+		})
+		return
+	}
+
+	old_pod := &api_obj.Pod{}
+	err = json.Unmarshal([]byte(res[0].Value), old_pod)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/DeletePod] Failed to unmarshal data, " + err.Error(),
+		})
+		return
+	}
+
+	err = s.EtcdWrap.Del(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/DeletePod] Failed to delete from etcd, " + err.Error(),
+		})
+		return
+	}
+
+	//给kubelet发消息。
+	nodeIp := tools.NodesIpMap[old_pod.Spec.NodeName]
+	uri := nodeIp + strconv.Itoa(int(kubelet.Port)) + kubelet.DelPod_prefix + namespace + "/" + name
+	_, err = network.DelRequest(uri)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/DeletePod] Failed to send DEL request, " + err.Error(),
+		})
+		return
+	}
+
+	//给endpoint controller发消息。
+	ep_msg := &message.Message{
+		Type:    message.POD_DELETE,
+		Content: res[0].Value,
+	}
+	s.Producer.Produce(message.TOPIC_EndpointController, ep_msg)
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": "[handler/DeletePod] Delete pod success.",
+	})
+}
+
+func (s *ApiServer) GetPod(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+
+	if namespace == "" || name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/GetPod] Empty namespace or name.",
+		})
+		return
+	}
+
+	e_key := apiserver.ETCD_pod_prefix + namespace + "/" + name
+	res, err := s.EtcdWrap.Get(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/GetPod] Failed to get from etcd, " + err.Error(),
+		})
+		return
+	}
+
+	if len(res) != 1 {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/GetPod] Found zero or more than one pod.",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": res[0].Value,
+	})
+}
+
+func (s *ApiServer) GetPodsByNamespace(c *gin.Context) {
+	namespace := c.Param("namespace")
+
+	if namespace == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/GetPodsByNamespace] Empty namespace.",
+		})
+		return
+	}
+
+	e_key := apiserver.ETCD_pod_prefix + namespace
+	res, err := s.EtcdWrap.GetByPrefix(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/GetPodsByNamespace] Failed to get from etcd, " + err.Error(),
+		})
+		return
+	}
+
+	data := "["
+	for id, p := range res {
+		p_str, err := json.Marshal(p)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "[ERR/handler/GetPodsByNamespace] Failed to marshal data, " + err.Error(),
+			})
+			return
+		}
+		data += string(p_str)
+
+		if id < len(res)-1 {
+			data += ","
+		}
+	}
+
+	data += "]"
 
 	c.JSON(http.StatusCreated, gin.H{
 		"data": data,

@@ -38,7 +38,7 @@ const (
 	API_delete_endpoint_prefix         string = "/endpoints/delete/"
 	API_delete_endpoint                string = "/endpoints/delete/:namespace/:name"
 	API_get_endpoint_prefix            string = "/endpoints/"
-	API_get_endpoint                   string = "/endpoints/:epname"
+	API_get_endpoint                   string = "/endpoints/:namespace/:name"
 	API_get_endpoint_by_service_prefix string = "/endpoints/getBySrv/"
 	API_get_endpoint_by_service        string = "/endpoints/getBySrv/:srvname"
 

@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/message"
 	"minik8s/pkg/network"
+	"minik8s/tools"
 )
 
 func (s *ApiServer) PodNeedRestart(pod api_obj.Pod) {
@@ -63,7 +65,7 @@ func (s *ApiServer) UpdatePodPhase(pod api_obj.Pod, needCheckRestart bool) (stri
 		return "", err
 	}
 
-	if old_pod.PodStatus.PodIP != pod.PodStatus.PodIP {
+	if old_pod.PodStatus.PodIP != "" && old_pod.PodStatus.PodIP != pod.PodStatus.PodIP {
 		//向ep controller发送update pod的消息。
 		ep_msg := &message.Message{
 			Type:    message.POD_UPDATE,
@@ -72,6 +74,8 @@ func (s *ApiServer) UpdatePodPhase(pod api_obj.Pod, needCheckRestart bool) (stri
 		s.Producer.Produce(message.TOPIC_EndpointController, ep_msg)
 	}
 	old_pod.PodStatus.PodIP = pod.PodStatus.PodIP
+
+	fmt.Printf("[Apiserver/UpdatePodPhase] Updated pod ip: %s.\n", pod.PodStatus.PodIP)
 
 	//检查是否重启了
 	if needCheckRestart && old_pod.PodStatus.Phase != pod.PodStatus.Phase {
@@ -128,4 +132,10 @@ func (s *ApiServer) UpdateSrvCondition(namespace string, name string) error {
 	}
 
 	return nil
+}
+
+func AllocateClusterIp() string {
+	clusterIp := "172.0.0." + strconv.Itoa(int(tools.ClusterIpFlag))
+	tools.ClusterIpFlag += 1
+	return clusterIp
 }
