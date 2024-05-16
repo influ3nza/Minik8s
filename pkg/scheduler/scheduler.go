@@ -4,13 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"minik8s/pkg/api_obj"
+	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/message"
 	"minik8s/pkg/network"
-	"minik8s/pkg/config/apiserver"
 )
 
 var pollIndex int32 = 0
@@ -181,5 +184,22 @@ func CreateSchedulerInstance() (*Scheduler, error) {
 }
 
 func (s *Scheduler) Run() {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT)
+	go func() {
+		<-sigChan
+		s.Clean()
+	}()
+
 	go s.Consumer.Consume([]string{"scheduler"}, s.MsgHandler)
+}
+
+func (s *Scheduler) Clean() {
+	fmt.Printf("[scheduler/CLEAN] Scheduler closing...\n")
+
+	close(s.Consumer.Sig)
+	close(s.Producer.Sig)
+	s.Consumer.Consumer.Close()
+	s.Producer.Producer.Close()
+	os.Exit(0)
 }

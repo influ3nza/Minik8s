@@ -36,7 +36,7 @@ func ParsePod(filePath string) error {
 	}
 
 	//WARN: 这里默认为running，便于测试。
-	pod.PodStatus.Phase = obj_inner.Running
+	pod.PodStatus.Phase = obj_inner.Pending
 
 	pod_str, err := json.Marshal(pod)
 	if err != nil {
