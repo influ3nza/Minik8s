@@ -8,6 +8,7 @@ apt update
 
 # 使用 apt 安装 wget
 apt install -y wget
+apt install -y ipvsadm
 
 wget https://github.com/etcd-io/etcd/releases/download/v3.4.32/etcd-v3.4.32-linux-amd64.tar.gz
 tar -xzvf etcd-v3.4.32-linux-amd64.tar.gz

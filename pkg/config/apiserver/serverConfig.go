@@ -33,14 +33,20 @@ const (
 
 	API_add_endpoint string = "/endpoints/add"
 	//所有endpoint的名字{srvname}-{podname}
-	API_delete_endpoints_prefix string = "/endpoints/deleteBatch/"
-	API_delete_endpoints        string = "/endpoints/deleteBatch/:namespace/:srvname"
-	API_delete_endpoint_prefix  string = "/endpoints/delete/"
-	API_delete_endpoint         string = "/endpoints/delete/:namespace/:name"
+	API_delete_endpoints_prefix        string = "/endpoints/deleteBatch/"
+	API_delete_endpoints               string = "/endpoints/deleteBatch/:namespace/:srvname"
+	API_delete_endpoint_prefix         string = "/endpoints/delete/"
+	API_delete_endpoint                string = "/endpoints/delete/:namespace/:name"
+	API_get_endpoint_prefix            string = "/endpoints/"
+	API_get_endpoint                   string = "/endpoints/:namespace/:name"
+	API_get_endpoint_by_service_prefix string = "/endpoints/"
+	API_get_endpoint_by_service        string = "/endpoints/:srvname"
 
-	API_get_replicasets           string = "/replicasets/getAll"
-	API_delete_replicasets_prefix string = "/replicasets/delete/"
-	API_delete_replicasets        string = "/replicasets/delete/:namespace/:name"
+	API_get_replicasets          string = "/replicasets/getAll"
+	API_delete_replicaset_prefix string = "/replicasets/delete/"
+	API_delete_replicaset        string = "/replicasets/delete/:namespace/:name"
+	API_update_replicaset        string = "/replicasets/update"
+	API_add_replicaset           string = "/replicasets/add"
 )
 
 type ServerConfig struct {
