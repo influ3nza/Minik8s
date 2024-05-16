@@ -3,6 +3,9 @@ package app
 import (
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/gin-gonic/gin"
 
@@ -93,8 +96,27 @@ func (s *ApiServer) Bind() {
 func (s *ApiServer) Run() error {
 	s.Bind()
 	tools.NodesIpMap = make(map[string]string)
-	go s.Consumer.Consume([]string{message.TOPIC_ApiServer_FromNode}, s.MsgHandler)
 	tools.Apiserver_boot_finished = true
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT)
+	go func() {
+		<-sigChan
+		s.Clean()
+	}()
+
+	go s.Consumer.Consume([]string{message.TOPIC_ApiServer_FromNode}, s.MsgHandler)
+
 	err := s.router.Run(fmt.Sprintf(":%d", s.port))
 	return err
+}
+
+func (s *ApiServer) Clean() {
+	fmt.Printf("[apiserver/CLEAN] Apiserver closing...\n")
+
+	close(s.Consumer.Sig)
+	close(s.Producer.Sig)
+	s.Consumer.Consumer.Close()
+	s.Producer.Producer.Close()
+	os.Exit(0)
 }

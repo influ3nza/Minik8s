@@ -166,15 +166,17 @@ func (s *ApiServer) GetEndpointsByService(c *gin.Context) {
 		return
 	}
 
-	var eps []string
+	var eps = "["
 	for id, ep := range res {
-		eps = append(eps, ep.Value)
+		eps += ep.Value
 
 		//返回值以逗号隔开
 		if id < len(res)-1 {
-			eps = append(eps, ",")
+			eps += ","
 		}
 	}
+
+	eps += "]"
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": eps,

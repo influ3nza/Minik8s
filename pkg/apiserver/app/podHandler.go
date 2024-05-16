@@ -27,15 +27,17 @@ func (s *ApiServer) GetPods(c *gin.Context) {
 		})
 		return
 	} else {
-		var pods []string
+		var pods = "["
 		for id, pod := range res {
-			pods = append(pods, pod.Value)
+			pods += pod.Value
 
 			//返回值以逗号隔开
 			if id < len(res)-1 {
-				pods = append(pods, ",")
+				pods += ","
 			}
 		}
+
+		pods += "]"
 
 		c.JSON(http.StatusOK, gin.H{
 			"data": pods,
@@ -254,7 +256,7 @@ func (s *ApiServer) GetPodsByNode(c *gin.Context) {
 		}
 	}
 
-	data := ""
+	data := "["
 	for id, p := range pack {
 		p_str, err := json.Marshal(p)
 		if err != nil {
@@ -269,6 +271,8 @@ func (s *ApiServer) GetPodsByNode(c *gin.Context) {
 			data += ","
 		}
 	}
+
+	data += "]"
 
 	c.JSON(http.StatusCreated, gin.H{
 		"data": data,
@@ -363,7 +367,7 @@ func (s *ApiServer) GetPod(c *gin.Context) {
 
 	if len(res) != 1 {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[ERR/handler/GetPod] Found zero or more than one pod, " + err.Error(),
+			"error": "[ERR/handler/GetPod] Found zero or more than one pod.",
 		})
 		return
 	}
@@ -392,7 +396,7 @@ func (s *ApiServer) GetPodsByNamespace(c *gin.Context) {
 		return
 	}
 
-	data := ""
+	data := "["
 	for id, p := range res {
 		p_str, err := json.Marshal(p)
 		if err != nil {
@@ -407,6 +411,8 @@ func (s *ApiServer) GetPodsByNamespace(c *gin.Context) {
 			data += ","
 		}
 	}
+
+	data += "]"
 
 	c.JSON(http.StatusCreated, gin.H{
 		"data": data,

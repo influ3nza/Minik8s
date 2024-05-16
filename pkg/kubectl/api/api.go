@@ -9,6 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"minik8s/pkg/api_obj"
+	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/network"
 )

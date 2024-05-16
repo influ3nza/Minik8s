@@ -25,15 +25,17 @@ func (s *ApiServer) GetServices(c *gin.Context) {
 		})
 		return
 	} else {
-		var srvs []string
+		var srvs = "["
 		for id, srv := range res {
-			srvs = append(srvs, srv.Value)
+			srvs += srv.Value
 
 			//返回值以逗号隔开
 			if id < len(res)-1 {
-				srvs = append(srvs, ",")
+				srvs += ","
 			}
 		}
+
+		srvs += "]"
 
 		c.JSON(http.StatusOK, gin.H{
 			"data": srvs,

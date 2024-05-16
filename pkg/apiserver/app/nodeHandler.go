@@ -22,15 +22,17 @@ func (s *ApiServer) GetNodes(c *gin.Context) {
 		})
 		return
 	} else {
-		var nodes []string
+		var nodes = "["
 		for id, node := range res {
-			nodes = append(nodes, node.Value)
+			nodes += node.Value
 
 			//返回值以逗号隔开
 			if id < len(res)-1 {
-				nodes = append(nodes, ",")
+				nodes += ","
 			}
 		}
+
+		nodes += "]"
 
 		c.JSON(http.StatusOK, gin.H{
 			"data": nodes,
