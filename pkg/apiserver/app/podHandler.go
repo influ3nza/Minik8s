@@ -296,7 +296,7 @@ func (s *ApiServer) DeletePod(c *gin.Context) {
 	}
 	if len(res) != 1 {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[ERR/handler/DeletePod] Found zero or more than one node.",
+			"error": "[ERR/handler/DeletePod] Found zero or more than one pod.",
 		})
 		return
 	}
@@ -335,4 +335,80 @@ func (s *ApiServer) DeletePod(c *gin.Context) {
 		Content: res[0].Value,
 	}
 	s.Producer.Produce(message.TOPIC_EndpointController, ep_msg)
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": "[handler/DeletePod] Delete pod success.",
+	})
+}
+
+func (s *ApiServer) GetPod(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+
+	if namespace == "" || name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/GetPod] Empty namespace or name.",
+		})
+		return
+	}
+
+	e_key := apiserver.ETCD_pod_prefix + namespace + "/" + name
+	res, err := s.EtcdWrap.Get(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/GetPod] Failed to get from etcd, " + err.Error(),
+		})
+		return
+	}
+
+	if len(res) != 1 {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/GetPod] Found zero or more than one pod, " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": res[0].Value,
+	})
+}
+
+func (s *ApiServer) GetPodsByNamespace(c *gin.Context) {
+	namespace := c.Param("namespace")
+
+	if namespace == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/GetPodsByNamespace] Empty namespace.",
+		})
+		return
+	}
+
+	e_key := apiserver.ETCD_pod_prefix + namespace
+	res, err := s.EtcdWrap.GetByPrefix(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/GetPodsByNamespace] Failed to get from etcd, " + err.Error(),
+		})
+		return
+	}
+
+	data := ""
+	for id, p := range res {
+		p_str, err := json.Marshal(p)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "[ERR/handler/GetPodsByNamespace] Failed to marshal data, " + err.Error(),
+			})
+			return
+		}
+		data += string(p_str)
+
+		if id < len(res)-1 {
+			data += ","
+		}
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"data": data,
+	})
 }

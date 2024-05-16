@@ -205,3 +205,36 @@ func (s *ApiServer) DeleteService(c *gin.Context) {
 		"data": "[handler/DeleteService] Delete service success",
 	})
 }
+
+func (s *ApiServer) GetService(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+
+	if namespace == "" || name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[apiserver/GetService] Empty namespace or name.",
+		})
+		return
+	}
+
+	e_key := apiserver.ETCD_service_prefix + namespace + "/" + name
+	res, err := s.EtcdWrap.Get(e_key)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[apiserver/GetService] Empty namespace or name.",
+		})
+		return
+	}
+
+	if len(res) != 1 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[apiserver/GetService] Found zero or more than one srv.",
+		})
+		return
+	}
+
+	// 返回200
+	c.JSON(http.StatusOK, gin.H{
+		"data": res[0].Value,
+	})
+}

@@ -69,14 +69,14 @@ func (s *ApiServer) Bind() {
 	s.router.POST(apiserver.API_update_pod, s.UpdatePodScheduled)
 	s.router.POST(apiserver.API_add_pod, s.AddPod)
 	s.router.GET(apiserver.API_get_pods_by_node, s.GetPodsByNode)
-	s.router.GET(apiserver.API_get_pod)               //TODO
-	s.router.GET(apiserver.API_get_pods_by_namespace) //TODO
+	s.router.GET(apiserver.API_get_pod, s.GetPod)
+	s.router.GET(apiserver.API_get_pods_by_namespace, s.GetPodsByNamespace)
 	s.router.DELETE(apiserver.API_delete_pod, s.DeletePod)
 
 	s.router.POST(apiserver.API_add_service, s.AddService)
 	s.router.GET(apiserver.API_get_services, s.GetServices)
-	s.router.GET(apiserver.API_get_service)       //TODO
-	s.router.DELETE(apiserver.API_delete_service) //TODO
+	s.router.GET(apiserver.API_get_service, s.GetService)
+	s.router.DELETE(apiserver.API_delete_service, s.DeleteService)
 
 	s.router.POST(apiserver.API_add_endpoint, s.AddEndpoint)
 	s.router.DELETE(apiserver.API_delete_endpoints, s.DeleteEndpoints)
