@@ -7,6 +7,7 @@ import (
 	"github.com/tidwall/gjson"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
+	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/kubelet/pod_manager"
 	"minik8s/pkg/kubelet/util"
 	"minik8s/pkg/message"
@@ -96,6 +97,7 @@ func (server *Kubelet) AddPod(c *gin.Context) {
 func (server *Kubelet) DelPod(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
+	pauseId := c.Param("pause")
 	c.JSON(http.StatusOK, gin.H{
 		"data": "[kubectl/DelPod] deleting pod",
 	})
@@ -121,7 +123,7 @@ func (server *Kubelet) DelPod(c *gin.Context) {
 			return
 		}
 
-		err := pod_manager.DeletePod(name, namespace)
+		err := pod_manager.DeletePod(name, namespace, pauseId)
 		if err != nil {
 			msg.Content = message.DEL_POD_FAILED
 			server.Producer.Produce(message.TOPIC_ApiServer_FromNode, msg)
@@ -167,7 +169,7 @@ func (server *Kubelet) GetPodMatrix(c *gin.Context) {
 func (server *Kubelet) GetPodStatus() {
 	for {
 		time.Sleep(5 * time.Second)
-		request, err := network.GetRequest(server.ApiServerAddress + "/pods/getAll")
+		request, err := network.GetRequest(server.ApiServerAddress + apiserver.API_get_pods_by_node_prefix + fmt.Sprintf("%s", "node-example1"))
 		if err != nil {
 			fmt.Println("Send Get RequestErr ", err.Error())
 			continue
@@ -276,7 +278,7 @@ func (server *Kubelet) Restart(pod_ api_obj.Pod, key_ string) {
 }
 
 func (server *Kubelet) PodRestart(pod *api_obj.Pod) error {
-	err := pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace)
+	err := pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace, pod.MetaData.Labels["pause"])
 	if err != nil {
 		return err
 	}

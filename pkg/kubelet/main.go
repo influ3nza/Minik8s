@@ -17,6 +17,119 @@ import (
 
 var wg sync.WaitGroup
 
+var pod = api_obj.Pod{
+	ApiVersion: "1",
+	Kind:       "pod",
+	MetaData: obj_inner.ObjectMeta{
+		Name:      "testpod",
+		NameSpace: "test2",
+		Labels: map[string]string{
+			"testlabel": "podlabel",
+		},
+		Annotations: nil,
+		UUID:        "",
+	},
+	Spec: api_obj.PodSpec{
+		Containers: []api_obj.Container{
+			{
+				Name: "testubuntu",
+				Image: obj_inner.Image{
+					Img:           "docker.io/library/ubuntu:latest",
+					ImgPullPolicy: "Always",
+				},
+				EntryPoint: obj_inner.EntryPoint{
+					WorkingDir: "/",
+				},
+				Ports: []obj_inner.ContainerPort{
+					{
+						ContainerPort: 0,
+						HostIP:        "0.0.0.0",
+						HostPort:      0,
+						Name:          "no name",
+						Protocol:      "TCP",
+					},
+				},
+				Env: []obj_inner.EnvVar{
+					{
+						Name:  "env1",
+						Value: "env1Value",
+					},
+				},
+				VolumeMounts: []obj_inner.VolumeMount{
+					{
+						MountPath: "/home",
+						SubPath:   "config",
+						Name:      "testMount",
+						ReadOnly:  false,
+					},
+				},
+				Resources: obj_inner.ResourceRequirements{
+					Limits: map[string]obj_inner.Quantity{
+						obj_inner.CPU_LIMIT:    obj_inner.Quantity("0.5"),
+						obj_inner.MEMORY_LIMIT: obj_inner.Quantity("200MiB"),
+					},
+					Requests: map[string]obj_inner.Quantity{
+						obj_inner.CPU_REQUEST:    obj_inner.Quantity("0.25"),
+						obj_inner.MEMORY_REQUEST: obj_inner.Quantity("100MiB"),
+					},
+				},
+			}, {
+				Name: "testName1",
+				Image: obj_inner.Image{
+					Img:           "docker.io/library/ubuntu:latest",
+					ImgPullPolicy: "Always",
+				},
+				EntryPoint: obj_inner.EntryPoint{
+					WorkingDir: "/",
+				},
+				Ports: []obj_inner.ContainerPort{
+					{
+						ContainerPort: 0,
+						HostIP:        "0.0.0.0",
+						HostPort:      0,
+						Name:          "no name",
+						Protocol:      "TCP",
+					},
+				},
+				Env: []obj_inner.EnvVar{
+					{
+						Name:  "env2",
+						Value: "env2Value",
+					},
+				},
+				VolumeMounts: []obj_inner.VolumeMount{
+					{
+						MountPath: "/home",
+						SubPath:   "config1",
+						Name:      "testMount",
+						ReadOnly:  false,
+					},
+				},
+				Resources: obj_inner.ResourceRequirements{
+					Limits: map[string]obj_inner.Quantity{
+						obj_inner.CPU_LIMIT:    obj_inner.Quantity("0.5"),
+						obj_inner.MEMORY_LIMIT: obj_inner.Quantity("200MiB"),
+					},
+					Requests: map[string]obj_inner.Quantity{
+						obj_inner.CPU_REQUEST:    obj_inner.Quantity("0.25"),
+						obj_inner.MEMORY_REQUEST: obj_inner.Quantity("100MiB"),
+					},
+				},
+			},
+		},
+		Volumes: []obj_inner.Volume{
+			{
+				Name: "testMount",
+				Type: "",
+				Path: "/testOOO",
+			},
+		},
+		NodeName:      "",
+		NodeSelector:  nil,
+		RestartPolicy: "",
+	},
+}
+
 func main() {
 	testCreateMonitor()
 }
@@ -61,118 +174,6 @@ func testLock() {
 func testReStart() {
 	client, err := containerd.New("/run/containerd/containerd.sock")
 	defer client.Close()
-	pod := api_obj.Pod{
-		ApiVersion: "1",
-		Kind:       "pod",
-		MetaData: obj_inner.ObjectMeta{
-			Name:      "testpod",
-			NameSpace: "test2",
-			Labels: map[string]string{
-				"testlabel": "podlabel",
-			},
-			Annotations: nil,
-			UUID:        "",
-		},
-		Spec: api_obj.PodSpec{
-			Containers: []api_obj.Container{
-				{
-					Name: "testubuntu",
-					Image: obj_inner.Image{
-						Img:           "docker.io/library/ubuntu:latest",
-						ImgPullPolicy: "Always",
-					},
-					EntryPoint: obj_inner.EntryPoint{
-						WorkingDir: "/",
-					},
-					Ports: []obj_inner.ContainerPort{
-						{
-							ContainerPort: 0,
-							HostIP:        "0.0.0.0",
-							HostPort:      0,
-							Name:          "no name",
-							Protocol:      "TCP",
-						},
-					},
-					Env: []obj_inner.EnvVar{
-						{
-							Name:  "env1",
-							Value: "env1Value",
-						},
-					},
-					VolumeMounts: []obj_inner.VolumeMount{
-						{
-							MountPath: "/home",
-							SubPath:   "config",
-							Name:      "testMount",
-							ReadOnly:  false,
-						},
-					},
-					Resources: obj_inner.ResourceRequirements{
-						Limits: map[string]obj_inner.Quantity{
-							obj_inner.CPU_LIMIT:    obj_inner.Quantity("0.5"),
-							obj_inner.MEMORY_LIMIT: obj_inner.Quantity("200MiB"),
-						},
-						Requests: map[string]obj_inner.Quantity{
-							obj_inner.CPU_REQUEST:    obj_inner.Quantity("0.25"),
-							obj_inner.MEMORY_REQUEST: obj_inner.Quantity("100MiB"),
-						},
-					},
-				}, {
-					Name: "testName1",
-					Image: obj_inner.Image{
-						Img:           "docker.io/library/ubuntu:latest",
-						ImgPullPolicy: "Always",
-					},
-					EntryPoint: obj_inner.EntryPoint{
-						WorkingDir: "/",
-					},
-					Ports: []obj_inner.ContainerPort{
-						{
-							ContainerPort: 0,
-							HostIP:        "0.0.0.0",
-							HostPort:      0,
-							Name:          "no name",
-							Protocol:      "TCP",
-						},
-					},
-					Env: []obj_inner.EnvVar{
-						{
-							Name:  "env2",
-							Value: "env2Value",
-						},
-					},
-					VolumeMounts: []obj_inner.VolumeMount{
-						{
-							MountPath: "/home",
-							SubPath:   "config1",
-							Name:      "testMount",
-							ReadOnly:  false,
-						},
-					},
-					Resources: obj_inner.ResourceRequirements{
-						Limits: map[string]obj_inner.Quantity{
-							obj_inner.CPU_LIMIT:    obj_inner.Quantity("0.5"),
-							obj_inner.MEMORY_LIMIT: obj_inner.Quantity("200MiB"),
-						},
-						Requests: map[string]obj_inner.Quantity{
-							obj_inner.CPU_REQUEST:    obj_inner.Quantity("0.25"),
-							obj_inner.MEMORY_REQUEST: obj_inner.Quantity("100MiB"),
-						},
-					},
-				},
-			},
-			Volumes: []obj_inner.Volume{
-				{
-					Name: "testMount",
-					Type: "",
-					Path: "/testOOO",
-				},
-			},
-			NodeName:      "",
-			NodeSelector:  nil,
-			RestartPolicy: "",
-		},
-	}
 	fmt.Println(pod.Spec.Containers[0].Name)
 
 	ctx := namespaces.WithNamespace(context.Background(), pod.MetaData.NameSpace)
@@ -197,143 +198,11 @@ func testReStart() {
 
 	util.RegisterPod(pod.MetaData.Name, pod.MetaData.NameSpace)
 	fmt.Println("Register success")
-
-	//err = pod_manager.StopPod(pod.MetaData.Name, pod.MetaData.NameSpace)
-	//if err != nil {
-	//	fmt.Println("Stopped Failed At Main ", err.Error())
-	//}
-	//
-	//for i := 0; i < 3; i++ {
-	//	err = pod_manager.ReStartPod(pod.MetaData.Name, pod.MetaData.NameSpace)
-	//	if err != nil {
-	//		fmt.Println(err.Error())
-	//		continue
-	//	} else {
-	//		break
-	//	}
-	//}
-	//
-	//if err != nil {
-	//	_ = pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace)
-	//	fmt.Println("Restart Failed")
-	//}
 }
 
 func testCreateMonitor() {
 	client, err := containerd.New("/run/containerd/containerd.sock")
 	defer client.Close()
-	pod := api_obj.Pod{
-		ApiVersion: "1",
-		Kind:       "pod",
-		MetaData: obj_inner.ObjectMeta{
-			Name:      "testpod",
-			NameSpace: "test2",
-			Labels: map[string]string{
-				"testlabel": "podlabel",
-			},
-			Annotations: nil,
-			UUID:        "",
-		},
-		Spec: api_obj.PodSpec{
-			Containers: []api_obj.Container{
-				{
-					Name: "testubuntu",
-					Image: obj_inner.Image{
-						Img:           "docker.io/library/ubuntu:latest",
-						ImgPullPolicy: "Always",
-					},
-					EntryPoint: obj_inner.EntryPoint{
-						WorkingDir: "/",
-					},
-					Ports: []obj_inner.ContainerPort{
-						{
-							ContainerPort: 0,
-							HostIP:        "0.0.0.0",
-							HostPort:      0,
-							Name:          "no name",
-							Protocol:      "TCP",
-						},
-					},
-					Env: []obj_inner.EnvVar{
-						{
-							Name:  "env1",
-							Value: "env1Value",
-						},
-					},
-					VolumeMounts: []obj_inner.VolumeMount{
-						{
-							MountPath: "/home",
-							SubPath:   "config",
-							Name:      "testMount",
-							ReadOnly:  false,
-						},
-					},
-					Resources: obj_inner.ResourceRequirements{
-						Limits: map[string]obj_inner.Quantity{
-							obj_inner.CPU_LIMIT:    obj_inner.Quantity("0.5"),
-							obj_inner.MEMORY_LIMIT: obj_inner.Quantity("200MiB"),
-						},
-						Requests: map[string]obj_inner.Quantity{
-							obj_inner.CPU_REQUEST:    obj_inner.Quantity("0.25"),
-							obj_inner.MEMORY_REQUEST: obj_inner.Quantity("100MiB"),
-						},
-					},
-				}, {
-					Name: "testName1",
-					Image: obj_inner.Image{
-						Img:           "docker.io/library/ubuntu:latest",
-						ImgPullPolicy: "Always",
-					},
-					EntryPoint: obj_inner.EntryPoint{
-						WorkingDir: "/",
-					},
-					Ports: []obj_inner.ContainerPort{
-						{
-							ContainerPort: 0,
-							HostIP:        "0.0.0.0",
-							HostPort:      0,
-							Name:          "no name",
-							Protocol:      "TCP",
-						},
-					},
-					Env: []obj_inner.EnvVar{
-						{
-							Name:  "env2",
-							Value: "env2Value",
-						},
-					},
-					VolumeMounts: []obj_inner.VolumeMount{
-						{
-							MountPath: "/home",
-							SubPath:   "config1",
-							Name:      "testMount",
-							ReadOnly:  false,
-						},
-					},
-					Resources: obj_inner.ResourceRequirements{
-						Limits: map[string]obj_inner.Quantity{
-							obj_inner.CPU_LIMIT:    obj_inner.Quantity("0.5"),
-							obj_inner.MEMORY_LIMIT: obj_inner.Quantity("200MiB"),
-						},
-						Requests: map[string]obj_inner.Quantity{
-							obj_inner.CPU_REQUEST:    obj_inner.Quantity("0.25"),
-							obj_inner.MEMORY_REQUEST: obj_inner.Quantity("100MiB"),
-						},
-					},
-				},
-			},
-			Volumes: []obj_inner.Volume{
-				{
-					Name: "testMount",
-					Type: "",
-					Path: "/testOOO",
-				},
-			},
-			NodeName:      "",
-			NodeSelector:  nil,
-			RestartPolicy: "",
-		},
-	}
 	fmt.Println(pod.Spec.Containers[0].Name)
 
 	ctx := namespaces.WithNamespace(context.Background(), pod.MetaData.NameSpace)
@@ -357,7 +226,7 @@ func testCreateMonitor() {
 	fmt.Println("Pod Ip is ", pod.PodStatus.PodIP)
 
 	util.RegisterPod(pod.MetaData.Name, pod.MetaData.NameSpace)
-	fmt.Println("Register success")
+	fmt.Println("Register success, ", pod.MetaData.Labels["pause"])
 
 	wg.Add(2)
 	go func() {
@@ -394,10 +263,10 @@ func testCreateMonitor() {
 				fmt.Println("UnRegister NonExist")
 			}
 		}
-		//err = pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace)
-		//if err != nil {
-		//	fmt.Println("Main Failed At line 202 ", err.Error())
-		//}
+		err = pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace, pod.MetaData.Labels["pause"])
+		if err != nil {
+			fmt.Println("Main Failed At line 268 ", err.Error())
+		}
 		wg.Done()
 	}()
 	wg.Wait()

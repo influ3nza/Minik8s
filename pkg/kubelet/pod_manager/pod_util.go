@@ -51,6 +51,23 @@ func GetPodNetConfFile(namespace string, container string) ([]string, error) {
 		fmt.Println("GetPodNetConfFile Failed At line 20", err.Error())
 		return []string{}, err
 	}
+
+	content := "nameserver 192.168.1.13\n"
+	reslovPath := fmt.Sprintf("%s/reslov.conf", dirPath)
+	data, err := os.ReadFile(reslovPath)
+	if err != nil {
+		fmt.Println("Write in reslov file dns server failed at line 59 ", err.Error())
+		return []string{}, err
+	}
+
+	data = append([]byte(content), data...)
+
+	err = os.WriteFile(reslovPath, data, os.ModePerm)
+	if err != nil {
+		fmt.Println("Error writing to file:", err)
+		return []string{}, err
+	}
+
 	_, err = util.CpContainer(namespace, container, "/etc/hosts", fmt.Sprintf("%s/hosts", dirPath), true)
 	if err != nil {
 		fmt.Println("GetPodNetConfFile Failed At line 26 ", err.Error())
