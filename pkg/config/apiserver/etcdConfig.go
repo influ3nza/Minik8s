@@ -15,4 +15,8 @@ const (
 	//"/registry/endpoints/:namespace/:name"
 	//其中:name的格式为{service_name}-{pod_name}
 	ETCD_endpoint_prefix = "/registry/endpoints/"
+
+	ETCD_replicaset_prefix = "/registry/replicasets/"
+
+	ETCD_hpa_prefix = "/registry/hpas/"
 )
