@@ -19,4 +19,6 @@ const (
 	ETCD_replicaset_prefix = "/registry/replicasets/"
 
 	ETCD_hpa_prefix = "/registry/hpas/"
+
+	ETCD_workflow_prefix = "/registry/workflows/"
 )
