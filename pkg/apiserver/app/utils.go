@@ -65,6 +65,8 @@ func (s *ApiServer) UpdatePodPhase(pod api_obj.Pod, needCheckRestart bool) (stri
 		return "", err
 	}
 
+	old_pod.MetaData.Annotations = pod.MetaData.Annotations
+
 	if old_pod.PodStatus.PodIP != "" && old_pod.PodStatus.PodIP != pod.PodStatus.PodIP {
 		//向ep controller发送update pod的消息。
 		ep_msg := &message.Message{
