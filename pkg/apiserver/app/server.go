@@ -75,7 +75,7 @@ func (s *ApiServer) Bind() {
 	s.router.GET(apiserver.API_get_pod, s.GetPod)
 	s.router.GET(apiserver.API_get_pods_by_namespace, s.GetPodsByNamespace)
 	s.router.DELETE(apiserver.API_delete_pod, s.DeletePod)
-	s.router.GET(apiserver.API_get_pod_metrix, s.GetPodMetrix)
+	s.router.GET(apiserver.API_get_pod_metrics, s.GetPodMetrics)
 
 	s.router.POST(apiserver.API_add_service, s.AddService)
 	s.router.GET(apiserver.API_get_services, s.GetServices)
