@@ -54,7 +54,7 @@ func (s *ApiServer) AddPod(c *gin.Context) {
 	err := c.ShouldBind(new_pod)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[msgHandler/AddPod] Failed to parse pod from request, " + err.Error(),
+			"error": "[apiserver/AddPod] Failed to parse pod from request, " + err.Error(),
 		})
 		return
 	}
@@ -71,7 +71,7 @@ func (s *ApiServer) AddPod(c *gin.Context) {
 
 	if new_pod_name == "" || new_pod_namespace == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[msgHandler/AddPod] Empty pod name or namespace",
+			"error": "[apiserver/AddPod] Empty pod name or namespace",
 		})
 		return
 	}
