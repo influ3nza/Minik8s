@@ -85,7 +85,7 @@ func AddPod(pod *api_obj.Pod) error {
 	}
 	pod.PodStatus.PodIP = podIpInPause
 	pod.PodStatus.Phase = obj_inner.Running
-	pod.MetaData.Labels["pause"] = containerPauseId
+	pod.MetaData.Annotations["pause"] = containerPauseId
 
 	return nil
 }
@@ -107,7 +107,7 @@ func DeletePod(podName string, namespace string, pauseId string) error {
 	err = delCNIRules(pauseId)
 	if err != nil {
 		fmt.Println("Delete Pod CNI Rules Failed At line 109, ", err.Error())
-		return err
+		return nil
 	}
 	return nil
 }

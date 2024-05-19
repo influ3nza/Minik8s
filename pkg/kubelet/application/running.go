@@ -52,7 +52,7 @@ func (server *Kubelet) AddPod(c *gin.Context) {
 		}
 		err_ := pod_manager.AddPod(pod)
 		util.UnLock(pod.MetaData.Name, pod.MetaData.NameSpace)
-
+		fmt.Println("Pod Pause Id is ", pod.MetaData.Annotations["pause"])
 		if err_ != nil {
 			pod.PodStatus.PodIP = "error"
 			msg := &message.Message{
@@ -232,11 +232,12 @@ func (server *Kubelet) GetPodStatus() {
 func (server *Kubelet) Restart(pod_ api_obj.Pod, key_ string) {
 	i := 1
 	for ; i < 4; i++ {
-		var t = int64(i * 5)
-		time.Sleep(time.Duration(t * 1000000000))
+		time.Sleep(5 * time.Second)
 		if util.Lock(pod_.MetaData.Name, pod_.MetaData.NameSpace) {
+			fmt.Println("Get Lock ", pod_.MetaData.NameSpace, " ", pod_.MetaData.Name)
 			err_ := server.PodRestart(&pod_)
 			if err_ != nil {
+				fmt.Printf("Restart Failed error: %s", err_.Error())
 				if i == 3 {
 					pod_.PodStatus.Phase = obj_inner.Failed
 					podJson_, _ := json.Marshal(pod_)
@@ -249,9 +250,11 @@ func (server *Kubelet) Restart(pod_ api_obj.Pod, key_ string) {
 					server.Producer.Produce(message.TOPIC_ApiServer_FromNode, msg_)
 					util.RestartingLock.Delete(key_)
 					util.UnLock(pod_.MetaData.Name, pod_.MetaData.NameSpace)
+					fmt.Println("Unlock ", pod_.MetaData.NameSpace, " ", pod_.MetaData.Name)
 					return
 				} else {
 					util.UnLock(pod_.MetaData.Name, pod_.MetaData.NameSpace)
+					fmt.Println("Unlock ", pod_.MetaData.NameSpace, " ", pod_.MetaData.Name, "Continuing")
 					continue
 				}
 			} else {
@@ -266,9 +269,11 @@ func (server *Kubelet) Restart(pod_ api_obj.Pod, key_ string) {
 				server.Producer.Produce(message.TOPIC_ApiServer_FromNode, msg_)
 				util.RestartingLock.Delete(key_)
 				util.UnLock(pod_.MetaData.Name, pod_.MetaData.NameSpace)
+				fmt.Println("Unlock ", pod_.MetaData.NameSpace, " ", pod_.MetaData.Name, "Restart success")
 				return
 			}
 		} else {
+			fmt.Println("Lock Failed Fall Back")
 			if _, ok := util.RestartingLock.Load(key_); ok {
 				util.RestartingLock.Delete(key_)
 			}
@@ -278,14 +283,14 @@ func (server *Kubelet) Restart(pod_ api_obj.Pod, key_ string) {
 }
 
 func (server *Kubelet) PodRestart(pod *api_obj.Pod) error {
-	err := pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace, pod.MetaData.Labels["pause"])
+	err := pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace, pod.MetaData.Annotations["pause"])
 	if err != nil {
 		return err
 	}
 
 	err = pod_manager.AddPod(pod)
 	if err != nil {
-		return err
+		return nil
 	}
 	return nil
 }
