@@ -50,12 +50,20 @@ func (s *ApiServer) AddPod(c *gin.Context) {
 
 	//在etcd中创建一个新的pod对象，内容已从用户yaml文件中读取完毕。
 	new_pod := &api_obj.Pod{}
+
 	err := c.ShouldBind(new_pod)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "[msgHandler/AddPod] Failed to parse pod from request, " + err.Error(),
 		})
 		return
+	}
+
+	if new_pod.MetaData.Labels == nil {
+		new_pod.MetaData.Labels = make(map[string]string)
+	}
+	if new_pod.MetaData.Annotations == nil {
+		new_pod.MetaData.Annotations = make(map[string]string)
 	}
 
 	new_pod_name := new_pod.MetaData.Name
@@ -324,7 +332,9 @@ func (s *ApiServer) DeletePod(c *gin.Context) {
 
 	//给kubelet发消息。
 	nodeIp := tools.NodesIpMap[old_pod.Spec.NodeName]
-	uri := nodeIp + strconv.Itoa(int(kubelet.Port)) + kubelet.DelPod_prefix + namespace + "/" + name
+	uri := nodeIp + strconv.Itoa(int(kubelet.Port)) +
+		kubelet.DelPod_prefix + namespace + "/" + name + "/" + old_pod.MetaData.Annotations["pause"]
+	fmt.Printf("Send pod delete to : %s.\n", uri)
 	_, err = network.DelRequest(uri)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

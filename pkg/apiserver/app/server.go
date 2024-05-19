@@ -99,6 +99,8 @@ func (s *ApiServer) Run() error {
 	tools.NodesIpMap = make(map[string]string)
 	tools.Apiserver_boot_finished = true
 
+	s.EtcdWrap.DeleteByPrefix("/registry")
+
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT)
 	go func() {

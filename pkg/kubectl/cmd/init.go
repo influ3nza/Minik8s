@@ -16,8 +16,9 @@ func Execute() error {
 
 func init() {
 	root_kubectl.AddCommand(hello_cmd)
-	// root_kubectl.AddCommand(ApplyCmd)
+	root_kubectl.AddCommand(ApplyCmd)
 	root_kubectl.AddCommand(GetCmd)
+	root_kubectl.AddCommand(DelCmd)
 }
 
 var ApplyFiles []string

@@ -3,6 +3,9 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
@@ -219,7 +222,22 @@ func (ec *EndpointController) MsgHandler(msg *message.Message) {
 }
 
 func (ec *EndpointController) Run() {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT)
+	go func() {
+		<-sigChan
+		ec.Clean()
+	}()
+
 	go ec.Consumer.Consume([]string{message.TOPIC_EndpointController}, ec.MsgHandler)
+}
+
+func (ec *EndpointController) Clean() {
+	fmt.Printf("[ep controller/CLEAN] Ep controller closing...\n")
+
+	close(ec.Consumer.Sig)
+	ec.Consumer.Consumer.Close()
+	os.Exit(0)
 }
 
 func CreateEndpointControllerInstance() (*EndpointController, error) {

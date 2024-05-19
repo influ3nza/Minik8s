@@ -89,15 +89,16 @@ func ApplyHandler(cmd *cobra.Command, args []string) {
 		switch strings.ToLower(kind) {
 		case "pod":
 			{
-				var pod = &api_obj.Pod{}
-				err = json.Unmarshal(fileToJson, pod)
-				if err != nil {
-					fmt.Printf("[ERR] Cannot parse file to pod, err: %s\n", err.Error())
-					return
-				}
-				fmt.Print(*pod)
+				// var pod = &api_obj.Pod{}
+				// err = json.Unmarshal(fileToJson, pod)
+				// if err != nil {
+				// 	fmt.Printf("[ERR] Cannot parse file to pod, err: %s\n", err.Error())
+				// 	return
+				// }
+				// fmt.Print(*pod)
 
-				err = api.SendObjectTo(fileToJson, "pod")
+				// err = api.SendObjectTo(fileToJson, "pod")
+				err = api.ParsePod(file)
 				if err != nil {
 					fmt.Printf("[ERR] Cannot send pod to server, err: %s\n", err.Error())
 					return
