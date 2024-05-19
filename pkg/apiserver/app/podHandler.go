@@ -428,3 +428,63 @@ func (s *ApiServer) GetPodsByNamespace(c *gin.Context) {
 		"data": data,
 	})
 }
+
+func (s *ApiServer) GetPodMetrix(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+
+	if name == "" || namespace == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/GetPodMetrix] Empty namespace or name.",
+		})
+		return
+	}
+
+	pod := &api_obj.Pod{}
+	e_key := apiserver.ETCD_pod_prefix + namespace + "/" + name
+	res, err := s.EtcdWrap.Get(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/GetPodMetrix] Failed to get pod, " + err.Error(),
+		})
+		return
+	}
+	if len(res) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/GetPodMetrix] Pod does not exist.",
+		})
+		return
+	}
+
+	err = json.Unmarshal([]byte(res[0].Value), pod)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/GetPodMetrix] Failed to unmarshal data, " + err.Error(),
+		})
+		return
+	}
+
+	uri := tools.NodesIpMap[pod.Spec.NodeName] +
+		strconv.Itoa(int(kubelet.Port)) + kubelet.GetMatrix_prefix + namespace + "/" + name
+
+	pod_metrix := &api_obj.PodMetrics{}
+	err = network.GetRequestAndParse(uri, pod_metrix)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/GetPodMetrix] Failed to send GET request, " + err.Error(),
+		})
+		return
+	}
+
+	pod_metrix_str, err := json.Marshal(pod_metrix)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/GetPodMetrix] Failed to marshal data, " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": pod_metrix_str,
+	})
+}
