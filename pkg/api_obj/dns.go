@@ -14,5 +14,5 @@ type Path struct {
 	ServiceName string `json:"serviceName" yaml:"serviceName"`
 	Port        int32  `json:"port" yaml:"port"`
 	SubPath     string `json:"subPath" yaml:"subPath"`
-	ServiceId   string
+	ServiceIp   string
 }
