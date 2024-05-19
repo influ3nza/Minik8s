@@ -8,7 +8,7 @@ type ProxyPass struct {
 
 type Server struct {
 	Port        string
-	ServerName  string
+	Domain      string
 	ProxyPasses []ProxyPass
 }
 

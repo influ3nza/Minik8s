@@ -2,7 +2,6 @@ package dns_op
 
 import (
 	"fmt"
-	"minik8s/pkg/api_obj"
 	"os"
 	"text/template"
 )
@@ -11,7 +10,7 @@ const nginxConfigFile = "/mydata/nginx/nginx.conf"
 
 var DNSRules AllDNSes
 
-func RewriteNginx(dns *api_obj.Dns) error {
+func RewriteNginx() error {
 	file, err := os.OpenFile(nginxConfigFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
 		return fmt.Errorf("open Nginx File Failed, %s", err.Error())
@@ -31,13 +30,9 @@ func RewriteNginx(dns *api_obj.Dns) error {
 	}
 
 	tmpl := template.Must(template.ParseFiles("/GJX/minik8s/pkg/dns/dns_op/nginx.tmpl"))
-	server := Server{
-		Port:        "",
-		ServerName:  "",
-		ProxyPasses: nil,
-	}
-	for _, path := range dns.Paths {
-
+	res := tmpl.Execute(file, DNSRules)
+	if res != nil {
+		return fmt.Errorf("write To Nginx Config File Failed, %s", res.Error())
 	}
 	return nil
 }

@@ -2,9 +2,9 @@ http {
     {{range .Servers}}
     server {
         listen 0.0.0.0:{{.Port}};
-        server_name {{.ServerName}};
+        server_name {{.Domain}};
 
-        {{range .Locations}}
+        {{range .ProxyPasses}}
         location /{{.Path}}/ {
             access_log /var/log/nginx/access.log;
             proxy_pass http://{{.IP}}:{{.Port}}/;

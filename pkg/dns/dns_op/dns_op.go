@@ -1,10 +1,12 @@
 package dns_op
 
 import (
+	"encoding/json"
 	"fmt"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/etcd"
 	"os/exec"
+	"strconv"
 	"strings"
 )
 
@@ -24,38 +26,57 @@ func (d *DnsService) StartDns(configPath string) error {
 }
 
 func (d *DnsService) AddDns(dns *api_obj.Dns) error {
-	for _, p := range dns.Paths {
-		if p.EndPoint == nil {
-			return fmt.Errorf("cannot generate dns, endpoint is null")
+	etcdStore := ParseDns(dns.Host)
+	value := map[string]string{
+		"host": "192.168.1.13",
+	}
+	str, _ := json.Marshal(value)
+	err := d.EtcdClient.Put(etcdStore, str)
+	if err != nil {
+		return fmt.Errorf("add Dns To Etcd Failed, %s", err.Error())
+	}
+	server := Server{
+		Port:        "80",
+		Domain:      dns.Host,
+		ProxyPasses: []ProxyPass{},
+	}
+	for _, path := range dns.Paths {
+		proxyPass := ProxyPass{
+			Path: path.SubPath,
+			IP:   path.ServiceIp,
+			Port: strconv.Itoa(int(path.Port)),
 		}
-		key := ParseDns(dns.Host, p.SubPath)
-		value := p.EndPoint.SrvIP
-		err := d.EtcdClient.Put(key, []byte(value))
-		if err != nil {
-			return fmt.Errorf("cannot generate dns, put etcd failed")
-		}
+		server.ProxyPasses = append(server.ProxyPasses, proxyPass)
+	}
+	DNSRules.Servers = append(DNSRules.Servers, server)
+	err = RewriteNginx()
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
 func (d *DnsService) DeleteDns(dns *api_obj.Dns) error {
-	for _, p := range dns.Paths {
-		key := ParseDns(dns.Host, p.SubPath)
-		err := d.EtcdClient.Del(key)
-		if err != nil {
-			return fmt.Errorf("cannot del dns, %s", err.Error())
+	key := ParseDns(dns.Host)
+	err := d.EtcdClient.Del(key)
+	if err != nil {
+		fmt.Println("Delete Dns Failed In Del Etcd, ", err.Error())
+	}
+	for idx, rule := range DNSRules.Servers {
+		if dns.Host == rule.Domain {
+			DNSRules.Servers = append(DNSRules.Servers[:idx], DNSRules.Servers[idx+1:]...)
 		}
+	}
+	err = RewriteNginx()
+	if err != nil {
+		fmt.Println("Delete Dns Failed, ", err.Error())
 	}
 	return nil
 }
 
-func ParseDns(host string, path string) string {
-	if strings.HasSuffix(host, ".") {
-		host = strings.TrimSuffix(host, ".")
-	}
+func ParseDns(domain string) string {
 
-	fullPath := fmt.Sprintf("%s.%s", host, path)
-	fullPath = reverseDomain(fullPath)
+	fullPath := reverseDomain(domain)
 	fullPath = strings.Replace(fullPath, ".", "/", -1)
 	fullPath = fmt.Sprintf("/savedns/%s", fullPath)
 	fmt.Println(fullPath)
