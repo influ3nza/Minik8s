@@ -54,6 +54,11 @@ const (
 	API_delete_hpa_prefix string = "/hpas/delete/"
 	API_delete_hpa        string = "/hpas/delete/:namespace/:name"
 	API_update_hpa        string = "hpas/update"
+
+	API_get_workflow_prefix string = "/workflows/"
+	API_get_workflow        string = "/workflows/:namespace/:name"
+	API_add_workflow        string = "/workflows/add"
+	API_update_workflow     string = "/workflows/update"
 )
 
 type ServerConfig struct {
