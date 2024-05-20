@@ -11,8 +11,8 @@ type Dns struct {
 }
 
 type Path struct {
-	ServiceName string    `json:"serviceName" yaml:"serviceName"`
-	Port        int32     `json:"port" yaml:"port"`
-	SubPath     string    `json:"subPath" yaml:"subPath"`
-	EndPoint    *Endpoint //todo apiServer 在加入dns的时候找到对应的ep 将指针放进去
+	ServiceName string `json:"serviceName" yaml:"serviceName"`
+	Port        int32  `json:"port" yaml:"port"`
+	SubPath     string `json:"subPath" yaml:"subPath"`
+	ServiceIp   string
 }
