@@ -22,13 +22,6 @@ apt install -y openjdk-17-jdk
 # 输出安装完成的消息
 echo "etcd wget已成功安装"
 
-if [ "$1" == "node" ]; then
-  nohup etcd --data-dir="/var/lib/etcd/default.etcd" --listen-client-urls="http://192.168.1.13:2379,http://localhost:2379"  --advertise-client-urls="http://192.168.1.13:2379,http://localhost:2379" & > etcd.log
-else
-    # 参数不匹配时的处理
-    etcd &
-fi
-
 echo "etcd 已成功安装"
 
 if [ -x "$(command -v containerd)" ]; then
@@ -116,6 +109,13 @@ EOF
 
 nerdctl network ls
 echo "flannel.conflist 文件已创建并写入内容"
+
+if [ "$1" == "node" ]; then
+  nohup etcd --data-dir="/var/lib/etcd/default.etcd" --listen-client-urls="http://192.168.1.13:2379,http://localhost:2379"  --advertise-client-urls="http://192.168.1.13:2379,http://localhost:2379" & > etcd.log
+else
+    # 参数不匹配时的处理
+    etcd &
+fi
 
 export ETCDCTL_API=3
 etcdctl --endpoints "http://localhost:2379" put /coreos.com/network/config '{"NetWork":"10.2.0.0/16","SubnetMin":"10.2.1.0","SubnetMax": "10.2.20.0","Backend": {"Type": "vxlan"}}'
