@@ -17,6 +17,34 @@ import (
 type HPAController struct {
 }
 
+var (
+	timedelay = 5 * time.Second
+	timeinterval = []time.Duration{15 * time.Second}
+)
+
+func CreateHPAControllerInstance() (*ReplicasetController, error) {
+	return &HPAController{}, err
+}
+
+
+func (hc *HPAController) Run() {
+	hc.execute(timedelay, timeinterval, hc.watch)
+}
+
+func (hc *HPAController) execute(delay time.Duration, interval []time.Duration, callback callback) {
+	if len(interval) == 0 {
+		return
+	}
+	<-time.After(delay)
+	for{
+		for _, inter := range interval {
+			callback()
+			<-time.After(inter)
+		}
+	}
+}
+
+
 func (hc *HPAController) GetAllHPAs() ([]api_obj.HPA, error) {
 	uri := config.API_server_prefix + config.API_get_hpas
 	dataStr, err := network.GetRequest(uri)
@@ -236,7 +264,7 @@ func (hc *HPAController) UpdateHpa(hpa *api_obj.HPA) error {
 		fmt.Printf("[ERR/hpaController/UpdateHpaStatus] Failed to marshal hpa, %v.\n", err)
 		return
 	}
-	_, err = network.PostRequest(uri, hpaStr) //may have bug in &
+	_, err = network.PostRequest(uri, hpaStr)
 	if err != nil {
 		fmt.Printf("[ERR/hpaController/UpdateHpaStatus] Failed to post request, err:%v\n", err)
 		return err
