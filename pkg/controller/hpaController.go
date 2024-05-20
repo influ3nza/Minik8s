@@ -107,7 +107,7 @@ func (hc *HPAController) watch() {
 				return
 			}
 		}
-			//更新replica的个数
+			// d.更新replica的个数
 		hpa.Status.CurReplicas = expectedReplicas
 
 
@@ -236,7 +236,7 @@ func (hc *HPAController) UpdateHpa(hpa *api_obj.HPA) error {
 		fmt.Printf("[ERR/hpaController/UpdateHpaStatus] Failed to marshal hpa, %v.\n", err)
 		return
 	}
-	_, err = network.PostRequest(uri, hpaStr)
+	_, err = network.PostRequest(uri, hpaStr) //may have bug in &
 	if err != nil {
 		fmt.Printf("[ERR/hpaController/UpdateHpaStatus] Failed to post request, err:%v\n", err)
 		return err
@@ -270,7 +270,7 @@ func (hc *HPAController) AverageCPUUsage(pods []api_obj.Pod) float64 {
 			return
 		}
 		podMetrics := &api_obj.PodMetrics{}
-		err := json.Unmarshal([]byte(dataStr), podMetrics)
+		err := json.Unmarshal([]byte(dataStr), &podMetrics)
 		if err != nil {
 			fmt.Printf("[ERR/HPAController/AverageCPUUsage] Failed to unmarshal pod, " + err.Error())
 			ec.PrintHandlerWarning()
@@ -300,7 +300,7 @@ func (hc *HPAController) AverageMemoryUsage(pods []api_obj.Pod) float64 {
 			return
 		}
 		podMetrics := &api_obj.PodMetrics{}
-		err := json.Unmarshal([]byte(dataStr), podMetrics)
+		err := json.Unmarshal([]byte(dataStr), &podMetrics)
 		if err != nil {
 			fmt.Printf("[ERR/HPAController/AverageCPUUsage] Failed to unmarshal pod, " + err.Error())
 			ec.PrintHandlerWarning()
