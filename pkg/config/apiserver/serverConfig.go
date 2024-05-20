@@ -17,18 +17,19 @@ const (
 	API_get_pod_prefix               string = "/pods/"
 	API_get_pod                      string = "/pods/:namespace/:name"
 	API_get_pods                     string = "/pods/getAll"
-	API_get_pods_by_node_prefix      string = "/pods/getByNode"
+	API_get_pods_by_node_prefix      string = "/pods/getByNode/"
 	API_get_pods_by_node             string = "/pods/getByNode/:nodename"
-	API_get_pods_by_namespace_prefix string = "/pods/getByNamespace"
+	API_get_pods_by_namespace_prefix string = "/pods/getByNamespace/"
 	API_get_pods_by_namespace        string = "/pods/getByNamespace/:namespace"
 	API_delete_pod_prefix            string = "/pods/delete/"
 	API_delete_pod                   string = "/pods/delete/:namespace/:name"
+	API_get_pod_metrix               string = "/pods/getMetrix/:namespace/:name"
 
 	API_add_service           string = "/services/add"
 	API_get_services          string = "/services/getAll"
 	API_get_service_prefix    string = "/services/"
 	API_get_service           string = "/services/:namespace/:name"
-	API_delete_service_prefix string = "/services/delete"
+	API_delete_service_prefix string = "/services/delete/"
 	API_delete_service        string = "/services/delete/:namespace/:name"
 
 	API_add_endpoint string = "/endpoints/add"
@@ -47,6 +48,17 @@ const (
 	API_delete_replicaset        string = "/replicasets/delete/:namespace/:name"
 	API_update_replicaset        string = "/replicasets/update"
 	API_add_replicaset           string = "/replicasets/add"
+
+	API_add_hpa           string = "/hpas/add"
+	API_get_hpas          string = "/hpas/getAll"
+	API_delete_hpa_prefix string = "/hpas/delete/"
+	API_delete_hpa        string = "/hpas/delete/:namespace/:name"
+	API_update_hpa        string = "hpas/update"
+
+	API_get_workflow_prefix string = "/workflows/"
+	API_get_workflow        string = "/workflows/:namespace/:name"
+	API_add_workflow        string = "/workflows/add"
+	API_update_workflow     string = "/workflows/update"
 )
 
 type ServerConfig struct {
