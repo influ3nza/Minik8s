@@ -12,6 +12,7 @@ import (
 
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/config/apiserver"
+	"minik8s/pkg/config/kubelet"
 	"minik8s/pkg/message"
 	"minik8s/pkg/network"
 )
@@ -81,8 +82,7 @@ func (s *Scheduler) ExecSchedule(pod *api_obj.Pod) {
 		fmt.Printf("[ERR/scheduler/ExecSchedule] Failed to update pod to apiserver, %s.\n", err)
 		return
 	} else {
-		//TODO: 合并后需要修改这里。
-		uri = dataStr + "/pod/AddPod"
+		uri = dataStr + kubelet.AddPod
 		_, err = network.PostRequest(uri, pod_str)
 		if err != nil {
 			fmt.Printf("[ERR/scheduler/ExecSchedule] Failed to send request to node, %s.\n", err)

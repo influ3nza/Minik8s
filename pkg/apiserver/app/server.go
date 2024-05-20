@@ -9,19 +9,24 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"minik8s/pkg/apiserver/controller/manager"
 	"minik8s/pkg/config/apiserver"
+	"minik8s/pkg/dns"
+	"minik8s/pkg/dns/dns_op"
 	"minik8s/pkg/etcd"
 	"minik8s/pkg/message"
 	"minik8s/tools"
 )
 
 type ApiServer struct {
-	router    *gin.Engine
-	EtcdWrap  *etcd.EtcdWrap
-	port      int32
-	Producer  *message.MsgProducer
-	Consumer  *message.MsgConsumer
-	NodeIPMap map[string]string
+	router            *gin.Engine
+	EtcdWrap          *etcd.EtcdWrap
+	port              int32
+	Producer          *message.MsgProducer
+	Consumer          *message.MsgConsumer
+	DnsService        *dns_op.DnsService
+	ControllerManager manager.ControllerManager
+	NodeIPMap         map[string]string
 }
 
 // 在进行测试/实际运行时，第1步调用此函数。
@@ -42,14 +47,19 @@ func CreateApiServerInstance(c *apiserver.ServerConfig) (*ApiServer, error) {
 		return nil, err
 	}
 
+	dns_srv := dns.InitDnsService()
+
+	cm := manager.CreateNewControllerManagerInstance()
+
 	return &ApiServer{
-		router:   router,
-		EtcdWrap: wrap,
-		port:     c.Port,
-		Producer: producer,
-		Consumer: consumer,
+		router:            router,
+		EtcdWrap:          wrap,
+		port:              c.Port,
+		Producer:          producer,
+		Consumer:          consumer,
+		DnsService:        dns_srv,
+		ControllerManager: cm,
 		//TODO: 这些数据都是易失数据，在做容错的时候需要考虑到这一点。
-		//TODO: 心跳更新。 -> 不考虑
 	}, nil
 }
 
@@ -92,6 +102,21 @@ func (s *ApiServer) Bind() {
 	s.router.DELETE(apiserver.API_delete_replicaset, s.DeleteReplicaSet) //need check,in replicasetHandler
 	s.router.GET(apiserver.API_update_replicaset)    //TODO
 	s.router.POST(apiserver.API_add_replicaset, s.AddReplicaSet)  //need check,in replicasetHandler
+
+	s.router.POST(apiserver.API_add_dns, s.AddDns)
+	s.router.DELETE(apiserver.API_delete_dns, s.DeleteDns)
+	s.router.GET(apiserver.API_get_dns)     //TODO
+	s.router.GET(apiserver.API_get_all_dns) //TODO
+
+	s.router.POST(apiserver.API_update_workflow)   //TODO
+	s.router.DELETE(apiserver.API_delete_workflow) //TODO
+
+	s.router.GET(apiserver.API_get_function)       //TODO
+	s.router.POST(apiserver.API_add_function)      //TODO
+	s.router.DELETE(apiserver.API_delete_function) //TODO
+
+	s.router.POST(apiserver.API_add_workflow, s.AddWorkflow)
+	s.router.GET(apiserver.API_get_workflow, s.GetWorkflow)
 }
 
 // 在进行测试/实际运行时，第2步调用此函数。默认端口为8080
@@ -100,6 +125,7 @@ func (s *ApiServer) Run() error {
 	tools.NodesIpMap = make(map[string]string)
 	tools.Apiserver_boot_finished = true
 
+	//TODO:之后要在这里做容错。
 	s.EtcdWrap.DeleteByPrefix("/registry")
 
 	sigChan := make(chan os.Signal, 1)
@@ -109,6 +135,7 @@ func (s *ApiServer) Run() error {
 		s.Clean()
 	}()
 
+	go s.ControllerManager.Run()
 	go s.Consumer.Consume([]string{message.TOPIC_ApiServer_FromNode}, s.MsgHandler)
 
 	err := s.router.Run(fmt.Sprintf(":%d", s.port))

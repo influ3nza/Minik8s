@@ -126,8 +126,21 @@ func (s *ApiServer) AddNode(c *gin.Context) {
 	//初始化
 	node.NodeMetadata.UUID = tools.NewUUID()
 	//TODO: 这里是便于测试，之后需要重新书写
-	node.NodeStatus = api_obj.NodeStatus{
-		Condition: api_obj.Ready,
+	node.NodeStatus.Condition = api_obj.Ready
+
+	//存储node的ip地址
+	nodeaddr := "http://" + node.NodeStatus.Addresses.InternalIp + ":"
+	tools.NodesIpMap[node_name] = nodeaddr
+
+	fmt.Printf("[msgHandler/addNode] Node internal Ip: %s.\n", nodeaddr)
+
+	e_key := apiserver.ETCD_node_ip_prefix + node.NodeMetadata.Name
+	err = s.EtcdWrap.Put(e_key, []byte(nodeaddr))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[msgHandler/AddNode] Failed to write in etcd, " + err.Error(),
+		})
+		return
 	}
 
 	//parse， 此时的node已经是结构体了
@@ -143,21 +156,6 @@ func (s *ApiServer) AddNode(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "[msgHandler/addNode] Failed to write in etcd, " + err.Error(),
-		})
-		return
-	}
-
-	//存储node的ip地址
-	//TODO:仅供测试使用，需要取消注释。
-	nodeaddr := "http://127.0.0.1:"
-	// nodeaddr := node.GetInternelIp() + ":" + strconv.Itoa(int(node.NodeStatus.Addresses.Port))
-	tools.NodesIpMap[node_name] = nodeaddr
-
-	e_key := apiserver.ETCD_node_ip_prefix + node.NodeMetadata.Name
-	err = s.EtcdWrap.Put(e_key, []byte(nodeaddr))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[msgHandler/AddNode] Failed to write in etcd, " + err.Error(),
 		})
 		return
 	}

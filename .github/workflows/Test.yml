@@ -20,26 +20,21 @@ jobs:
       with:
         go-version: ${{ matrix.go-version }}
 
+    - name: Install nginx
+      run: |
+        sudo apt install nginx
+        sudo systemctl stop nginx
+        sudo systemctl disable nginx
+        sudo mkdir -p /mydata/nginx/
+
     - name: Install dependencies
       run: |
         go mod init minik8s
         go mod tidy
-    - name: Install Softwares
-      run: |
-        sudo chmod 777 ./tools/setup_scripts/setup.sh
-        sudo ./tools/setup_scripts/setup.sh
 
-    - name: Test create pod
+    - name: Test
       run: |
-        cd test/create_pod_test
-        go test
-
-    - name: Test network connection
-      run: |
-        cd test/network_util_test
-        go test
-      
-    - name: Test service and endpoint
-      run: |
-        cd test/srv_endpoint_test
-        go test
+        go build ./pkg/dns/dns_test/main.go
+        sudo mkdir -p /GJX/minik8s/pkg/dns/dns_op/
+        sudo cp ./pkg/dns/dns_op/nginx.tmpl /GJX/minik8s/pkg/dns/dns_op/
+        sudo ./main
