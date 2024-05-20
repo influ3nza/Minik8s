@@ -14,8 +14,14 @@ const (
 )
 
 const (
+	FUNC_CREATE string = "func_create"
+	WF_CREATE   string = "wf_create"
+)
+
+const (
 	TOPIC_EndpointController string = "EndpointController"
 	TOPIC_ApiServer_FromNode string = "ApiServerFromNode"
+	TOPIC_Scheduler          string = "Scheduler"
 )
 
 const (
