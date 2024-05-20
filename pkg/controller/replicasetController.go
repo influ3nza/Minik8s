@@ -111,7 +111,7 @@ func (rc *ReplicaController) watch() {
 
 	//遍历每一个replicaset
 	for _, rs := range replicasets {
-		correspondPods := make([]apiObject.Pod, 0)
+		correspondPods := make([]api_obj.Pod, 0)
 		//遍历pod，找到存在于replicaset中的pod
 		for _, pod := range pods {
 			if CheckPod(&pod, rs.Spec.Selector) {
