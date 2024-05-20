@@ -69,6 +69,8 @@ func (s *ApiServer) AddWorkflow(c *gin.Context) {
 		return
 	}
 
+	//TODO:需要通知serverless server或者workflow cintroller
+
 	//返回200
 	c.JSON(http.StatusCreated, gin.H{
 		"data": "[apiserver/AddWorkflow] Create workflow success",
@@ -112,5 +114,44 @@ func (s *ApiServer) GetWorkflow(c *gin.Context) {
 	//返回200
 	c.JSON(http.StatusCreated, gin.H{
 		"data": wf_str,
+	})
+}
+
+func (s *ApiServer) DeleteWorkflow(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+	if name == "" || namespace == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/apiserver/DeleteWorkflow] Empty name or namespace.",
+		})
+		return
+	}
+
+	e_key := apiserver.ETCD_workflow_prefix + namespace + "/" + name
+	res, err := s.EtcdWrap.Get(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/apiserver/DeleteWorkflow] Failed to get from etcd, " + err.Error(),
+		})
+		return
+	}
+
+	if len(res) != 1 {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/apiserver/DeleteWorkflow] Found zero or more than one workflow.",
+		})
+		return
+	}
+
+	err = s.EtcdWrap.Del(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/apiserver/DeleteWorkflow] Failed to delete from etcd, " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": "Delete workflow success",
 	})
 }
