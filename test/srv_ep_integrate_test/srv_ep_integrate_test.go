@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"minik8s/pkg/apiserver/app"
+	"minik8s/pkg/apiserver/controller"
 	"minik8s/pkg/config/apiserver"
-	"minik8s/pkg/controller"
 	"minik8s/pkg/kubectl/api"
 	"minik8s/pkg/network"
 	"minik8s/pkg/scheduler"
