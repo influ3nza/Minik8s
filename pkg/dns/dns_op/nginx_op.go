@@ -41,7 +41,7 @@ func RewriteNginx() error {
 func RestartNginx() error {
 	err := exec.Command("pkill", "nginx").Run()
 	if err != nil {
-		return fmt.Errorf("kill Nginx Process Failed, %s", err.Error())
+		fmt.Printf("kill Nginx Process Failed, %s", err.Error())
 	}
 	err = exec.Command("nginx", "-c", nginxConfigFile).Run()
 	if err != nil {
