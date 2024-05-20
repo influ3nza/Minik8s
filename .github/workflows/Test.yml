@@ -27,7 +27,7 @@ jobs:
           sudo ./tools/setup_scripts/setup.sh
 
       - name: Build
-        run: sudo go build ./pkg/kube_proxy/Main/main.go
+        run: sudo go build ./pkg/kube_proxy/Main/kube-proxy.go
 
       - name: Test
-        run: sudo ./main
+        run: sudo ./kube-proxy
