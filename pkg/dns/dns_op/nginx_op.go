@@ -39,13 +39,14 @@ func RewriteNginx() error {
 }
 
 func RestartNginx() error {
-	err := exec.Command("pkill", "nginx").Run()
+	err := exec.Command("nginx", "-s", "reload", "-c", nginxConfigFile).Run()
 	if err != nil {
-		fmt.Printf("kill Nginx Process Failed, %s", err.Error())
-	}
-	err = exec.Command("nginx", "-c", nginxConfigFile).Run()
-	if err != nil {
-		return fmt.Errorf("start Nginx Process Failed, %s", err.Error())
+		fmt.Println("ReStart Failed")
+		err = exec.Command("nginx", "-c", nginxConfigFile).Run()
+		if err != nil {
+			return fmt.Errorf("start Nginx Failed, %s", err.Error())
+		}
+		return nil
 	}
 
 	return nil
