@@ -36,5 +36,5 @@ jobs:
       run: |
         go build ./pkg/dns/dns_test/main.go
         sudo mkdir -p /GJX/minik8s/pkg/dns/dns_op/
-        sudo cp ./pkg/dns/dns_op/nginx/nginx.tmpl /GJX/minik8s/pkg/dns/dns_op/
+        sudo cp ./pkg/dns/dns_op/nginx.tmpl /GJX/minik8s/pkg/dns/dns_op/
         sudo ./main
