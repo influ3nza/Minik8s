@@ -43,11 +43,12 @@ func Run() {
 }
 
 func main() {
-	//main1()
+	//fmt.Println(os.Args[1])
+	//main1(os.Args[1], os.Args[2])
 	Run()
 }
 
-func main1() {
+func main1(ip string, cluIp string) {
 	if err := InitEnv(); err != nil {
 		return
 	}
@@ -65,22 +66,15 @@ func main1() {
 		Spec: api_obj.ServiceSpec{
 			Type:      api_obj.NodePort,
 			Selector:  map[string]string{},
-			ClusterIP: "172.20.0.1",
+			ClusterIP: cluIp,
 			Ports: []api_obj.ServicePort{
 				{
 					Name:       "testname",
 					Protocol:   "tcp",
 					Port:       7840,
-					TargetPort: 7840,
+					TargetPort: 80,
 					NodePort:   30000,
 				},
-				//}, {
-				//	Name:       "testname",
-				//	Protocol:   "tcp",
-				//	Port:       "890",
-				//	TargetPort: "890",
-				//	NodePort:   0,
-				//},
 			},
 		},
 		Status: api_obj.ServiceStatus{},
@@ -121,10 +115,10 @@ func main1() {
 			UUID:        "",
 		},
 		SrvUUID: "TESTUUID",
-		SrvIP:   "172.20.0.1",
+		SrvIP:   cluIp,
 		SrvPort: 7840,
 		PodUUID: "UUID",
-		PodIP:   "10.2.3.3",
+		PodIP:   ip,
 		PodPort: 80,
 		Weight:  2,
 	}
@@ -135,20 +129,20 @@ func main1() {
 	//out, err = exec.Command("curl", "172.20.0.1:7840").CombinedOutput()
 	//fmt.Printf("%s\n", string(out))
 
-	err = manager.DelEndPoint(ep)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	out, err = exec.Command("ipvsadm", "-Ln").CombinedOutput()
-	fmt.Printf("%s\n", string(out))
-	out, err = exec.Command("iptables-save").CombinedOutput()
-	fmt.Printf("%s\n", string(out))
+	//err = manager.DelEndPoint(ep)
+	//if err != nil {
+	//	fmt.Println(err.Error())
+	//}
+	//out, err = exec.Command("ipvsadm", "-Ln").CombinedOutput()
+	//fmt.Printf("%s\n", string(out))
+	//out, err = exec.Command("iptables-save").CombinedOutput()
+	//fmt.Printf("%s\n", string(out))
 
 	//time.Sleep(60 * time.Second)
-	err_ := manager.DelService(serv)
-	if err_ != nil {
-		fmt.Println("delete failed at main line 73, ", err_.Error())
-		return
-	}
+	//err_ := manager.DelService(serv)
+	//if err_ != nil {
+	//	fmt.Println("delete failed at main line 73, ", err_.Error())
+	//	return
+	//}
 	return
 }
