@@ -53,7 +53,13 @@ const (
 	API_get_hpas          string = "/hpas/getAll"
 	API_delete_hpa_prefix string = "/hpas/delete/"
 	API_delete_hpa        string = "/hpas/delete/:namespace/:name"
-	API_update_hpa        string = "hpas/update"
+	API_update_hpa        string = "/hpas/update"
+
+	API_add_dns        string = "/dns/add"
+	API_get_dns_prefix string = "/dns/"
+	API_get_dns        string = "/dns/:namespace/:name"
+	API_delete_dns     string = "/dns/delete"
+	API_get_all_dns    string = "/dns/getAll"
 
 	API_get_workflow_prefix    string = "/workflows/"
 	API_get_workflow           string = "/workflows/:namespace/:name"
