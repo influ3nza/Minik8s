@@ -97,6 +97,20 @@ func (s *ApiServer) Bind() {
 	s.router.GET(apiserver.API_get_replicasets)      //TODO
 	s.router.DELETE(apiserver.API_delete_replicaset) //TODO
 	s.router.GET(apiserver.API_update_replicaset)    //TODO
+
+	s.router.POST(apiserver.API_add_dns, s.AddDns)
+	s.router.POST(apiserver.API_delete_dns, s.DeleteDns)
+	s.router.GET(apiserver.API_get_dns)     //TODO
+	s.router.GET(apiserver.API_get_all_dns) //TODO
+
+	s.router.GET(apiserver.API_get_workflow)       //TODO
+	s.router.POST(apiserver.API_add_workflow)      //TODO
+	s.router.POST(apiserver.API_update_workflow)   //TODO
+	s.router.DELETE(apiserver.API_delete_workflow) //TODO
+
+	s.router.GET(apiserver.API_get_function)       //TODO
+	s.router.POST(apiserver.API_add_function)      //TODO
+	s.router.DELETE(apiserver.API_delete_function) //TODO
 }
 
 // 在进行测试/实际运行时，第2步调用此函数。默认端口为8080
