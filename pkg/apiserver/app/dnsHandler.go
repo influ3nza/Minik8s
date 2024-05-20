@@ -1,7 +1,9 @@
 package app
 
 import (
+	"encoding/json"
 	"minik8s/pkg/api_obj"
+	"minik8s/pkg/config/apiserver"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -26,6 +28,23 @@ func (s *ApiServer) AddDns(c *gin.Context) {
 		return
 	}
 
+	dns_str, err := json.Marshal(dns)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[msgHandler/AddDns] Failed to marshal data, " + err.Error(),
+		})
+		return
+	}
+
+	e_key := apiserver.ETCD_dns_prefix + dns_namespace + "/" + dns_name
+	err = s.EtcdWrap.Put(e_key, dns_str)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/AddDns] Failed to put into etcd, " + err.Error(),
+		})
+		return
+	}
+
 	err = s.DnsService.AddDns(dns)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -41,20 +60,35 @@ func (s *ApiServer) AddDns(c *gin.Context) {
 }
 
 func (s *ApiServer) DeleteDns(c *gin.Context) {
-	dns := &api_obj.Dns{}
-	err := c.ShouldBind(dns)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[msgHandler/DeleteDns] Failed to parse dns from request, " + err.Error(),
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+	if namespace == "" || name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[msgHandler/DeleteDns] Empty dns name or namespace",
 		})
 		return
 	}
 
-	dns_namespace := dns.MetaData.NameSpace
-	dns_name := dns.MetaData.Name
-	if dns_namespace == "" || dns_name == "" {
+	e_key := apiserver.ETCD_dns_prefix + namespace + "/" + name
+	res, err := s.EtcdWrap.Get(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/DeleteDns] Failed to get from etcd, " + err.Error(),
+		})
+		return
+	}
+	if len(res) != 1 {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[msgHandler/DeleteDns] Empty dns name or namespace",
+			"error": "[ERR/handler/DeleteDns] Found zero or more than one dns.",
+		})
+		return
+	}
+
+	dns := &api_obj.Dns{}
+	err = json.Unmarshal([]byte(res[0].Value), dns)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[msgHandler/DeleteDns] Failed to unmarshal data, " + err.Error(),
 		})
 		return
 	}

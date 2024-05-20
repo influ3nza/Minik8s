@@ -99,7 +99,7 @@ func (s *ApiServer) Bind() {
 	s.router.GET(apiserver.API_update_replicaset)    //TODO
 
 	s.router.POST(apiserver.API_add_dns, s.AddDns)
-	s.router.POST(apiserver.API_delete_dns, s.DeleteDns)
+	s.router.DELETE(apiserver.API_delete_dns, s.DeleteDns)
 	s.router.GET(apiserver.API_get_dns)     //TODO
 	s.router.GET(apiserver.API_get_all_dns) //TODO
 
