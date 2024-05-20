@@ -125,7 +125,12 @@ func (s *ApiServer) Run() error {
 	tools.Apiserver_boot_finished = true
 
 	//TODO:之后要在这里做容错。
-	s.EtcdWrap.DeleteByPrefix("/registry")
+	// s.EtcdWrap.DeleteByPrefix("/registry")
+	err := s.RefreshNodeIp()
+	if err != nil {
+		fmt.Printf("[ERR/apiserver] Failed tp refresh ip map.\n")
+		return err
+	}
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT)
@@ -137,7 +142,7 @@ func (s *ApiServer) Run() error {
 	go s.ControllerManager.Run()
 	go s.Consumer.Consume([]string{message.TOPIC_ApiServer_FromNode}, s.MsgHandler)
 
-	err := s.router.Run(fmt.Sprintf(":%d", s.port))
+	err = s.router.Run(fmt.Sprintf(":%d", s.port))
 	return err
 }
 

@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: pod
+metaData:
+  labels:
+    app: test2
+  name: pod-example2
+  nameSpace: q
+spec:
+  containers:
+    - image: 
+        imgName: docker.io/library/ubuntu:latest
+        imgPullPolicy: Always
+      name: testContainer-1
+      entryPoint:
+        workingDir: /
+      ports:
+        - containerPort: 80
+          hostIP: 0.0.0.0
+          hostPort: 0
+          name: no name
+          protocol: TCP
+      env: 
+        - name: www
+          value: sdg
+      volumeMounts:
+        - mountPath: /home
+          subPath: config
+          name: testMount
+          readOnly: false
+      resources: 
+        limits:
+          cpu: 0.5
+          memory: 100MiB
+
+    - image: 
+        imgName: docker.io/library/nginx:latest
+        imgPullPolicy: Always
+      name: testContaetrye
+      entryPoint:
+        workingDir: /
+      ports:
+        - containerPort: 80
+          hostIP: 0.0.0.0
+          hostPort: 0
+          name: no name
+          protocol: TCP
+      env: 
+        - name: www
+          value: sdg
+      volumeMounts: 
+        - mountPath: /home
+          subPath: config
+          name: testMount
+          readOnly: false
+      resources: 
+        limits:
+          cpu: 0.5
+          memory: 100MiB
+  volume:
+    - name: testMount
+      type: ttype
+      path: /test000

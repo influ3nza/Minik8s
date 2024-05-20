@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
@@ -83,6 +84,7 @@ func (s *ApiServer) UpdatePodPhase(pod api_obj.Pod, needCheckRestart bool) (stri
 	if needCheckRestart && old_pod.PodStatus.Phase != pod.PodStatus.Phase {
 		old_pod.PodStatus.Restarts += 1
 	}
+	fmt.Printf("[Apiserver/UpdatePodPhase] Update pod phase: %s -> %s", old_pod.PodStatus.Phase, pod.PodStatus.Phase)
 	old_pod.PodStatus.Phase = pod.PodStatus.Phase
 
 	//存入etcd中。
@@ -139,5 +141,23 @@ func (s *ApiServer) UpdateSrvCondition(namespace string, name string) error {
 func AllocateClusterIp() string {
 	clusterIp := "10.1.0." + strconv.Itoa(int(tools.ClusterIpFlag))
 	tools.ClusterIpFlag += 1
+	//TODO:存入etcd持久化，
 	return clusterIp
+}
+
+func (s *ApiServer) RefreshNodeIp() error {
+	e_key := apiserver.ETCD_node_ip_prefix
+	res, err := s.EtcdWrap.GetByPrefix(e_key)
+	if err != nil {
+		fmt.Printf("[ERR/apiserver/utils/RefreshNodeIp] Failed tp get from etcd, %v", err)
+		return err
+	}
+
+	for _, kv := range res {
+		nodename := kv.Key[strings.LastIndex(kv.Key, "/")+1:]
+		fmt.Printf("[Refresh node] Node: %s, %s.\n", nodename, kv.Value)
+		tools.NodesIpMap[nodename] = kv.Value
+	}
+
+	return nil
 }

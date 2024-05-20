@@ -29,7 +29,7 @@ func (s *ApiServer) AddDns(c *gin.Context) {
 	}
 
 	//填写srv的clusterIp
-	for _, path := range dns.Paths {
+	for id, path := range dns.Paths {
 		e_key := apiserver.ETCD_service_prefix + dns_namespace + "/" + path.ServiceName
 		res, err := s.EtcdWrap.Get(e_key)
 		if err != nil {
@@ -54,7 +54,7 @@ func (s *ApiServer) AddDns(c *gin.Context) {
 			return
 		}
 
-		path.ServiceIp = srv.Spec.ClusterIP
+		dns.Paths[id].ServiceIp = srv.Spec.ClusterIP
 	}
 
 	dns_str, err := json.Marshal(dns)
@@ -109,6 +109,14 @@ func (s *ApiServer) DeleteDns(c *gin.Context) {
 	if len(res) != 1 {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "[ERR/handler/DeleteDns] Found zero or more than one dns.",
+		})
+		return
+	}
+
+	err = s.EtcdWrap.Del(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/DeleteDns] Failed to delete from etcd, " + err.Error(),
 		})
 		return
 	}

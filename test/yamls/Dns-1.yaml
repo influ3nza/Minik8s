@@ -3,10 +3,10 @@ kind: dns
 metaData:
   labels:
     app: test
-  name: pod-example1
-  nameSpace: qwerty
+  name: dns-example1
+  nameSpace: q
 host: www.example.com
 paths:
   - serviceName: srv-example1
     port: 10000
-    subPath: /path
+    subPath: path

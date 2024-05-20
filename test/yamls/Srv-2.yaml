@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: test2
+  name: srv-example2
+  nameSpace: q
+spec:
+  ports:
+    - name: port1
+      protocol: TCP
+      port: 10000
+      targetPort: 80
+      nodePort: 30000
+  selector: 
+    app: test2
+  type: NodePort

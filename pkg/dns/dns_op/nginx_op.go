@@ -30,7 +30,7 @@ func RewriteNginx() error {
 		fmt.Println(writeString)
 	}
 
-	tmpl := template.Must(template.ParseFiles("/GJX/minik8s/pkg/dns/dns_op/nginx.tmpl"))
+	tmpl := template.Must(template.ParseFiles("/ZTH/Minik8s/pkg/dns/dns_op/nginx.tmpl"))
 	res := tmpl.Execute(file, DNSRules)
 	if res != nil {
 		return fmt.Errorf("write To Nginx Config File Failed, %s", res.Error())

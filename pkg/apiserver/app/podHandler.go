@@ -257,7 +257,7 @@ func (s *ApiServer) GetPodsByNode(c *gin.Context) {
 			return
 		}
 
-		if pod.Spec.NodeName == nodename {
+		if pod.Spec.NodeName == nodename && pod.PodStatus.Phase == obj_inner.Running {
 			pack = append(pack, *pod)
 		}
 	}

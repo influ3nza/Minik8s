@@ -15,5 +15,5 @@ func InitDnsService() *dns_op.DnsService {
 		fmt.Println(err.Error())
 	}
 	srv.EtcdClient = client
-	return nil
+	return srv
 }

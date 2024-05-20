@@ -4,7 +4,7 @@ metaData:
   labels:
     app: test
   name: pod-example1
-  nameSpace: qwerty
+  nameSpace: q
 spec:
   containers:
     - image: 

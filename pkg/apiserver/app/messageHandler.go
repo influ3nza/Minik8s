@@ -13,6 +13,7 @@ import (
 
 func (s *ApiServer) MsgHandler(msg *message.Message) {
 	fmt.Printf("[Apiserver/MsgHandler] Apiserver received message!\n")
+	fmt.Printf("[Apiservr/MsgHandler] Message type: %s.\n", msg.Type)
 
 	switch msg.Type {
 	case message.POD_CREATE: //kubelet创建完pod或者srv之后，发送消息给apiserver
@@ -120,6 +121,7 @@ func (s *ApiServer) HandlePodDelete(msg string) {
 func (s *ApiServer) HandleSrvCreate(msg string) {
 	//将etcd中的srv对象的status修改为available
 	//参数：srv结构体
+	//TODO:检查一下srv的状态，避免多台机器同时发送相同的消息。
 	srv := &api_obj.Service{}
 	err := json.Unmarshal([]byte(msg), srv)
 	if err != nil {

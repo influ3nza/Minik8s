@@ -37,9 +37,20 @@ func (wfc *WorkflowController) ExecuteWorkflow(wf api_obj.Workflow) {
 }
 
 func (wfc *WorkflowController) CheckNodeFunc(node api_obj.WorkflowNode) bool {
-	return true
+	//检查workflow是否合法（是否调用存在的函数）
+	//检查workflow调用的函数是否都有pod实例。如果没有需要冷启动。
+	
 }
 
 func (wfc *WorkflowController) executeWorkflow(wf api_obj.Workflow) {
+	pos := wf.Spec.StartNode
+	coeff := wf.Spec.StartCoeff
 
+	for {
+		if pos == "" {
+			break
+		}
+
+		node := 
+	}
 }

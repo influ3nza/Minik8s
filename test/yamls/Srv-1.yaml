@@ -4,7 +4,7 @@ metadata:
   labels:
     app: test
   name: srv-example1
-  nameSpace: qwerty
+  nameSpace: q
 spec:
   ports:
     - name: port1
