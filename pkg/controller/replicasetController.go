@@ -45,16 +45,14 @@ func (rc. *ReplicaController) execute(delay time.Duration, interval []time.Durat
 
 
 func (rc *ReplicaController) CheckPod(pod *api_obj.Pod, selectors map[string]string) bool {
-	// 只要pod的label中有一个key-value对与selector中的key-value对相同，就认为pod满足要求
 	podLabel := pod.Metadata.Labels
+	//may have bug,我的思路是只要有一个label匹配key-value就返回true
 	for key, value := range selectors {
-		if podLabel[key] != value {
-			return false
-		} else {
-			continue
+		if podLabel[key] == value {
+			return true
 		}
 	}
-	return true
+	return false
 }
 
 func (rc *ReplicaController) GetAllReplicasets() ([]api_obj.ReplicaSet, error) {
@@ -147,7 +145,7 @@ func (rc *ReplicaController) AddReplicaPods(replicaset *obj_inner.ObjectMeta, po
 	podNew.MetaData.Labels["replicaset_namespace"] = replicaset.NameSpace
 	podNew.MetaData.Labels["replicaset_uuid"] = replicaset.UUID
 
-	podName := newPod.MetaData.Name
+	podName := podNew.MetaData.Name
 
 	for i := 0; i < num; i++ {
 		rand.Seed(time.Now().UnixNano())
@@ -204,13 +202,14 @@ func (rc *ReplicaController) UpdateReplicaSet(pods []api_obj.Pod, rs *api_obj.Re
 			ready += 1
 		}
 	}
+	newReplicaSet = rs
 	newReplicaSet.Status.Replicas = rs.Spec.Replicas
 	newReplicaSet.Status.ReadyReplicas = ready
 
 	replicasetStr, err := json.Marshal(newReplicaSet)
 	if err != nil {
-		fmt.Printf("[ERR/replicasetController/UpdateReplicaSet] Failed to marshal pod, %v.\n", err)
-		return
+		fmt.Printf("[ERR/replicasetController/UpdateReplicaSet] Failed to marshal replicaset, %v.\n", err)
+		return err
 	}
 	_, err = network.PostRequest(uri, replicasetStr)
 	if err != nil {

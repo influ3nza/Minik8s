@@ -87,23 +87,25 @@ func (hc *HPAController) watch() {
 
 			// c. 判断hpa的pod是否在规定区间之内, 如果不在，需要扩容或者缩容
 				// 根据策略扩容
-				// 如果是policy是Pods就扩容到最小，如果policy是Percent就扩容到(min+max)/2
+				// 先直接扩容到expectreplica
 		if hpa.Status.CurReplicas < expectedReplicas {
 			err := hc.AddHpaPod(hpa, correspondPods, expectedReplicas-hpa.Status.CurReplicas)
 			if err != nil {
-				k8log.ErrorLog("hpaController", "HandleHPAUpdate "+err.Error())
+				fmt.Printf("[ERR/HPAController/watch] Failed to addhpapod, %s.\n", err)
+				ec.PrintHandlerWarning()
+				return
 			}
-			return
 		}
 
 				// 根据策略缩容
-				// 如果是policy是Pods就缩容到最小，如果policy是Percent就扩容到(min+max)/2
+				// 先直接扩容到expectreplica
 		if hpa.Status.CurReplicas > expectedReplicas {
-			err := hc.ReduceHpaPod(hpa, correspondPods)
+			err := hc.ReduceHpaPod(hpa, correspondPods, hpa.Status.CurReplicas-expectedReplicas)
 			if err != nil {
-				k8log.ErrorLog("hpaController", "HandleHPAUpdate "+err.Error())
+				fmt.Printf("[ERR/HPAController/watch] Failed to reducehpapod, %s.\n", err)
+				ec.PrintHandlerWarning()
+				return
 			}
-			return
 		}
 			//更新replica的个数
 		hpa.Status.CurReplicas = expectedReplicas
@@ -113,44 +115,144 @@ func (hc *HPAController) watch() {
 			// a.根据策略扩容
 			// 如果是policy是Pods就扩容到最小，如果policy是Percent就扩容到(min+max)/2
 		if hpa.Status.CurReplicas < hpa.Spec.MinReplicas {
-			err := hc.AddHpaPod(hpa, correspondPods, hpa.Spec.MinReplicas-hpa.Status.CurReplicas)
-			if err != nil {
-				k8log.ErrorLog("hpaController", "HandleHPAUpdate "+err.Error())
+			if *hpa.Spec.Policy == PodsPolicy || hpa.Spec.Policy == nil {
+				err := hc.AddHpaPod(hpa, correspondPods, hpa.Spec.MinReplicas-hpa.Status.CurReplicas)
+				if err != nil {
+					fmt.Printf("[ERR/HPAController/watch] Failed to addhpapod in pods, %s.\n", err)
+					ec.PrintHandlerWarning()
+					return
+				}
+				
 			}
-			return
+			else if *hpa.Spec.Policy == PercentPolicy {
+				err := hc.AddHpaPod(hpa, correspondPods, (hpa.Spec.MinReplicas+hpa.Spec.MaxReplicas)/2-hpa.Status.CurReplicas)
+				if err != nil {
+					fmt.Printf("[ERR/HPAController/watch] Failed to addhpapod in percent, %s.\n", err)
+					ec.PrintHandlerWarning()
+					return
+				}
+			}
 		}
 
 			// b.根据策略缩容
 			// 如果是policy是Pods就缩容到最小，如果policy是Percent就扩容到(min+max)/2
 		if hpa.Status.CurrentReplicas > hpa.Spec.MaxReplicas {
-			err := hc.ReduceHpaPod(hpa, correspondPods, hpa.Status.CurrentReplicas-hpa.Spec.MaxReplicas)
-			if err != nil {
-				k8log.ErrorLog("hpaController", "HandleHPAUpdate "+err.Error())
+			if *hpa.Spec.Policy == PodsPolicy || hpa.Spec.Policy == nil {
+				err := hc.ReduceHpaPod(hpa, correspondPods, hpa.Status.CurrentReplicas-hpa.Spec.MaxReplicas)
+				if err != nil {
+					fmt.Printf("[ERR/HPAController/watch] Failed to reducehpapod in pod, %s.\n", err)
+					ec.PrintHandlerWarning()
+					return
+				}
 			}
-			return
+			else if *hpa.Spec.Policy == PercentPolicy {
+				err := hc.ReduceHpaPod(hpa, correspondPods, hpa.Status.CurReplicas-(hpa.Spec.MinReplicas+hpa.Spec.MaxReplicas)/2)
+				if err != nil {
+					fmt.Printf("[ERR/HPAController/watch] Failed to reducehpapod in percent, %s.\n", err)
+					ec.PrintHandlerWarning()
+					return
+				}
+			}
 		}
 
 		// 4.更新hpa状态
 		hpa.Status.CurCpu = averageCPUUsage
 		hpa.Status.CurMemory = averageMemoryUsage
-		err := hc.UpdateHpaStatus(hpa)
+		err := hc.UpdateHpa(hpa)
 		if err != nil {
-			k8log.ErrorLog("hpaController", "HandleHPAUpdate "+err.Error())
+			fmt.Printf("[ERR/HPAController/watch] Failed to updateHpa, %s.\n", err)
+			ec.PrintHandlerWarning()
+			return
 		}
 	}
 
 }
 
 func (hc *HPAController) AddHpaPod(hpa *api_obj.HPA, pods []api_obj.Pod, num int) error {
+	uri := config.API_server_prefix + config.API_add_pod
+	podNew := api_obj.Pod{}
+	podNew.MetaData = pods[0].MetaData
+	podNew.ApiVersion = "v1"
+	podNew.Kind = "Pod"
+	podNew.Spec = pod[0].Spec
+	podNew.MetaData.Name = hpa.Spec.Workload.Name
+	podNew.MetaData.NameSpace = hpa.Spec.Workload.NameSpace
+	podNew.MetaData.Labels["hpa_name"] = hpa.MetaData.Name
+	podNew.MetaData.Labels["hpa_namespace"] = hpa.MetaData.NameSpace
+	podNew.MetaData.Labels["hpa_uuid"] = hpa.MetaData.UUID
 
+	podName := podNew.MetaData.Name
+
+	for i := 0; i < num; i++ {
+		rand.Seed(time.Now().UnixNano())
+		randomNumber := rand.Intn(1000)
+		randomString := strconv.Itoa(randomNumber)
+		podNew.MetaData.Name = podName + '-' + randomString + "hpaCreate" + num
+		
+		podJson, err := json.Marshal(podNew)
+		if err != nil {
+			fmt.Printf("[ERR/hpaController/AddHpaPod] Failed to marshal pod, %v.\n", err)
+			return
+		}
+
+		_, err = network.PostRequest(uri, podJson)
+		if err != nil {
+			fmt.Printf("[ERR/hpaController/AddHpaPod] Failed to post request, err:%v\n", err)
+			return err
+		}
+
+	}
+	fmt.Printf("[hpaController/AddHpaPod] Send add pod request success!\n")
+
+	return nil
 }
 
 func (hc *HPAController) ReduceHpaPod(hpa *api_obj.HPA, pods []api_obj.Pod, num int) error {
-	
+	uri := config.API_server_prefix + config.API_delete_pod
+	for i := 0; i < num; i++ {
+		podJson, err := json.Marshal(pods[i])
+		if err != nil {
+			fmt.Printf("[ERR/hpaController/ReduceHpaPod] Failed to marshal pod, %v.\n", err)
+			return
+		}
+
+		_, err = network.PostRequest(uri, podJson)
+		if err != nil {
+			fmt.Printf("[ERR/hpaController/ReduceHpaPod] Failed to post request, err:%v\n", err)
+			return err
+		}
+	}
+	fmt.Printf("[hpaController/ReduceHpaPod] Send delete pod request success!\n")
+	return nil
 }
 
-func (hc *HPAController) UpdateHpaStatus(hpa *api_obj.HPA) error {
-	
+func (hc *HPAController) UpdateHpa(hpa *api_obj.HPA) error {
+	uri := config.API_server_prefix + config.API_update_hpa
+	newHpa := api_obj.HPA{}
+
+	newHpa = hpa
+	hpaStr, err := json.Marshal(newHpa)
+	if err != nil {
+		fmt.Printf("[ERR/hpaController/UpdateHpaStatus] Failed to marshal hpa, %v.\n", err)
+		return
+	}
+	_, err = network.PostRequest(uri, hpaStr)
+	if err != nil {
+		fmt.Printf("[ERR/hpaController/UpdateHpaStatus] Failed to post request, err:%v\n", err)
+		return err
+	}
+	return nil
+}
+
+func (hc *HPAController) CheckPod(pod *api_obj.Pod, selectors map[string]string) bool {
+	podLabel := pod.Metadata.Labels
+	//may have bug
+	for key, value := range selectors {
+		if podLabel[key] == value {
+			return true
+		}
+	}
+	return false
 }
 
 //通过for循环遍历每个pod，对每个pod通过name和namespace构造uri来调用getpodmetrics，返回该pod的

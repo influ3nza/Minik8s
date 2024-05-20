@@ -25,8 +25,8 @@ type HPASpec struct {
 	MaxReplicas    int         			`json:"maxReplicas" yaml:"maxReplicas"`
 	Selector 	   map[string]string 	`json:"selector" yaml:"selector"`
 	Metrics        HPAMetrics   		`json:"metrics" yaml:"metrics"`
-	AdjustInterval time.Duration 		`json:"adjustInterval" yaml:"adjustInterval"`
-	Policy 		   ScalingPolicyType 	`json:"policy" yaml:"policy"` 
+	Policy 		   *ScalingPolicyType 	`json:"policy" yaml:"policy"`
+	Workload	   obj_inner.ObjectMeta `json:"workload" yaml:"workload"`
 }
 
 type HPAMetrics struct {
