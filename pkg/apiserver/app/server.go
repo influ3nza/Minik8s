@@ -49,7 +49,6 @@ func CreateApiServerInstance(c *apiserver.ServerConfig) (*ApiServer, error) {
 		Producer: producer,
 		Consumer: consumer,
 		//TODO: 这些数据都是易失数据，在做容错的时候需要考虑到这一点。
-		//TODO: 心跳更新。 -> 不考虑
 	}, nil
 }
 

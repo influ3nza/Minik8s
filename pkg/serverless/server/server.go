@@ -73,7 +73,7 @@ func (s *SL_server) Run() {
 }
 
 func (s *SL_server) Clean() {
-	fmt.Printf("[apiserver/CLEAN] Apiserver closing...\n")
+	fmt.Printf("[Serverless/CLEAN] Serverless closing...\n")
 
 	close(s.Consumer.Sig)
 	s.Consumer.Consumer.Close()

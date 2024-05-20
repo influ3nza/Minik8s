@@ -202,7 +202,6 @@ func (s *ApiServer) UpdatePodScheduled(c *gin.Context) {
 	}
 
 	//返回node的ip地址
-	//TODO: 仅供测试使用！！！需要取消注释。
 	e_key = apiserver.ETCD_node_ip_prefix + new_pod.Spec.NodeName
 	res, err = s.EtcdWrap.Get(e_key)
 	if err != nil {
@@ -222,9 +221,8 @@ func (s *ApiServer) UpdatePodScheduled(c *gin.Context) {
 		return
 	}
 
-	//TODO:仅供测试使用，需要修改。
 	c.JSON(http.StatusCreated, gin.H{
-		"data": "http://127.0.0.1:20000",
+		"data": res[0].Value + strconv.Itoa(int(kubelet.Port)),
 	})
 
 	fmt.Printf("[handler/UpdatePod] Update pod success.\n")
