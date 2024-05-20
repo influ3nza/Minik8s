@@ -8,10 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"minik8s/pkg/api_obj"
-	"minik8s/tools"
 	"minik8s/pkg/config/apiserver"
 )
-
 
 func (s *ApiServer) AddHPA(c *gin.Context) {
 	fmt.Printf("[apiserver/AddHPA] Try to add an hpa.\n")
@@ -25,8 +23,6 @@ func (s *ApiServer) AddHPA(c *gin.Context) {
 		return
 	}
 
-	hpa_name := new_hpa.MetaData.Name
-	hpa_namespace := new_hpa.Metadata.Namespace
 	h_key := apiserver.ETCD_hpa_prefix + new_hpa.MetaData.NameSpace + "/" + new_hpa.MetaData.Name
 	h_str, err := json.Marshal(new_hpa)
 	if err != nil {
@@ -52,7 +48,6 @@ func (s *ApiServer) AddHPA(c *gin.Context) {
 
 }
 
-
 func (s *ApiServer) DeleteHPA(c *gin.Context) {
 	fmt.Printf("[apiserver/DeleteHPA] Try to delete HPA.\n")
 
@@ -77,7 +72,7 @@ func (s *ApiServer) DeleteHPA(c *gin.Context) {
 	//返回200
 	c.JSON(http.StatusOK, gin.H{
 		"data": "[HPAhandler/DeleteHPA] Delete hpa success",
-	})	
+	})
 }
 
 func (s *ApiServer) GetHPAs(c *gin.Context) {
@@ -98,7 +93,7 @@ func (s *ApiServer) GetHPAs(c *gin.Context) {
 
 		//返回值以逗号隔开
 		if id < len(hpas)-1 {
-			rss = append(allhpa, ",")
+			allhpa = append(allhpa, ",")
 		}
 	}
 
@@ -144,4 +139,3 @@ func (s *ApiServer) GetHPA(c *gin.Context) {
 		"data": arr,
 	})
 }
-

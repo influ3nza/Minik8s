@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"minik8s/pkg/api_obj"
-	"minik8s/tools"
 	"minik8s/pkg/config/apiserver"
 )
 
@@ -23,9 +22,6 @@ func (s *ApiServer) AddReplicaSet(c *gin.Context) {
 		})
 		return
 	}
-
-	replicaset_name := newReplicaSet.MetaData.Name
-	replicaset_namespace := newReplicaSet.Metadata.Namespace
 
 	//存入etcd
 	r_key := apiserver.ETCD_replicaset_prefix + newReplicaSet.MetaData.NameSpace + "/" + newReplicaSet.MetaData.Name
@@ -46,9 +42,9 @@ func (s *ApiServer) AddReplicaSet(c *gin.Context) {
 	}
 
 	/*
-	if tools.Test_enabled {
-		tools.Count_Test_Endpoint_Create += 1
-	}
+		if tools.Test_enabled {
+			tools.Count_Test_Endpoint_Create += 1
+		}
 	*/
 
 	//返回200
@@ -56,7 +52,6 @@ func (s *ApiServer) AddReplicaSet(c *gin.Context) {
 		"data": "[replicasethandler/AddReplicaSet] Add replicaset success",
 	})
 }
-
 
 func (s *ApiServer) DeleteReplicaSet(c *gin.Context) {
 	fmt.Printf("[apiserver/DeleteReplicaSet] Try to delete replicaSet.\n")
@@ -110,5 +105,3 @@ func (s *ApiServer) GetReplicaSets(c *gin.Context) {
 		"data": rss,
 	})
 }
-
-
