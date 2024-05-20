@@ -55,10 +55,24 @@ const (
 	API_delete_hpa        string = "/hpas/delete/:namespace/:name"
 	API_update_hpa        string = "/hpas/update"
 
-	API_get_workflow_prefix string = "/workflows/"
-	API_get_workflow        string = "/workflows/:namespace/:name"
-	API_add_workflow        string = "/workflows/add"
-	API_update_workflow     string = "/workflows/update"
+	API_add_dns        string = "/dns/add"
+	API_get_dns_prefix string = "/dns/"
+	API_get_dns        string = "/dns/:namespace/:name"
+	API_delete_dns     string = "/dns/delete"
+	API_get_all_dns    string = "/dns/getAll"
+
+	API_get_workflow_prefix    string = "/workflows/"
+	API_get_workflow           string = "/workflows/:namespace/:name"
+	API_add_workflow           string = "/workflows/add"
+	API_update_workflow        string = "/workflows/update"
+	API_delete_workflow_prefix string = "/workflows/delete/"
+	API_delete_workflow        string = "/workflows/delete/:namespace/:name"
+
+	API_get_function_prefix    string = "/functions/"
+	API_get_function           string = "/functions/:namespace/:name"
+	API_add_function           string = "/functions/add"
+	API_delete_function_prefix string = "/functions/delete/"
+	API_delete_function        string = "/functions/delete/:namespace/:name"
 )
 
 type ServerConfig struct {
