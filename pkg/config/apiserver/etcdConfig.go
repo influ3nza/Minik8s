@@ -21,4 +21,6 @@ const (
 	ETCD_hpa_prefix = "/registry/hpas/"
 
 	ETCD_workflow_prefix = "/registry/workflows/"
+
+	ETCD_dns_prefix = "/registry/dns/"
 )
