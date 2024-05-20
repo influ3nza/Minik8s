@@ -22,7 +22,7 @@ var pod = api_obj.Pod{
 	Kind:       "pod",
 	MetaData: obj_inner.ObjectMeta{
 		Name:      "testpod",
-		NameSpace: "test2",
+		NameSpace: "qwerty",
 		Labels: map[string]string{
 			"testlabel": "podlabel",
 		},
@@ -34,7 +34,7 @@ var pod = api_obj.Pod{
 			{
 				Name: "testubuntu",
 				Image: obj_inner.Image{
-					Img:           "docker.io/library/ubuntu:latest",
+					Img:           "docker.io/library/nginx:latest",
 					ImgPullPolicy: "Always",
 				},
 				EntryPoint: obj_inner.EntryPoint{
@@ -263,10 +263,10 @@ func testCreateMonitor() {
 				fmt.Println("UnRegister NonExist")
 			}
 		}
-		err = pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace, pod.MetaData.Labels["pause"])
-		if err != nil {
-			fmt.Println("Main Failed At line 268 ", err.Error())
-		}
+		//err = pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace, pod.MetaData.Labels["pause"])
+		//if err != nil {
+		//	fmt.Println("Main Failed At line 268 ", err.Error())
+		//}
 		wg.Done()
 	}()
 	wg.Wait()

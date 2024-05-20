@@ -13,6 +13,7 @@ import (
 	"minik8s/pkg/message"
 	"minik8s/pkg/network"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -167,9 +168,10 @@ func (server *Kubelet) GetPodMatrix(c *gin.Context) {
 }
 
 func (server *Kubelet) GetPodStatus() {
+	nodename, _ := os.Hostname()
 	for {
 		time.Sleep(5 * time.Second)
-		request, err := network.GetRequest(server.ApiServerAddress + apiserver.API_get_pods_by_node_prefix + fmt.Sprintf("%s", "node-example1"))
+		request, err := network.GetRequest(server.ApiServerAddress + apiserver.API_get_pods_by_node_prefix + nodename)
 		if err != nil {
 			fmt.Println("Send Get RequestErr ", err.Error())
 			continue

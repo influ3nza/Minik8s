@@ -27,6 +27,7 @@ type Kubelet struct {
 }
 
 func (server *Kubelet) register() {
+	// fmt.Println(server.IpAddress)
 	hostName, _ := os.Hostname()
 	node := api_obj.Node{
 		APIVersion: "v1",
@@ -52,6 +53,7 @@ func (server *Kubelet) register() {
 			UpdateTime:  time.Now(),
 		},
 	}
+	fmt.Println(node.NodeStatus.Addresses.InternalIp)
 
 	nodeJson, _ := json.Marshal(node)
 	request, err := network.PostRequest(server.ApiServerAddress+"/nodes/add", nodeJson)
@@ -75,7 +77,7 @@ func InitKubeletDefault() *Kubelet {
 	return &Kubelet{
 		ApiServerAddress: util.ApiServer,
 		Router:           router,
-		IpAddress:        util.IpAddress,
+		IpAddress:        util.IpAddressNode1,
 		Port:             int32(port),
 		Producer:         producer,
 		TotalCpu:         util.Cpu,
@@ -100,7 +102,7 @@ func InitKubelet(config util.KubeConfig) *Kubelet {
 }
 
 func (server *Kubelet) Run() {
-	//server.register()
+	server.register()
 	server.registerHandler()
 	go server.GetPodStatus()
 	err := server.Router.Run(fmt.Sprintf(":%d", server.Port))
