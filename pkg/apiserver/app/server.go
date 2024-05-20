@@ -101,6 +101,7 @@ func (s *ApiServer) Run() error {
 	tools.NodesIpMap = make(map[string]string)
 	tools.Apiserver_boot_finished = true
 
+	//TODO:之后要在这里做容错。
 	s.EtcdWrap.DeleteByPrefix("/registry")
 
 	sigChan := make(chan os.Signal, 1)
