@@ -20,7 +20,19 @@ jobs:
       with:
         go-version: ${{ matrix.go-version }}
 
+    - name: Install nginx
+      run: |
+        sudo apt install nginx
+        sudo systemctl stop nginx
+        sudo systemctl disable nginx
+        sudo mkdir -p /mydata/nginx/
+
     - name: Install dependencies
       run: |
         go mod init minik8s
         go mod tidy
+
+    - name: Test
+      run: |
+        go build ./pkg/dns/dns_test/main/go
+        sudo ./main

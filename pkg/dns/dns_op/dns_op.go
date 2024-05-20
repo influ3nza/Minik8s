@@ -51,7 +51,12 @@ func (d *DnsService) AddDns(dns *api_obj.Dns) error {
 	DNSRules.Servers = append(DNSRules.Servers, server)
 	err = RewriteNginx()
 	if err != nil {
-		return err
+		return fmt.Errorf("rewrite Nginx Failed In Add Dns, %s", err.Error())
+	}
+
+	err = RestartNginx()
+	if err != nil {
+		return fmt.Errorf("restart Nginx Failed In Add Dns, %s", err.Error())
 	}
 	return nil
 }
@@ -69,7 +74,12 @@ func (d *DnsService) DeleteDns(dns *api_obj.Dns) error {
 	}
 	err = RewriteNginx()
 	if err != nil {
-		fmt.Println("Delete Dns Failed, ", err.Error())
+		return fmt.Errorf("reweite Nginx Failed In Del Dns, %s", err.Error())
+	}
+
+	err = RestartNginx()
+	if err != nil {
+		return fmt.Errorf("restart Nginx Failed In Del Dns, %s", err.Error())
 	}
 	return nil
 }

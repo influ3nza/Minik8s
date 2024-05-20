@@ -3,6 +3,7 @@ package dns_op
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"text/template"
 )
 
@@ -34,5 +35,18 @@ func RewriteNginx() error {
 	if res != nil {
 		return fmt.Errorf("write To Nginx Config File Failed, %s", res.Error())
 	}
+	return nil
+}
+
+func RestartNginx() error {
+	err := exec.Command("pkill", "nginx").Run()
+	if err != nil {
+		return fmt.Errorf("kill Nginx Process Failed, %s", err.Error())
+	}
+	err = exec.Command("nginx", "-c", nginxConfigFile).Run()
+	if err != nil {
+		return fmt.Errorf("start Nginx Process Failed, %s", err.Error())
+	}
+
 	return nil
 }

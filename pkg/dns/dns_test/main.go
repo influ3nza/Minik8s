@@ -5,6 +5,8 @@ import (
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/dns/dns_op"
+	"os/exec"
+	"strconv"
 )
 
 func main() {
@@ -32,7 +34,23 @@ func main() {
 			},
 		},
 	}
-	err := dns_op.RewriteNginx(dns1)
+
+	server := dns_op.Server{
+		Port:        "80",
+		Domain:      dns1.Host,
+		ProxyPasses: []dns_op.ProxyPass{},
+	}
+	for _, path := range dns1.Paths {
+		proxyPass := dns_op.ProxyPass{
+			Path: path.SubPath,
+			IP:   path.ServiceIp,
+			Port: strconv.Itoa(int(path.Port)),
+		}
+		server.ProxyPasses = append(server.ProxyPasses, proxyPass)
+	}
+	dns_op.DNSRules.Servers = append(dns_op.DNSRules.Servers, server)
+
+	err := dns_op.RewriteNginx()
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -51,11 +69,48 @@ func main() {
 			},
 		},
 	}
-	// fmt.Println(string(jsonData))
-	err = dns_op.RewriteNginx(dns2)
+
+	server = dns_op.Server{
+		Port:        "80",
+		Domain:      dns2.Host,
+		ProxyPasses: []dns_op.ProxyPass{},
+	}
+	for _, path := range dns2.Paths {
+		proxyPass := dns_op.ProxyPass{
+			Path: path.SubPath,
+			IP:   path.ServiceIp,
+			Port: strconv.Itoa(int(path.Port)),
+		}
+		server.ProxyPasses = append(server.ProxyPasses, proxyPass)
+	}
+	dns_op.DNSRules.Servers = append(dns_op.DNSRules.Servers, server)
+
+	err = dns_op.RewriteNginx()
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-
+	otp, err := exec.Command("cat", "/mydata/nginx/nginx.conf").CombinedOutput()
+	if err != nil {
+		fmt.Println("Cat File Error")
+		return
+	} else {
+		fmt.Println(otp)
+	}
+	fmt.Printf("\n")
+	dns_op.DNSRules.Servers = append(dns_op.DNSRules.Servers[:1], dns_op.DNSRules.Servers[1+1:]...)
+	err = dns_op.RewriteNginx()
+	otp, err = exec.Command("cat", "/mydata/nginx/nginx.conf").CombinedOutput()
+	if err != nil {
+		fmt.Println("Cat File Error")
+		return
+	} else {
+		fmt.Println(otp)
+	}
 	fmt.Println(dns_op.DNSRules)
+
+	err = dns_op.RestartNginx()
+	if err != nil {
+		fmt.Println("Error While Restart Nginx ", err.Error())
+		return
+	}
 }
