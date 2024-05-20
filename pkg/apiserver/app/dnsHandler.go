@@ -28,6 +28,35 @@ func (s *ApiServer) AddDns(c *gin.Context) {
 		return
 	}
 
+	//填写srv的clusterIp
+	for _, path := range dns.Paths {
+		e_key := apiserver.ETCD_service_prefix + dns_namespace + "/" + path.ServiceName
+		res, err := s.EtcdWrap.Get(e_key)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "[msgHandler/AddDns] Failed to get from etcd, " + err.Error(),
+			})
+			return
+		}
+		if len(res) != 1 {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "[msgHandler/AddDns] Found zero or more than one srv.",
+			})
+			return
+		}
+
+		srv := &api_obj.Service{}
+		err = json.Unmarshal([]byte(res[0].Value), srv)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "[msgHandler/AddDns] Failed to unmarshal data, " + err.Error(),
+			})
+			return
+		}
+
+		path.ServiceIp = srv.Spec.ClusterIP
+	}
+
 	dns_str, err := json.Marshal(dns)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

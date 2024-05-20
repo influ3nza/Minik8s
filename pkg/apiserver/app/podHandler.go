@@ -54,7 +54,7 @@ func (s *ApiServer) AddPod(c *gin.Context) {
 	err := c.ShouldBind(new_pod)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[msgHandler/AddPod] Failed to parse pod from request, " + err.Error(),
+			"error": "[apiserver/AddPod] Failed to parse pod from request, " + err.Error(),
 		})
 		return
 	}
@@ -71,7 +71,7 @@ func (s *ApiServer) AddPod(c *gin.Context) {
 
 	if new_pod_name == "" || new_pod_namespace == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[msgHandler/AddPod] Empty pod name or namespace",
+			"error": "[apiserver/AddPod] Empty pod name or namespace",
 		})
 		return
 	}
@@ -202,7 +202,6 @@ func (s *ApiServer) UpdatePodScheduled(c *gin.Context) {
 	}
 
 	//返回node的ip地址
-	//TODO: 仅供测试使用！！！需要取消注释。
 	e_key = apiserver.ETCD_node_ip_prefix + new_pod.Spec.NodeName
 	res, err = s.EtcdWrap.Get(e_key)
 	if err != nil {
@@ -222,9 +221,8 @@ func (s *ApiServer) UpdatePodScheduled(c *gin.Context) {
 		return
 	}
 
-	//TODO:仅供测试使用，需要修改。
 	c.JSON(http.StatusCreated, gin.H{
-		"data": "http://127.0.0.1:20000",
+		"data": res[0].Value + strconv.Itoa(int(kubelet.Port)),
 	})
 
 	fmt.Printf("[handler/UpdatePod] Update pod success.\n")

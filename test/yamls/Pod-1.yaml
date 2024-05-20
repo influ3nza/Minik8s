@@ -33,7 +33,7 @@ spec:
           memory: 100MiB
 
     - image: 
-        imgName: docker.io/library/ubuntu:latest
+        imgName: docker.io/library/nginx:latest
         imgPullPolicy: Always
       name: testContaetrye
       entryPoint:
