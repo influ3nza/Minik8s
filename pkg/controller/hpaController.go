@@ -44,7 +44,6 @@ func (hc *HPAController) execute(delay time.Duration, interval []time.Duration, 
 	}
 }
 
-
 func (hc *HPAController) GetAllHPAs() ([]api_obj.HPA, error) {
 	uri := config.API_server_prefix + config.API_get_hpas
 	dataStr, err := network.GetRequest(uri)
