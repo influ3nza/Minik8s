@@ -1,6 +1,7 @@
 package workflow
 
 import (
+	"fmt"
 	"minik8s/pkg/api_obj"
 	"time"
 )
@@ -39,18 +40,42 @@ func (wfc *WorkflowController) ExecuteWorkflow(wf api_obj.Workflow) {
 func (wfc *WorkflowController) CheckNodeFunc(node api_obj.WorkflowNode) bool {
 	//检查workflow是否合法（是否调用存在的函数）
 	//检查workflow调用的函数是否都有pod实例。如果没有需要冷启动。
-	
+	//TODO:
+	return true
 }
 
-func (wfc *WorkflowController) executeWorkflow(wf api_obj.Workflow) {
+func (wfc *WorkflowController) executeWorkflow(wf api_obj.Workflow) error {
 	pos := wf.Spec.StartNode
 	coeff := wf.Spec.StartCoeff
+	nodesIndex := make(map[string]api_obj.WorkflowNode)
+
+	for _, node := range wf.Spec.Nodes {
+		nodesIndex[node.Name] = node
+	}
 
 	for {
 		if pos == "" {
 			break
 		}
 
-		node := 
+		node := nodesIndex[pos]
+		switch node.Type {
+		case api_obj.WF_Func:
+			//TODO:执行函数，更新coeff
+		case api_obj.WF_Fork:
+			var err error = nil
+			pos, err = wfc.DecideFork(coeff, node)
+			if err != nil {
+				fmt.Printf("[ERR/WorkflowController] Failed to execute fork, %v", err)
+			}
+		}
 	}
+
+	return nil
+}
+
+func (wfc *WorkflowController) DecideFork(coeff string, node api_obj.WorkflowNode) (string, error) {
+	//比较
+	//TODO
+	return "", nil
 }
