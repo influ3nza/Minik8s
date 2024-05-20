@@ -259,15 +259,73 @@ func (hc *HPAController) CheckPod(pod *api_obj.Pod, selectors map[string]string)
 //containermetrics数组，对这个数组求和得到每一个pod的CPUPercent和MemoryPercent
 //取平均得到平均数
 func (hc *HPAController) AverageCPUUsage(pods []api_obj.Pod) float64 {
+	var sum float64 = 0.00
+	length := len(pods)
+	for pod := range pods {
+		uri := config.API_server_prefix + config.API_get_pod_metrics
+		dataStr, err := network.GetRequest(uri)
+		if err != nil {
+			fmt.Printf("[ERR/EndpointController/OnAddService] GET request failed, %v.\n", err)
+			ec.PrintHandlerWarning()
+			return
+		}
+		podMetrics := &api_obj.PodMetrics{}
+		err := json.Unmarshal([]byte(dataStr), podMetrics)
+		if err != nil {
+			fmt.Printf("[ERR/HPAController/AverageCPUUsage] Failed to unmarshal pod, " + err.Error())
+			ec.PrintHandlerWarning()
+			return
+		}
 
+		containerMetricss := podMetrics.ContainerMetrics
+		var metrics float64 = 0.00
+		for containerMetrics := range containerMetricss {
+			metrics += float64(containerMetrics.Usage.CPUPercent)
+		}
+		sum += metrics
+	}
+	sum = sum / float64(length)
+	return sum
 }
 
 func (hc *HPAController) AverageMemoryUsage(pods []api_obj.Pod) float64 {
+	var sum float64 = 0.00
+	length := len(pods)
+	for pod := range pods {
+		uri := config.API_server_prefix + config.API_get_pod_metrics
+		dataStr, err := network.GetRequest(uri)
+		if err != nil {
+			fmt.Printf("[ERR/EndpointController/OnAddService] GET request failed, %v.\n", err)
+			ec.PrintHandlerWarning()
+			return
+		}
+		podMetrics := &api_obj.PodMetrics{}
+		err := json.Unmarshal([]byte(dataStr), podMetrics)
+		if err != nil {
+			fmt.Printf("[ERR/HPAController/AverageCPUUsage] Failed to unmarshal pod, " + err.Error())
+			ec.PrintHandlerWarning()
+			return
+		}
 
+		containerMetricss := podMetrics.ContainerMetrics
+		var metrics float64 = 0.00
+		for containerMetrics := range containerMetricss {
+			metrics += float64(containerMetrics.Usage.MemoryPercent)
+		}
+		sum += metrics
+	}
+	sum = sum / float64(length)
+	return sum
 }
 
 func (hc *HPAController) ExpectedReplicas(hpa *api_obj.HPA, averageCPUUsage float64, averageMemoryUsage float64) int {
+	cpuUsedPropotion := averageCPUUsage / hpa.Spec.Metrics.CPUPercent
+	memoryUsedPropotion := averageMemoryUsage / hpa.Spec.Metrics.MemPercent
+	expectedReplicas := int(math.Max(cpuUsedPropotion, memoryUsedPropotion) * float64(hpa.Status.CurReplicas))
 
+	fmt.Printf("[INFO/HPAController/ExpectedReplicas] cpuUsedPropotion: %.2f\n", cpuUsedPropotion)
+	fmt.Printf("[INFO/HPAController/ExpectedReplicas] memoryUsedPropotion: %.2f\n", memoryUsedPropotion)
+	fmt.Printf("[INFO/HPAController/ExpectedReplicas] expectedReplicas: %d\n", expectedReplicas)
+
+	return expectedReplicas
 }
-
-

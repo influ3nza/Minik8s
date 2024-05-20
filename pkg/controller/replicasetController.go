@@ -221,4 +221,4 @@ func (rc *ReplicaController) UpdateReplicaSet(pods []api_obj.Pod, rs *api_obj.Re
 
 
 
-//todo:发送创建create，delete请求
+//todo:发送创建create请求
