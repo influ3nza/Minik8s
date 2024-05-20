@@ -17,12 +17,17 @@ import (
 type ReplicasetController struct {
 }
 
+var (
+	timedelay = 10 * time.Second
+	timeinterval = []time.Duration{10 * time.Second}
+)
+
 func CreatereplicasetControllerInstance() (*ReplicasetController, error) {
 	return &ReplicasetController{}, err
 }
 
 func (rc *ReplicaController) Run() {
-	rc.execute(delay, interval, rc.watch)
+	rc.execute(timedelay, timeinterval, rc.watch)
 }
 
 func (rc. *ReplicaController) execute(delay time.Duration, interval []time.Duration, callback callback) {
@@ -63,7 +68,7 @@ func (rc *ReplicaController) GetAllReplicasets() ([]api_obj.ReplicaSet, error) {
 
 	var rss []api_obj.ReplicaSet
 	if dataStr == "" {
-		fmt.Printf("[ERR/ReplicasetController/OnAddService] Not any pod available.\n")
+		fmt.Printf("[ERR/ReplicasetController/GETALL] Not any Replicaset available.\n")
 		ec.PrintHandlerWarning()
 	} else {
 		err = json.Unmarshal([]byte(dataStr), &rss)
@@ -140,7 +145,7 @@ func (rc *ReplicaController) AddReplicaPods(replicaset *obj_inner.ObjectMeta, po
 	podNew.Spec = pod.Spec
 	podNew.MetaData.Labels["replicaset_name"] = replicaset.Name
 	podNew.MetaData.Labels["replicaset_namespace"] = replicaset.NameSpace
-	podNew.Message.Labels["replicaset_uuid"] = replicaset.UUID
+	podNew.MetaData.Labels["replicaset_uuid"] = replicaset.UUID
 
 	podName := newPod.MetaData.Name
 
@@ -186,7 +191,6 @@ func (rc *ReplicaController) ReduceReplicaPods(pods []api_obj.Pod, num int) erro
 	}
 	fmt.Printf("[replicasetController/ReduceReplicaPods] Send delete pod request success!\n")
 	return nil
-
 }
 
 //replicaset通知apiserver去更新，对应的函数是apiserver如何更新

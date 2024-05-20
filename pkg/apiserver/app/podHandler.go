@@ -429,13 +429,13 @@ func (s *ApiServer) GetPodsByNamespace(c *gin.Context) {
 	})
 }
 
-func (s *ApiServer) GetPodMetrix(c *gin.Context) {
+func (s *ApiServer) GetPodMetrics(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 
 	if name == "" || namespace == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[ERR/handler/GetPodMetrix] Empty namespace or name.",
+			"error": "[ERR/handler/GetPodMetrics] Empty namespace or name.",
 		})
 		return
 	}
@@ -445,13 +445,13 @@ func (s *ApiServer) GetPodMetrix(c *gin.Context) {
 	res, err := s.EtcdWrap.Get(e_key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[ERR/handler/GetPodMetrix] Failed to get pod, " + err.Error(),
+			"error": "[ERR/handler/GetPodMetrics] Failed to get pod, " + err.Error(),
 		})
 		return
 	}
 	if len(res) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[ERR/handler/GetPodMetrix] Pod does not exist.",
+			"error": "[ERR/handler/GetPodMetrics] Pod does not exist.",
 		})
 		return
 	}
@@ -459,7 +459,7 @@ func (s *ApiServer) GetPodMetrix(c *gin.Context) {
 	err = json.Unmarshal([]byte(res[0].Value), pod)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[ERR/handler/GetPodMetrix] Failed to unmarshal data, " + err.Error(),
+			"error": "[ERR/handler/GetPodMetrics] Failed to unmarshal data, " + err.Error(),
 		})
 		return
 	}
@@ -467,24 +467,24 @@ func (s *ApiServer) GetPodMetrix(c *gin.Context) {
 	uri := tools.NodesIpMap[pod.Spec.NodeName] +
 		strconv.Itoa(int(kubelet.Port)) + kubelet.GetMatrix_prefix + namespace + "/" + name
 
-	pod_metrix := &api_obj.PodMetrics{}
-	err = network.GetRequestAndParse(uri, pod_metrix)
+	pod_metrics := &api_obj.PodMetrics{}
+	err = network.GetRequestAndParse(uri, pod_metrics)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[ERR/handler/GetPodMetrix] Failed to send GET request, " + err.Error(),
+			"error": "[ERR/handler/GetPodMetrics] Failed to send GET request, " + err.Error(),
 		})
 		return
 	}
 
-	pod_metrix_str, err := json.Marshal(pod_metrix)
+	pod_metrics_str, err := json.Marshal(pod_metrics)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[ERR/handler/GetPodMetrix] Failed to marshal data, " + err.Error(),
+			"error": "[ERR/handler/GetPodMetrics] Failed to marshal data, " + err.Error(),
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"data": pod_metrix_str,
+		"data": pod_metrics_str,
 	})
 }

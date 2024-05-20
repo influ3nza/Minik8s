@@ -23,7 +23,7 @@ const (
 	API_get_pods_by_namespace        string = "/pods/getByNamespace/:namespace"
 	API_delete_pod_prefix            string = "/pods/delete/"
 	API_delete_pod                   string = "/pods/delete/:namespace/:name"
-	API_get_pod_metrix               string = "/pods/getMetrix/:namespace/:name"
+	API_get_pod_metrics               string = "/pods/getMetrics/:namespace/:name"
 
 	API_add_service           string = "/services/add"
 	API_get_services          string = "/services/getAll"

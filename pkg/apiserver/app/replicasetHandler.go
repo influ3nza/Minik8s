@@ -53,10 +53,10 @@ func (s *ApiServer) AddReplicaSet(c *gin.Context) {
 
 	//返回200
 	c.JSON(http.StatusOK, gin.H{
-		"data": "[replicasethandler/AddReplicaSet] Add endpoint success",
+		"data": "[replicasethandler/AddReplicaSet] Add replicaset success",
 	})
-
 }
+
 
 func (s *ApiServer) DeleteReplicaSet(c *gin.Context) {
 	fmt.Printf("[apiserver/DeleteReplicaSet] Try to delete replicaSet.\n")
@@ -81,7 +81,7 @@ func (s *ApiServer) DeleteReplicaSet(c *gin.Context) {
 
 	//返回200
 	c.JSON(http.StatusOK, gin.H{
-		"data": "[replicasethandler/DeleteReplicaSet] Delete endpoint success",
+		"data": "[replicasethandler/DeleteReplicaSet] Delete replicaset success",
 	})
 }
 
