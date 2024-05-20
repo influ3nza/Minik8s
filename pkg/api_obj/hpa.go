@@ -5,6 +5,13 @@ import (
 	"time"
 )
 
+type ScalingPolicyType string
+
+const (
+	PodsPolicy ScalingPolicyType = "Pods"
+	PercentPolicy ScalingPolicyType = "Percent"
+)
+
 type HPA struct {
 	ApiVersion string               `json:"apiVersion" yaml:"apiVersion"`
 	Kind       string               `json:"kind" yaml:"kind"`
@@ -19,6 +26,7 @@ type HPASpec struct {
 	Selector 	   map[string]string 	`json:"selector" yaml:"selector"`
 	Metrics        HPAMetrics   		`json:"metrics" yaml:"metrics"`
 	AdjustInterval time.Duration 		`json:"adjustInterval" yaml:"adjustInterval"`
+	Policy 		   ScalingPolicyType 	`json:"policy" yaml:"policy"` 
 }
 
 type HPAMetrics struct {
