@@ -135,6 +135,22 @@ func ApplyHandler(cmd *cobra.Command, args []string) {
 					return
 				}
 			}
+		case "dns":
+			{
+				var dns = &api_obj.Dns{}
+				err = json.Unmarshal(fileToJson, dns)
+				if err != nil {
+					fmt.Printf("[ERR] Cannot parse file to service, err: %s\n", err.Error())
+					return
+				}
+				fmt.Print(*dns)
+
+				err = api.SendObjectTo(fileToJson, "dns")
+				if err != nil {
+					fmt.Printf("[ERR] Cannot send dns to server, err: %s\n", err.Error())
+					return
+				}
+			}
 		}
 	}
 }
