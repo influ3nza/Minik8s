@@ -137,7 +137,7 @@ func (s *ApiServer) UpdateSrvCondition(namespace string, name string) error {
 }
 
 func AllocateClusterIp() string {
-	clusterIp := "10.0.0." + strconv.Itoa(int(tools.ClusterIpFlag))
+	clusterIp := "10.1.0." + strconv.Itoa(int(tools.ClusterIpFlag))
 	tools.ClusterIpFlag += 1
 	return clusterIp
 }
