@@ -46,6 +46,8 @@ func DelHandler(cmd *cobra.Command, args []string) {
 		DeleteReplicasetHandler(namespace, name)
 	case "hpa":
 		DeleteHpaHandler(namespace, name)
+	case "dns":
+		DeleteDnsHandler(namespace, name)
 	default:
 		fmt.Println("[ERR] Wrong api kind. Available: pod, service, replicaset, hpa.")
 	}
@@ -73,4 +75,12 @@ func DeleteReplicasetHandler(namespace string, name string) {
 
 func DeleteHpaHandler(namespace string, name string) {
 
+}
+
+func DeleteDnsHandler(namespace string, name string) {
+	uri := apiserver.API_server_prefix + apiserver.API_delete_dns_prefix + namespace + "/" + name
+	_, err := network.DelRequest(uri)
+	if err != nil {
+		fmt.Printf("[ERR/DeleteSrv] Failed to send DEL request.\n")
+	}
 }

@@ -146,6 +146,8 @@ func SendObjectTo(jsonStr []byte, kind string) error {
 		suffix = apiserver.API_add_node
 	case "service":
 		suffix = apiserver.API_add_service
+	case "dns":
+		suffix = apiserver.API_add_dns
 	}
 
 	uri := apiserver.API_server_prefix + suffix
