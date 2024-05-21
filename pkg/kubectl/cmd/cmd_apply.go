@@ -152,6 +152,39 @@ func ApplyHandler(cmd *cobra.Command, args []string) {
 					return
 				}
 			}
+		case "function":
+			{
+				err = ApplyFunctionHandler(fileToJson)
+				if err != nil {
+					fmt.Printf("[ERR] Cannot send function to server, err: %s\n", err.Error())
+					return
+				}
+			}
 		}
 	}
+}
+
+func ApplyFunctionHandler(fileToJson []byte) error {
+	f := &api_obj.Function{}
+	err := json.Unmarshal(fileToJson, f)
+	if err != nil {
+		return err
+	}
+
+	path := f.FilePath
+	api.DoZip(path, path+".zip")
+	_, err = os.ReadFile(path + ".zip")
+	if err != nil {
+		_ = os.Remove(path + ".zip")
+		return err
+	}
+
+	// fw := api_obj.FunctionWrap{
+	// 	Func:    *f,
+	// 	Content: content,
+	// }
+
+	//TODO:发送请求。删除本地zip文件。
+	// _ = os.Remove(path + ".zip")
+	return nil
 }

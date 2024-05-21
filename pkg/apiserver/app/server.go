@@ -112,10 +112,10 @@ func (s *ApiServer) Bind() {
 
 	s.router.GET(apiserver.API_get_function)       //TODO
 	s.router.POST(apiserver.API_add_function)      //TODO
-	s.router.DELETE(apiserver.API_delete_function) //TODO
+	s.router.DELETE(apiserver.API_delete_function, s.AddFunction) //TODO
 
 	s.router.POST(apiserver.API_add_workflow, s.AddWorkflow)
-	s.router.GET(apiserver.API_get_workflow, s.GetWorkflow)
+	s.router.GET(apiserver.API_get_workflow, s.GetWorkflow)	
 }
 
 // 在进行测试/实际运行时，第2步调用此函数。默认端口为8080
