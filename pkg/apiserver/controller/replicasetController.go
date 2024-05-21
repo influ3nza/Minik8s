@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
+	"minik8s/pkg/apiserver/controller/utils"
 	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/network"
 )
@@ -69,9 +71,8 @@ func (rc *ReplicasetController) GetAllReplicasets() ([]api_obj.ReplicaSet, error
 
 	var rss []api_obj.ReplicaSet
 	if dataStr == "" {
-		fmt.Printf("[ERR/ReplicasetController/GETALL] Not any Replicaset available.\n")
-		rc.PrintHandlerWarning()
-		return nil, err
+		fmt.Printf("[ReplicasetController/GETALL] Not any Replicaset available, return.\n")
+		return nil, errors.New("no rs.")
 	} else {
 		err = json.Unmarshal([]byte(dataStr), &rss)
 		if err != nil {
@@ -147,14 +148,16 @@ func (rc *ReplicasetController) AddReplicaPods(replicaset *obj_inner.ObjectMeta,
 	podNew.MetaData.Labels["replicaset_name"] = replicaset.Name
 	podNew.MetaData.Labels["replicaset_namespace"] = replicaset.NameSpace
 	podNew.MetaData.Labels["replicaset_uuid"] = replicaset.UUID
+	podNew.MetaData.NameSpace = replicaset.NameSpace
 
 	podName := podNew.MetaData.Name
 
 	for i := 0; i < num; i++ {
+		//这里将pod名字随机，而容器名随机会在kubelet内完成。
 		rand.Seed(time.Now().UnixNano())
-		randomNumber := rand.Intn(1000)
+		randomNumber := rand.Intn(10000)
 		randomString := strconv.Itoa(randomNumber)
-		podNew.MetaData.Name = podName + "-" + randomString + "rsCreate" + strconv.Itoa(num)
+		podNew.MetaData.Name = utils.RS_prefix + replicaset.Name + "-" + podName + "-" + randomString
 
 		podJson, err := json.Marshal(podNew)
 		if err != nil {

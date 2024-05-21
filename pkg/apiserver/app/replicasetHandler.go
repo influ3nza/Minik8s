@@ -4,11 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
 	"minik8s/pkg/api_obj"
+	"minik8s/pkg/apiserver/controller/utils"
 	"minik8s/pkg/config/apiserver"
+	"minik8s/pkg/config/kubelet"
+	"minik8s/pkg/network"
+	"minik8s/tools"
 )
 
 func (s *ApiServer) AddReplicaSet(c *gin.Context) {
@@ -74,6 +79,46 @@ func (s *ApiServer) DeleteReplicaSet(c *gin.Context) {
 		return
 	}
 
+	e_key := apiserver.ETCD_pod_prefix + namespace + "/" + utils.RS_prefix + name
+	res, err := s.EtcdWrap.GetByPrefix(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/replicasethandler/DeleteReplicaSets] Failed to get from etcd, " + err.Error(),
+		})
+		return
+	}
+
+	//删除所有对应的pod
+	for _, kv := range res {
+		pod := &api_obj.Pod{}
+		err := json.Unmarshal([]byte(kv.Value), pod)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "[ERR/replicasethandler/DeleteReplicaSets] Failed to unmarshal data, " + err.Error(),
+			})
+			return
+		}
+
+		e_key := apiserver.ETCD_pod_prefix + pod.MetaData.NameSpace + "/" + pod.MetaData.Name
+		err = s.EtcdWrap.Del(e_key)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "[ERR/replicasethandler/GetReplicaSets] Failed to delete from etcd, " + err.Error(),
+			})
+			return
+		}
+
+		uri := tools.NodesIpMap[pod.Spec.NodeName] + strconv.Itoa(int(kubelet.Port)) + kubelet.DelPod_prefix +
+			pod.MetaData.NameSpace + "/" + pod.MetaData.Name + "/" + pod.MetaData.Annotations["pause"]
+		_, err = network.DelRequest(uri)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "[ERR/replicasethandler/GetReplicaSets] Failed to send DEL request, " + err.Error(),
+			})
+			return
+		}
+	}
+
 	//返回200
 	c.JSON(http.StatusOK, gin.H{
 		"data": "[replicasethandler/DeleteReplicaSet] Delete replicaset success",
@@ -103,5 +148,53 @@ func (s *ApiServer) GetReplicaSets(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": rss,
+	})
+}
+
+func (s *ApiServer) UpdateReplicaSet(c *gin.Context) {
+	fmt.Printf("[apiserver/UpdateReplicaSet] Try to update replicaset.")
+
+	rs := &api_obj.ReplicaSet{}
+	err := c.ShouldBind(rs)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/replicasethandler/UpdateReplicaSet] Failed to parse data into replicaset.",
+		})
+		return
+	}
+
+	e_key := apiserver.ETCD_replicaset_prefix + rs.MetaData.NameSpace + "/" + rs.MetaData.Name
+	res, err := s.EtcdWrap.Get(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/replicasethandler/UpdateReplicaSets] Failed to get from etcd, " + err.Error(),
+		})
+		return
+	}
+	if len(res) != 1 {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/replicasethandler/UpdateReplicaSets] Found zero or more than one rs.",
+		})
+		return
+	}
+
+	new_rs_str, err := json.Marshal(rs)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/replicasethandler/UpdateReplicaSets] Failed to marshal data, " + err.Error(),
+		})
+		return
+	}
+
+	err = s.EtcdWrap.Put(e_key, new_rs_str)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/replicasethandler/UpdateReplicaSets] Failed to write into etcd, " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": "[replicasethandler/UpdateReplicaSets] Update rs success",
 	})
 }
