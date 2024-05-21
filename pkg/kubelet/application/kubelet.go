@@ -53,7 +53,6 @@ func (server *Kubelet) register() {
 			UpdateTime:  time.Now(),
 		},
 	}
-	fmt.Println(node.NodeStatus.Addresses.InternalIp)
 
 	nodeJson, _ := json.Marshal(node)
 	request, err := network.PostRequest(server.ApiServerAddress+"/nodes/add", nodeJson)
@@ -77,7 +76,7 @@ func InitKubeletDefault() *Kubelet {
 	return &Kubelet{
 		ApiServerAddress: util.ApiServer,
 		Router:           router,
-		IpAddress:        util.IpAddressNode1,
+		IpAddress:        util.IpAddressMas,
 		Port:             int32(port),
 		Producer:         producer,
 		TotalCpu:         util.Cpu,

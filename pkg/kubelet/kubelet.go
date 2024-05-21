@@ -46,7 +46,7 @@ func main() {
 			fmt.Println("Init Kubelet Failed ", err.Error())
 			return
 		}
+		fmt.Println(*server)
 	}
-
 	server.Run()
 }
