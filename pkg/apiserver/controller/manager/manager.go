@@ -9,18 +9,28 @@ import (
 )
 
 type ControllerManager struct {
-	EpController *controller.EndpointController
+	EpController  *controller.EndpointController
+	RsController  *controller.ReplicasetController
+	HpaController *controller.HPAController
 }
 
-func CreateNewControllerManagerInstance() ControllerManager {
+func CreateNewControllerManagerInstance() (ControllerManager, error) {
 	ep, err := controller.CreateEndpointControllerInstance()
 	if err != nil {
 		fmt.Printf("[Controller/MAIN] Failed to create ep controller.")
+		return ControllerManager{}, err
+	}
+
+	rs, err := controller.CreateReplicasetControllerInstance()
+	if err != nil {
+		fmt.Printf("[Controller/MAIN] Failed to create ep controller.")
+		return ControllerManager{}, err
 	}
 
 	return ControllerManager{
 		EpController: ep,
-	}
+		RsController: rs,
+	}, nil
 }
 
 func (cm *ControllerManager) Run() {
@@ -32,6 +42,7 @@ func (cm *ControllerManager) Run() {
 	}()
 
 	go cm.EpController.Run()
+	go cm.RsController.Run()
 }
 
 func (cm *ControllerManager) Clean() {

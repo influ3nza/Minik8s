@@ -24,6 +24,7 @@ const (
 	API_delete_pod_prefix            string = "/pods/delete/"
 	API_delete_pod                   string = "/pods/delete/:namespace/:name"
 	API_get_pod_metrics              string = "/pods/getMetrics/:namespace/:name"
+	API_get_pod_metrics_prefix       string = "/pods/getMetrics/"
 
 	API_add_service           string = "/services/add"
 	API_get_services          string = "/services/getAll"
