@@ -237,15 +237,17 @@ func (hc *HPAController) AddHpaPod(hpa api_obj.HPA, pods []api_obj.Pod, num int)
 }
 
 func (hc *HPAController) ReduceHpaPod(hpa api_obj.HPA, pods []api_obj.Pod, num int) error {
-	uri := apiserver.API_server_prefix + apiserver.API_delete_pod
 	for i := 0; i < num; i++ {
-		podJson, err := json.Marshal(pods[i])
+		namespace := pods[i].MetaData.NameSpace
+		name := pods[i].MetaData.Name
+		uri := apiserver.API_server_prefix + apiserver.API_delete_pod_prefix + namespace + "/" + name
+		_, err := json.Marshal(pods[i])
 		if err != nil {
 			fmt.Printf("[ERR/hpaController/ReduceHpaPod] Failed to marshal pod, %v.\n", err)
 			return err
 		}
 
-		_, err = network.PostRequest(uri, podJson)
+		_, err = network.DelRequest(uri)
 		if err != nil {
 			fmt.Printf("[ERR/hpaController/ReduceHpaPod] Failed to post request, err:%v\n", err)
 			return err

@@ -176,15 +176,17 @@ func (rc *ReplicasetController) AddReplicaPods(replicaset *obj_inner.ObjectMeta,
 }
 
 func (rc *ReplicasetController) ReduceReplicaPods(pods []api_obj.Pod, num int) error {
-	uri := apiserver.API_server_prefix + apiserver.API_delete_pod
 	for i := 0; i < num; i++ {
-		podJson, err := json.Marshal(pods[i])
+		namespace := pods[i].MetaData.NameSpace
+		name := pods[i].MetaData.Name
+		uri := apiserver.API_server_prefix + apiserver.API_delete_pod_prefix + namespace + "/" + name
+		_, err := json.Marshal(pods[i])
 		if err != nil {
 			fmt.Printf("[ERR/replicasetController/ReduceReplicaPods] Failed to marshal pod, %v.\n", err)
 			return err
 		}
 
-		_, err = network.PostRequest(uri, podJson)
+		_, err = network.DelRequest(uri)
 		if err != nil {
 			fmt.Printf("[ERR/replicasetController/ReduceReplicaPods] Failed to post request, err:%v\n", err)
 			return err
