@@ -3,7 +3,7 @@ kind: pod
 metaData:
   labels:
     app: test2
-  name: pod-example2
+  name: pod-2
   nameSpace: q
 spec:
   containers:
