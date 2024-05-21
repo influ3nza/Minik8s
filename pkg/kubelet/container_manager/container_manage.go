@@ -141,19 +141,18 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 		}
 		portLabel["ports"] = string(jsonFy)
 	}
-	// 配置容器snap-shot，将oci opts合并入容器opts
-	containerOpts := []containerd.NewContainerOpts{
-		containerd.WithNewSnapshot(container.Name+"snapshot", image),
-		containerd.WithNewSpec(createOpts...),
-		containerd.WithContainerLabels(nameLabel),
-		containerd.WithAdditionalContainerLabels(podLabel),
-		containerd.WithAdditionalContainerLabels(portLabel),
-	}
-
 	containerId, err := GenerateUUIDForContainer()
 	if err != nil {
 		fmt.Println("Failed At CreateK8sContainer line 155 ", err.Error())
 		return nil, "", err
+	}
+	// 配置容器snap-shot，将oci opts合并入容器opts
+	containerOpts := []containerd.NewContainerOpts{
+		containerd.WithNewSnapshot(container.Name+containerId+"snapshot", image),
+		containerd.WithNewSpec(createOpts...),
+		containerd.WithContainerLabels(nameLabel),
+		containerd.WithAdditionalContainerLabels(podLabel),
+		containerd.WithAdditionalContainerLabels(portLabel),
 	}
 
 	containerCreated, err := client.NewContainer(ctx, containerId, containerOpts...)
