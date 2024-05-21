@@ -25,7 +25,7 @@ func (rc *ReplicasetController) PrintHandlerWarning() {
 	fmt.Printf("[WARN/ReplicasetController] Error in message handler, the system may not be working properly!\n")
 }
 
-func CreatereplicasetControllerInstance() (*ReplicasetController, error) {
+func CreateReplicasetControllerInstance() (*ReplicasetController, error) {
 	return &ReplicasetController{}, nil
 }
 
@@ -37,6 +37,7 @@ func (rc *ReplicasetController) execute(delay time.Duration, interval []time.Dur
 	if len(interval) == 0 {
 		return
 	}
+
 	<-time.After(delay)
 	for {
 		for _, inter := range interval {
@@ -82,6 +83,7 @@ func (rc *ReplicasetController) GetAllReplicasets() ([]api_obj.ReplicaSet, error
 	}
 }
 
+// 监视
 func (rc *ReplicasetController) watch() {
 	//返回所有的pods
 	uri := apiserver.API_server_prefix + apiserver.API_get_pods
@@ -219,5 +221,3 @@ func (rc *ReplicasetController) UpdateReplicaSet(pods []api_obj.Pod, rs *api_obj
 	}
 	return nil
 }
-
-//todo:发送创建create请求
