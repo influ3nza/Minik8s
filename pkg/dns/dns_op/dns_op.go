@@ -14,7 +14,7 @@ type DnsService struct {
 	EtcdClient *etcd.EtcdWrap
 }
 
-// TODO:这个函数不会被使用
+// WARN:这个函数不会被使用
 func (d *DnsService) StartDns(configPath string) error {
 	cmd := []string{"-conf", configPath}
 	res, err := exec.Command("coredns", cmd...).CombinedOutput()

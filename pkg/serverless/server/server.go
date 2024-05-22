@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 )
 
 type SL_server struct {
@@ -18,7 +17,7 @@ type SL_server struct {
 }
 
 func CreateNewSLServerInstance() (*SL_server, error) {
-	consumer, err := message.NewConsumer("ss", "ss")
+	consumer, err := message.NewConsumer(message.TOPIC_Serverless, message.TOPIC_Serverless)
 	if err != nil {
 		fmt.Printf("[ERR/Serverless/Server] Error creating consumer.\n")
 		return nil, err
@@ -36,6 +35,7 @@ func (s *SL_server) MsgHandler(msg *message.Message) {
 	//TODO:填写正确的消息类型：
 	//1. FUNC_CREATE
 	//2. WF_CREATE
+	//3. FUNC_EXEC
 	//有关于DELETE应该在apiserver处就被处理完毕了，注意需要同时删除所有pod
 	//和对应的rs。
 	//UPDATE不考虑。
@@ -43,20 +43,7 @@ func (s *SL_server) MsgHandler(msg *message.Message) {
 }
 
 func (s *SL_server) PollApiserver() {
-	//TODO:定期轮询apiserver有关func pod的复制数量以及所在ip
-	//TODO:需要用某个全局变量存起来。
-	//TODO:修改时，需要拿锁。
-	for {
-		time.Sleep(3 * time.Second)
-
-		pods, err := s.GetPodsFromApiserver()
-		if err != nil {
-			fmt.Printf("[ERR/Serverless/PollApiserver] Failed to get from apiserver, %v", err)
-			return
-		}
-
-		s.GeneratePodMap(pods)
-	}
+	//TODO:
 }
 
 func (s *SL_server) Run() {
@@ -67,8 +54,7 @@ func (s *SL_server) Run() {
 		s.Clean()
 	}()
 
-	//TODO:修改topic
-	go s.Consumer.Consume([]string{"ss"}, s.MsgHandler)
+	go s.Consumer.Consume([]string{message.TOPIC_Serverless}, s.MsgHandler)
 	go s.PollApiserver()
 }
 

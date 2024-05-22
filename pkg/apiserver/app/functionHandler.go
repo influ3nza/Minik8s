@@ -95,7 +95,14 @@ func (s *ApiServer) AddFunction(c *gin.Context) {
 
 	//TODO:复制dockerfile
 
-	//TODO:删除zip
+	//删除zip
+	err = os.Remove(path)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/AddFunction] Failed to delete file, " + err.Error(),
+		})
+		return
+	}
 
 	//向serverless组件发送消息
 	s_msg := &message.Message{
@@ -135,7 +142,7 @@ func (s *ApiServer) ExecFunction(c *gin.Context) {
 		return
 	}
 
-	f := api_obj.Function{}
+	f := &api_obj.Function{}
 	err = json.Unmarshal([]byte(res[0].Value), f)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -145,8 +152,25 @@ func (s *ApiServer) ExecFunction(c *gin.Context) {
 	}
 
 	f.Coeff = coeff
-	//TODO:向serverless组件发送exec请求。
+	f_str, err := json.Marshal(f)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/AddFunction] Failed to marshal data, " + err.Error(),
+		})
+		return
+	}
 
+	//向serverless组件发送exec请求。
+	m_msg := &message.Message{
+		Type:    message.FUNC_EXEC,
+		Content: string(f_str),
+	}
+	s.Producer.Produce(message.TOPIC_Serverless, m_msg)
+
+	//返回200
+	c.JSON(http.StatusOK, gin.H{
+		"data": "[handler/AddFunction] Add function success",
+	})
 }
 
 func (s *ApiServer) FindFunctionIp(c *gin.Context) {
@@ -183,4 +207,8 @@ func (s *ApiServer) FindFunctionIp(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": pack_str,
 	})
+}
+
+func (s *ApiServer) GetFunctionRes(c *gin.Context) {
+	//TODO:通过文件路径获取结果。
 }

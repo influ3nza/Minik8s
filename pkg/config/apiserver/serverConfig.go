@@ -84,6 +84,8 @@ const (
 	API_exec_function           string = "/functions/exec/:name/:coeff"
 	API_find_function_ip_prefix string = "/function/findByIp/"
 	API_find_function_ip        string = "/function/findByIp/:name"
+	API_get_function_res_prefix string = "/function/getRes/"
+	API_get_function_res        string = "/function/getRes/:name"
 )
 
 type ServerConfig struct {
