@@ -24,6 +24,17 @@ func AddPod(pod *api_obj.Pod) error {
 	}
 	defer client.Close()
 	ctx := namespaces.WithNamespace(context.Background(), pod.MetaData.NameSpace)
+
+	if pod.MetaData.Labels["func"] != "" {
+		res, err := container_manager.StartFuncContainer(client, pod.MetaData.NameSpace, pod.MetaData.Labels["func"], pod.MetaData.Name)
+		if err != nil {
+			return fmt.Errorf("start Func Pod Failed %s", err.Error())
+		}
+		pod.PodStatus.PodIP = res
+		pod.PodStatus.Phase = obj_inner.Running
+		return nil
+	}
+
 	res, err := container_manager.CreatePauseContainer(ctx, client, pod.MetaData.NameSpace,
 		/*fmt.Sprintf("%s-pause", pod.MetaData.Name)*/ pod.MetaData.Name)
 	if err != nil {

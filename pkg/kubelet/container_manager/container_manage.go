@@ -7,9 +7,12 @@ import (
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/kubelet/image_manager"
+	"minik8s/pkg/kubelet/pod_manager"
 	"minik8s/pkg/kubelet/util"
 	"os"
+	"os/exec"
 	"reflect"
+	"strings"
 	"time"
 
 	v2 "github.com/containerd/cgroups/v2/stats"
@@ -162,6 +165,33 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 	}
 
 	return containerCreated, containerId, nil
+}
+
+func StartFuncContainer(client *containerd.Client, namespace string, name string, podName string) (string, error) {
+	err := image_manager.FetchMasterImage(client, name, namespace)
+	if err != nil {
+		return "", fmt.Errorf("fetch Func Image Failed %s", err.Error())
+	}
+	cmd := []string{"-n", namespace, "run", "--name", podName, "--net", "flannel", "--label", fmt.Sprintf("podName=%s", podName), name}
+	opt, err := exec.Command("nerdctl", cmd...).CombinedOutput()
+
+	if err != nil {
+		fmt.Println("Create Func Failed At line 178")
+		return "", err
+	}
+	funcContainerId := strings.TrimSuffix(string(opt), "\n")
+	// 截取后面64个字母
+	if len(funcContainerId) > 64 {
+		funcContainerId = funcContainerId[len(funcContainerId)-64:]
+	}
+
+	ip, err := pod_manager.GetPodIp(namespace, funcContainerId)
+	if err != nil {
+		fmt.Println("Get Func Ip Failed ", err.Error())
+		return "", err
+	}
+
+	return ip, nil
 }
 
 // StartContainer 启动创建好的container
