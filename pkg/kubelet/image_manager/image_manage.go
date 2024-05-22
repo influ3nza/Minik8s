@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/containerd/containerd"
-	"github.com/containerd/containerd/namespaces"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/kubelet/util"
 	"os/exec"
@@ -19,12 +18,6 @@ func GetImageFromLocal(client *containerd.Client, name string, ctx context.Conte
 }
 
 func FetchMasterImage(client *containerd.Client, imgName string, namespace string) error {
-	ctx := namespaces.WithNamespace(context.Background(), namespace)
-	if img, _ := GetImageFromLocal(client, imgName, ctx); img != nil {
-		return nil
-	} else {
-		fmt.Println("Get Func Image From Local Failed")
-	}
 	cmd := []string{"-n", namespace, "pull", "--insecure-registry", imgName}
 	err := exec.Command("nerdctl", cmd...).Run()
 	if err != nil {

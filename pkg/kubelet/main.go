@@ -131,7 +131,67 @@ var pod = api_obj.Pod{
 }
 
 func main() {
-	testCreateMonitor()
+	// testCreateMonitor()
+	testFunc()
+}
+
+func testFunc() {
+	pod1 := &api_obj.Pod{
+		ApiVersion: "v1",
+		Kind:       "pod",
+		MetaData: obj_inner.ObjectMeta{
+			Name:      "qwer",
+			NameSpace: "q",
+			Labels: map[string]string{
+				"func": "bar",
+			},
+			Annotations: map[string]string{},
+		},
+		Spec: api_obj.PodSpec{
+			Containers: []api_obj.Container{
+				{
+					Name: "container",
+					Image: obj_inner.Image{
+						Img:           "my-registry.io:5000/bar",
+						ImgPullPolicy: "Always",
+					},
+				},
+			},
+		},
+		PodStatus: api_obj.PodStatus{},
+	}
+
+	res := pod_manager.AddPod(pod1)
+	if res != nil {
+		fmt.Println("Create Func Pod Failed ", res.Error())
+	}
+	fmt.Println(pod1.PodStatus.PodIP + "  " + pod1.MetaData.Annotations["pause"])
+	client, err := containerd.New("/run/containerd/containerd.sock")
+	if err != nil {
+		fmt.Println("Create Client Failed At Main")
+	}
+	ctx := namespaces.WithNamespace(context.Background(), pod1.MetaData.NameSpace)
+	// filter := "labels.podName==" + pod.MetaData.Name
+	containers, err := container_manager.ListContainers(client, ctx)
+	// containers[0].Labels(ctx)
+	if len(containers) > 0 {
+		str, _ := containers[0].Labels(ctx)
+		fmt.Println(str)
+	}
+	if err != nil {
+		return
+	}
+	fmt.Printf("container length is %d", len(containers))
+	for i := 0; i < 1; i++ {
+		time.Sleep(2 * time.Second)
+		str := pod_manager.MonitorPodContainers(pod1.MetaData.Name, pod1.MetaData.NameSpace)
+		fmt.Println("Monitor Pod is ", str)
+	}
+
+	err = pod_manager.DeletePod(pod1.MetaData.Name, pod1.MetaData.NameSpace, pod1.MetaData.Annotations["pause"])
+	if err != nil {
+		fmt.Println("Delete Func Pod Failed")
+	}
 }
 
 func testLock() {
