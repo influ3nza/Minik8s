@@ -74,6 +74,8 @@ const (
 	API_add_function           string = "/functions/add"
 	API_delete_function_prefix string = "/functions/delete/"
 	API_delete_function        string = "/functions/delete/:namespace/:name"
+	API_exec_function_prefix   string = "/functions/exec/"
+	API_exec_funtion           string = "/functions/exec/:name/:coeff"
 )
 
 type ServerConfig struct {

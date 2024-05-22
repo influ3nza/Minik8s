@@ -211,7 +211,7 @@ func DoZip(path string, target string) error {
 			return nil
 		}
 
-		f, err := os.Open(path)
+		f, err := os.Open(p)
 		if err != nil {
 			return err
 		}

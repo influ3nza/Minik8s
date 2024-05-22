@@ -22,6 +22,7 @@ const (
 	TOPIC_EndpointController string = "EndpointController"
 	TOPIC_ApiServer_FromNode string = "ApiServerFromNode"
 	TOPIC_Scheduler          string = "Scheduler"
+	TOPIC_Serverless         string = "Serverless"
 )
 
 const (
