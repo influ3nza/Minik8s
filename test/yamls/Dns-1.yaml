@@ -3,7 +3,7 @@ kind: dns
 metaData:
   labels:
     app: test
-  name: dns-example1
+  name: dns-1
   nameSpace: q
 host: www.example.com
 paths:

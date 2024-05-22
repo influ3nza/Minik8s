@@ -161,3 +161,22 @@ func (s *ApiServer) RefreshNodeIp() error {
 
 	return nil
 }
+
+func (s *ApiServer) GetPodsOfFunction(funcName string) ([]string, error) {
+	//搜索所有pod，找出function所在的所有pod的ip地址。
+	//所有是function的pod都会在label中有func: function_name的记录。
+	e_key := apiserver.ETCD_pod_prefix
+	res, err := s.EtcdWrap.GetByPrefix(e_key)
+	if err != nil {
+		fmt.Printf("[ERR/GetPodsOfFunction] Failed to get from etcd, %v", err)
+		return []string{}, nil
+	}
+
+	for _, kv := range res {
+		pod := &api_obj.Pod{}
+		err := json.Unmarshal([]byte(kv.Value), pod)
+		if err != nil {
+			
+		}		
+	}
+}

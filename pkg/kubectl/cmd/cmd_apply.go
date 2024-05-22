@@ -152,6 +152,21 @@ func ApplyHandler(cmd *cobra.Command, args []string) {
 					return
 				}
 			}
+		case "replicaset":
+			{
+				var rs = &api_obj.ReplicaSet{}
+				err = json.Unmarshal(fileToJson, rs)
+				if err != nil {
+					fmt.Printf("[ERR] Cannot parse file to service, err: %s\n", err.Error())
+					return
+				}
+
+				err = api.SendObjectTo(fileToJson, "replicaset")
+				if err != nil {
+					fmt.Printf("[ERR] Cannot send dns to server, err: %s\n", err.Error())
+					return
+				}
+			}
 		case "function":
 			{
 				err = ApplyFunctionHandler(fileToJson)

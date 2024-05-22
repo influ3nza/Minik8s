@@ -3,7 +3,7 @@ kind: Service
 metadata:
   labels:
     app: test2
-  name: srv-example2
+  name: srv-2
   nameSpace: q
 spec:
   ports:

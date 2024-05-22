@@ -49,7 +49,11 @@ func CreateApiServerInstance(c *apiserver.ServerConfig) (*ApiServer, error) {
 
 	dns_srv := dns.InitDnsService()
 
-	cm := manager.CreateNewControllerManagerInstance()
+	cm, err := manager.CreateNewControllerManagerInstance()
+	if err != nil {
+		fmt.Printf("[ERR/Apiserver] Failed to create controller manager.\n")
+		return nil, err
+	}
 
 	return &ApiServer{
 		router:            router,
@@ -59,7 +63,6 @@ func CreateApiServerInstance(c *apiserver.ServerConfig) (*ApiServer, error) {
 		Consumer:          consumer,
 		DnsService:        dns_srv,
 		ControllerManager: cm,
-		//TODO: 这些数据都是易失数据，在做容错的时候需要考虑到这一点。
 	}, nil
 }
 
@@ -98,9 +101,10 @@ func (s *ApiServer) Bind() {
 	s.router.GET(apiserver.API_get_endpoint, s.GetEndpoint)
 	s.router.GET(apiserver.API_get_endpoint_by_service, s.GetEndpointsByService)
 
-	s.router.GET(apiserver.API_get_replicasets)      //TODO
-	s.router.DELETE(apiserver.API_delete_replicaset) //TODO
-	s.router.GET(apiserver.API_update_replicaset)    //TODO
+	s.router.GET(apiserver.API_get_replicasets, s.GetReplicaSets)        //need check, in replicasetHandler
+	s.router.DELETE(apiserver.API_delete_replicaset, s.DeleteReplicaSet) //need check,in replicasetHandler
+	s.router.POST(apiserver.API_update_replicaset, s.UpdateReplicaSet)
+	s.router.POST(apiserver.API_add_replicaset, s.AddReplicaSet) //need check,in replicasetHandler
 
 	s.router.POST(apiserver.API_add_dns, s.AddDns)
 	s.router.DELETE(apiserver.API_delete_dns, s.DeleteDns)

@@ -3,5 +3,5 @@ kind: Node
 metadata:
   labels:
     app: test
-  name: node-example1
+  name: node-1
   nameSpace: q
