@@ -30,6 +30,7 @@ type WF_FuncSpec struct {
 type WF_ForkSpec struct {
 	Variable  string      `json:"variable" yaml:"variable"`
 	CompareBy CompareType `json:"compareType" yaml:"compareType"`
+	CompareTo string      `json:"compareTo" yaml:"compareTo"`
 	Next      string      `json:"next" yaml:"next"`
 }
 

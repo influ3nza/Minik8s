@@ -198,3 +198,11 @@ func (s *ApiServer) UpdateReplicaSet(c *gin.Context) {
 		"data": "[replicasethandler/UpdateReplicaSets] Update rs success",
 	})
 }
+
+func (s *ApiServer) ScaleUpReplicaSet(c *gin.Context) {
+	// TODO
+}
+
+func (s *ApiServer) ScaleDownReplicaSet(c *gin.Context) {
+	// TODO
+}

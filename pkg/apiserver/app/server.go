@@ -106,6 +106,9 @@ func (s *ApiServer) Bind() {
 	s.router.POST(apiserver.API_update_replicaset, s.UpdateReplicaSet)
 	s.router.POST(apiserver.API_add_replicaset, s.AddReplicaSet) //need check,in replicasetHandler
 
+	s.router.GET(apiserver.API_scaleup_replicaset, s.ScaleUpReplicaSet)
+	s.router.GET(apiserver.API_scaledown_replicaset, s.ScaleDownReplicaSet)
+
 	s.router.POST(apiserver.API_add_dns, s.AddDns)
 	s.router.DELETE(apiserver.API_delete_dns, s.DeleteDns)
 	s.router.GET(apiserver.API_get_dns)     //TODO
@@ -114,10 +117,10 @@ func (s *ApiServer) Bind() {
 	s.router.POST(apiserver.API_update_workflow)   //TODO
 	s.router.DELETE(apiserver.API_delete_workflow) //TODO
 
-	s.router.GET(apiserver.API_get_function)  //TODO
+	s.router.GET(apiserver.API_get_function) //TODO
 	s.router.POST(apiserver.API_add_function, s.AddFunction)
 	s.router.DELETE(apiserver.API_delete_function) //TODO
-	s.router.GET(apiserver.API_exec_funtion, s.ExecFunction)
+	s.router.GET(apiserver.API_exec_function, s.ExecFunction)
 
 	s.router.POST(apiserver.API_add_workflow, s.AddWorkflow)
 	s.router.GET(apiserver.API_get_workflow, s.GetWorkflow)

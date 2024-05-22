@@ -144,5 +144,43 @@ func (s *ApiServer) ExecFunction(c *gin.Context) {
 		return
 	}
 
-	//找到pod所在node的位置。
+	f.Coeff = coeff
+	//TODO:向serverless组件发送exec请求。
+
+}
+
+func (s *ApiServer) FindFunctionIp(c *gin.Context) {
+	name := c.Param("name")
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/FindFunctionIp] Empty function name.",
+		})
+		return
+	}
+
+	pack, err := s.GetPodsOfFunction(name)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/FindFunctionIp] Failed to get pod ip, " + err.Error(),
+		})
+		return
+	}
+
+	//检查是否有可用ip，如果没有，在这里进行扩容。
+	if len(pack) == 0 {
+		s.U_ScaleUpReplicaSet(name)
+	}
+
+	pack_str, err := json.Marshal(pack)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/FindFunctionIp] Failed to marshal data, " + err.Error(),
+		})
+		return
+	}
+
+	//返回200
+	c.JSON(http.StatusOK, gin.H{
+		"data": pack_str,
+	})
 }

@@ -13,4 +13,5 @@ type FunctionWrap struct {
 type Function struct {
 	Metadata obj_inner.ObjectMeta
 	FilePath string
+	Coeff    string
 }

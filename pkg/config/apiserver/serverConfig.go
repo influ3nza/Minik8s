@@ -50,6 +50,11 @@ const (
 	API_update_replicaset        string = "/replicasets/update"
 	API_add_replicaset           string = "/replicasets/add"
 
+	API_scaleup_replicaset_prefix   string = "/replicasets/scaleup/"
+	API_scaleup_replicaset          string = "/replicasets/scaleup/:name"
+	API_scaledown_replicaset_prefix string = "/replicasets/scaledown/"
+	API_scaledown_replicaset        string = "/replicasets/scaledown/:name"
+
 	API_add_hpa           string = "/hpas/add"
 	API_get_hpas          string = "/hpas/getAll"
 	API_delete_hpa_prefix string = "/hpas/delete/"
@@ -70,13 +75,15 @@ const (
 	API_delete_workflow_prefix string = "/workflows/delete/"
 	API_delete_workflow        string = "/workflows/delete/:namespace/:name"
 
-	API_get_function_prefix    string = "/functions/"
-	API_get_function           string = "/functions/:namespace/:name"
-	API_add_function           string = "/functions/add"
-	API_delete_function_prefix string = "/functions/delete/"
-	API_delete_function        string = "/functions/delete/:namespace/:name"
-	API_exec_function_prefix   string = "/functions/exec/"
-	API_exec_funtion           string = "/functions/exec/:name/:coeff"
+	API_get_function_prefix     string = "/functions/"
+	API_get_function            string = "/functions/:namespace/:name"
+	API_add_function            string = "/functions/add"
+	API_delete_function_prefix  string = "/functions/delete/"
+	API_delete_function         string = "/functions/delete/:namespace/:name"
+	API_exec_function_prefix    string = "/functions/exec/"
+	API_exec_function           string = "/functions/exec/:name/:coeff"
+	API_find_function_ip_prefix string = "/function/findByIp/"
+	API_find_function_ip        string = "/function/findByIp/:name"
 )
 
 type ServerConfig struct {
