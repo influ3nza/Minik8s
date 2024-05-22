@@ -50,10 +50,8 @@ const (
 	API_update_replicaset        string = "/replicasets/update"
 	API_add_replicaset           string = "/replicasets/add"
 
-	API_scaleup_replicaset_prefix   string = "/replicasets/scaleup/"
-	API_scaleup_replicaset          string = "/replicasets/scaleup/:name"
-	API_scaledown_replicaset_prefix string = "/replicasets/scaledown/"
-	API_scaledown_replicaset        string = "/replicasets/scaledown/:name"
+	API_scale_replicaset_prefix string = "/replicasets/scaleup/"
+	API_scale_replicaset        string = "/replicasets/scaleup/:name/:method"
 
 	API_add_hpa           string = "/hpas/add"
 	API_get_hpas          string = "/hpas/getAll"

@@ -20,6 +20,10 @@ const (
 )
 
 const (
+	SCHED string = "scheduler"
+)
+
+const (
 	TOPIC_EndpointController string = "EndpointController"
 	TOPIC_ApiServer_FromNode string = "ApiServerFromNode"
 	TOPIC_Scheduler          string = "Scheduler"

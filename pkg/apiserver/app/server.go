@@ -106,8 +106,7 @@ func (s *ApiServer) Bind() {
 	s.router.POST(apiserver.API_update_replicaset, s.UpdateReplicaSet)
 	s.router.POST(apiserver.API_add_replicaset, s.AddReplicaSet) //need check,in replicasetHandler
 
-	s.router.GET(apiserver.API_scaleup_replicaset, s.ScaleUpReplicaSet)
-	s.router.GET(apiserver.API_scaledown_replicaset, s.ScaleDownReplicaSet)
+	s.router.GET(apiserver.API_scale_replicaset, s.ScaleReplicaSet)
 
 	s.router.POST(apiserver.API_add_dns, s.AddDns)
 	s.router.DELETE(apiserver.API_delete_dns, s.DeleteDns)

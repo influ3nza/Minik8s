@@ -118,7 +118,12 @@ func (s *ApiServer) AddPod(c *gin.Context) {
 	}
 
 	//创建完成之后，通知scheduler分配node
-	s.Producer.CallScheduleNode(string(new_pod_str))
+	msg := &message.Message{
+		Type:    message.SCHED,
+		Content: string(new_pod_str),
+	}
+
+	s.Producer.Produce(message.TOPIC_Scheduler, msg)
 
 	//成功返回
 	c.JSON(http.StatusCreated, gin.H{

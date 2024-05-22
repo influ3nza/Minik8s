@@ -10,6 +10,7 @@ import (
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/config/apiserver"
+	"minik8s/pkg/etcd"
 	"minik8s/pkg/message"
 	"minik8s/pkg/network"
 	"minik8s/tools"
@@ -138,10 +139,12 @@ func (s *ApiServer) UpdateSrvCondition(namespace string, name string) error {
 	return nil
 }
 
-func AllocateClusterIp() string {
+func AllocateClusterIp(wrap *etcd.EtcdWrap) string {
 	clusterIp := "10.1.0." + strconv.Itoa(int(tools.ClusterIpFlag))
 	tools.ClusterIpFlag += 1
 	//TODO:存入etcd持久化，
+	e_key := apiserver.ETCD_service_mark_prefix
+	_ = wrap.Put(e_key, []byte(strconv.Itoa(int(tools.ClusterIpFlag))))
 	return clusterIp
 }
 
@@ -188,12 +191,44 @@ func (s *ApiServer) GetPodsOfFunction(funcName string) ([]string, error) {
 	return pack, nil
 }
 
-func (s *ApiServer) U_ScaleUpReplicaSet(funcName string) error {
-	//TODO
-	return nil
-}
+func (s *ApiServer) U_ScaleReplicaSet(funcName string, offset int) error {
+	e_key := apiserver.ETCD_replicaset_prefix + funcName
+	res, err := s.EtcdWrap.Get(e_key)
+	if err != nil {
+		fmt.Printf("[ERR/U_ScaleReplicaSet] Failed to get from etcd, %s.\n", err.Error())
+		return err
+	}
+	if len(res) != 1 {
+		fmt.Printf("[ERR/U_ScaleReplicaSet] Found zero or more than one rs.\n")
+		return errors.New("found zero or more than one rs")
+	}
 
-func (s *ApiServer) U_ScaleDownReplicaSet(funcName string) error {
-	//TODO
+	rs := &api_obj.ReplicaSet{}
+	err = json.Unmarshal([]byte(res[0].Value), rs)
+	if err != nil {
+		fmt.Printf("[ERR/U_ScaleReplicaSet] Failed to unmarshal data, %s.\n", err.Error())
+		return err
+	}
+
+	rs.Spec.Replicas += offset
+	if rs.Spec.Replicas < 0 {
+		rs.Spec.Replicas = 0
+	}
+	if rs.Spec.Replicas > 10 {
+		rs.Spec.Replicas = 10
+	}
+
+	rs_str, err := json.Marshal(rs)
+	if err != nil {
+		fmt.Printf("[ERR/U_ScaleReplicaSet] Failed to marshal data, %s.\n", err.Error())
+		return err
+	}
+
+	err = s.EtcdWrap.Put(e_key, rs_str)
+	if err != nil {
+		fmt.Printf("[ERR/U_ScaleReplicaSet] Failed to put into etcd, %s.\n", err.Error())
+		return err
+	}
+
 	return nil
 }

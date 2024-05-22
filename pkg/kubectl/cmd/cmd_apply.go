@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"minik8s/pkg/api_obj"
+	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/kubectl/api"
+	"minik8s/pkg/network"
 	"os"
 	"strings"
 
@@ -188,18 +190,23 @@ func ApplyFunctionHandler(fileToJson []byte) error {
 
 	path := f.FilePath
 	api.DoZip(path, path+".zip")
-	_, err = os.ReadFile(path + ".zip")
+	content, err := os.ReadFile(path + ".zip")
+	_ = os.Remove(path + ".zip")
 	if err != nil {
-		_ = os.Remove(path + ".zip")
 		return err
 	}
 
-	// fw := api_obj.FunctionWrap{
-	// 	Func:    *f,
-	// 	Content: content,
-	// }
+	fw := api_obj.FunctionWrap{
+		Func:    *f,
+		Content: content,
+	}
+	fw_str, err := json.Marshal(fw)
+	if err != nil {
+		return err
+	}
 
-	//TODO:发送请求。删除本地zip文件。
-	// _ = os.Remove(path + ".zip")
-	return nil
+	//发送请求。
+	uri := apiserver.API_server_prefix + apiserver.API_add_function
+	_, err = network.PostRequest(uri, fw_str)
+	return err
 }

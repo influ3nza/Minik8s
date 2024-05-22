@@ -112,7 +112,7 @@ func GetMatchPort(srvPort int32, cons []api_obj.Container) int32 {
 	return -10000
 }
 
-// TODO: 这里bug有点多。需要完全重新写。
+//这里bug有点多。需要完全重新写。
 func DeleteEndpoints(batch bool, suffix string) error {
 	uri := ""
 	getListUri := apiserver.API_server_prefix

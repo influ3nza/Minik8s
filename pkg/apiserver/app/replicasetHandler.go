@@ -199,10 +199,30 @@ func (s *ApiServer) UpdateReplicaSet(c *gin.Context) {
 	})
 }
 
-func (s *ApiServer) ScaleUpReplicaSet(c *gin.Context) {
-	// TODO
-}
+func (s *ApiServer) ScaleReplicaSet(c *gin.Context) {
+	name := c.Param("name")
+	method := c.Param("method")
 
-func (s *ApiServer) ScaleDownReplicaSet(c *gin.Context) {
-	// TODO
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/replicasethandler/ScaleUpReplicaSet] Empty replicaset name.",
+		})
+		return
+	}
+
+	offset := 1
+	if method != "add" {
+		offset = -1
+	}
+	err := s.U_ScaleReplicaSet(name, offset)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/replicasethandler/ScaleUpReplicaSet] Failed, " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": "[replicasethandler/ScaleUpReplicaSet] Scale rs success",
+	})
 }

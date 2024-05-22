@@ -167,7 +167,6 @@ func SendObjectTo(jsonStr []byte, kind string) error {
 	return nil
 }
 
-// TODO:实现有问题。
 func DoZip(path string, target string) error {
 	// 1. Create a ZIP file and zip.Writer
 	f, err := os.Create(target)

@@ -125,7 +125,7 @@ func (s *ApiServer) AddNode(c *gin.Context) {
 
 	//初始化
 	node.NodeMetadata.UUID = tools.NewUUID()
-	//TODO: 这里是便于测试，之后需要重新书写
+	//这里是便于测试，之后需要重新书写
 	node.NodeStatus.Condition = api_obj.Ready
 
 	//存储node的ip地址

@@ -48,14 +48,3 @@ func (mp *MsgProducer) Produce(topic string, msg *Message) {
 
 	mp.Producer.Input() <- &sarama.ProducerMessage{Topic: topic, Value: sarama.ByteEncoder(msg_str)}
 }
-
-func (mp *MsgProducer) CallScheduleNode(pod_str string) {
-	//apiserver -> scheduler
-	msg := &Message{
-		//TODO: 这里的type是硬编码，需要写进config
-		Type:    "ScheduleNode",
-		Content: pod_str,
-	}
-
-	mp.Produce("scheduler", msg)
-}
