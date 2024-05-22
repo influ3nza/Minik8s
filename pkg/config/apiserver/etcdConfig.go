@@ -23,4 +23,9 @@ const (
 	ETCD_workflow_prefix = "/registry/workflows/"
 
 	ETCD_dns_prefix = "/registry/dns/"
+
+	ETCD_function_prefix = "/registry/functions/"
+
+	//用于标记service的clusterip标过几个了
+	ETCD_service_mark_prefix = "/service/mark/"
 )
