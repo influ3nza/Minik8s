@@ -13,6 +13,22 @@ import (
 
 var serverDns string = "my-register.io"
 
+func IsRegistryStarted() bool {
+	cmd := exec.Command("nerdctl", "ps")
+	opt, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println("My-Registry is not started")
+		return false
+	}
+
+	result := strings.TrimSpace(string(opt))
+	if strings.Contains(result, "my-registry") {
+		return true
+	} else {
+		return false
+	}
+}
+
 func StartRegistry() (string, error) {
 	etcdClient, err := etcd.CreateEtcdInstance([]string{"192.168.1.13:2379"}, 5*time.Second)
 	if err != nil {
