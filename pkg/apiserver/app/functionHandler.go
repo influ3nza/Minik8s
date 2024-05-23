@@ -193,7 +193,7 @@ func (s *ApiServer) FindFunctionIp(c *gin.Context) {
 
 	//检查是否有可用ip，如果没有，在这里进行扩容。
 	if len(pack) == 0 {
-		err = s.U_ScaleReplicaSet(name, 1)
+		err = s.U_ScaleReplicaSet(name, 3)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "[ERR/handler/FindFunctionIp] Failed to send scale rs request, " + err.Error(),
