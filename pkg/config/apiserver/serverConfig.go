@@ -5,6 +5,10 @@ import (
 )
 
 const (
+	API_default_namespace string = "default"
+)
+
+const (
 	API_server_prefix string = "http://127.0.0.1:50000"
 
 	API_get_nodes       string = "/nodes/getAll"
@@ -76,10 +80,10 @@ const (
 	API_exec_workflow          string = "/worlflows/exec/:name"
 
 	API_get_function_prefix     string = "/functions/"
-	API_get_function            string = "/functions/:namespace/:name"
+	API_get_function            string = "/functions/:name"
 	API_add_function            string = "/functions/add"
 	API_delete_function_prefix  string = "/functions/delete/"
-	API_delete_function         string = "/functions/delete/:namespace/:name"
+	API_delete_function         string = "/functions/delete/:name"
 	API_exec_function_prefix    string = "/functions/exec/"
 	API_exec_function           string = "/functions/exec/:name/:coeff"
 	API_find_function_ip_prefix string = "/function/findByIp/"

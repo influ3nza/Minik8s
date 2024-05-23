@@ -33,7 +33,7 @@ func CreateNewFunctionControllerInstance() FunctionController {
 }
 
 func (fc *FunctionController) GetFunctionPodIps(f *api_obj.Function) {
-
+	
 }
 
 func (fc *FunctionController) GenerateReplicaset(f *api_obj.Function) error {
