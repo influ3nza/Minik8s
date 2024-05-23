@@ -232,3 +232,18 @@ func (s *ApiServer) U_ScaleReplicaSet(funcName string, offset int) error {
 
 	return nil
 }
+
+func (s *ApiServer) ReadServiceMark() int {
+	e_key := apiserver.ETCD_service_mark_prefix
+	res, err := s.EtcdWrap.GetByPrefix(e_key)
+	if err != nil || len(res) == 0 {
+		return 2
+	}
+
+	ret, err := strconv.Atoi(res[0].Value)
+	if err != nil {
+		return 2
+	}
+
+	return ret
+}

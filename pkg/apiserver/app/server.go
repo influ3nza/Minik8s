@@ -135,6 +135,7 @@ func (s *ApiServer) Run() error {
 
 	//TODO:之后要在这里做容错。
 	// s.EtcdWrap.DeleteByPrefix("/registry")
+	tools.ClusterIpFlag = int32(s.ReadServiceMark())
 	err := s.RefreshNodeIp()
 	if err != nil {
 		fmt.Printf("[ERR/apiserver] Failed tp refresh ip map.\n")

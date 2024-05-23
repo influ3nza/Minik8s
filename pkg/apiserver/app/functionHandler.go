@@ -25,6 +25,7 @@ func (s *ApiServer) AddFunction(c *gin.Context) {
 
 	//将function存入etcd
 	f := fw.Func
+	f.Metadata.NameSpace = apiserver.API_default_namespace
 	f.Metadata.UUID = tools.NewUUID()
 	if f.Metadata.Name == "" || f.FilePath == "" {
 		c.JSON(http.StatusInternalServerError, gin.H{
