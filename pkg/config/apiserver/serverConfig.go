@@ -5,6 +5,10 @@ import (
 )
 
 const (
+	API_default_namespace string = "default"
+)
+
+const (
 	API_server_prefix string = "http://192.168.1.13:50000"
 
 	API_get_nodes       string = "/nodes/getAll"
