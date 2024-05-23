@@ -183,7 +183,7 @@ func (s *ApiServer) GetPodsOfFunction(funcName string) ([]string, error) {
 			fmt.Printf("[ERR/GetPodsOfFunction] Failed to unmarshal data, %v", err)
 			return []string{}, nil
 		}
-		if pod.MetaData.Labels["func"] == funcName {
+		if pod.MetaData.Labels["func"] == funcName && pod.PodStatus.Phase == obj_inner.Running {
 			pack = append(pack, pod.PodStatus.PodIP)
 		}
 	}
