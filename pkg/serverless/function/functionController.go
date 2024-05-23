@@ -1,12 +1,16 @@
 package function
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
+	"minik8s/pkg/apiserver/controller/utils"
 	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/network"
+	"net/http"
+	"time"
 )
 
 type FunctionController struct {
@@ -32,8 +36,16 @@ func CreateNewFunctionControllerInstance() FunctionController {
 	return FunctionController{}
 }
 
-func (fc *FunctionController) GetFunctionPodIps(f *api_obj.Function) {
-	
+func (fc *FunctionController) GetFunctionPodIps(f *api_obj.Function) ([]string, error) {
+	array := []string{}
+	url := apiserver.API_server_prefix + apiserver.API_find_function_ip_prefix + f.Metadata.Name
+	err := network.GetRequestAndParse(url, &array)
+	if err != nil {
+		fmt.Printf("get Func Pod Ips Failed, %s", err.Error())
+		return []string{}, err
+	}
+
+	return array, nil
 }
 
 func (fc *FunctionController) GenerateReplicaset(f *api_obj.Function) error {
@@ -42,18 +54,24 @@ func (fc *FunctionController) GenerateReplicaset(f *api_obj.Function) error {
 		ApiVersion: "v1",
 		Kind:       "replicaset",
 		MetaData: obj_inner.ObjectMeta{
-			Name:      "todo" + f.Metadata.Name,
+			Name:      utils.RS_name_prefix + f.Metadata.Name,
 			NameSpace: f.Metadata.NameSpace,
-			Labels:    map[string]string{},
+			Labels: map[string]string{
+				"func": f.Metadata.Name,
+			},
 		},
 		Spec: api_obj.ReplicaSetSpec{
 			Replicas: 0,
-			Selector: map[string]string{},
+			Selector: map[string]string{
+				"func": f.Metadata.Name,
+			},
 			Template: api_obj.PodTemplate{
 				Metadata: obj_inner.ObjectMeta{
 					Name:      f.Metadata.Name, //todo need to be different
 					NameSpace: f.Metadata.NameSpace,
-					Labels:    map[string]string{},
+					Labels: map[string]string{
+						"func": f.Metadata.Name,
+					},
 				},
 				Spec: api_obj.PodSpec{
 					Containers: []api_obj.Container{
@@ -84,7 +102,9 @@ func (fc *FunctionController) GenerateReplicaset(f *api_obj.Function) error {
 	if err != nil {
 		return fmt.Errorf("marshal Replica Failed, %s", err.Error())
 	}
-	_, err = network.PostRequest("", replicaJson)
+
+	url := apiserver.API_server_prefix + apiserver.API_add_replicaset
+	_, err = network.PostRequest(url, replicaJson)
 	if err != nil {
 		return fmt.Errorf("network Failed, %s", err.Error())
 	}
@@ -92,8 +112,61 @@ func (fc *FunctionController) GenerateReplicaset(f *api_obj.Function) error {
 	return nil
 }
 
+func (fc *FunctionController) MakePods(f *api_obj.Function) ([]string, error) {
+	for {
+		res, err := fc.GetFunctionPodIps(f)
+		if err != nil {
+			return []string{}, fmt.Errorf("get Pod Ips Failed, %s", err.Error())
+		}
+
+		if len(res) < 3 {
+			time.Sleep(2 * time.Second)
+		} else {
+			return res, nil
+		}
+	}
+}
+
+func (fc *FunctionController) Schedule(funcName string, ips []string) string {
+
+	return ""
+}
+
+func (fc *FunctionController) TriggerFunction(f *api_obj.Function) (string, error) {
+	ips, err := fc.MakePods(f)
+	if err != nil {
+		return "", fmt.Errorf("get Ip Failed At Trigger, %s", err.Error())
+	}
+
+	ip := fc.Schedule(f.Metadata.Name, ips)
+	if ip == "" {
+		return "", fmt.Errorf("schedule Failed")
+	}
+
+	param := []byte(f.Coeff)
+	fmt.Println(param)
+
+	body := bytes.NewReader(param)
+	uri := "http://" + ip + ":8080"
+	resp, err := http.Post(uri, "application/json", body)
+	if err != nil {
+		return "", fmt.Errorf("post Req To Func Failed, %s", err.Error())
+	}
+	defer resp.Body.Close()
+
+	var result map[string]interface{}
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&result)
+	fmt.Println(result)
+	res, err := json.Marshal(result)
+	if err != nil {
+		return "", fmt.Errorf("marshal Result Failed %s", err.Error())
+	}
+	return string(res), nil
+}
+
 func (fc *FunctionController) DeleteFunction(f *api_obj.Function) error {
-	replicName := "todo" + f.Metadata.Name
+	replicName := utils.RS_name_prefix + f.Metadata.Name
 	url := apiserver.API_server_prefix + apiserver.API_delete_replicaset_prefix + replicName
 	_, err := network.DelRequest(url)
 	if err != nil {

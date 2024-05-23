@@ -9,7 +9,7 @@ const (
 )
 
 const (
-	API_server_prefix string = "http://127.0.0.1:50000"
+	API_server_prefix string = "http://192.168.1.13:50000"
 
 	API_get_nodes       string = "/nodes/getAll"
 	API_get_node_prefix string = "/nodes/"
