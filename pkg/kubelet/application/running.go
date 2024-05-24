@@ -3,8 +3,6 @@ package application
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/tidwall/gjson"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/config/apiserver"
@@ -14,7 +12,11 @@ import (
 	"minik8s/pkg/network"
 	"net/http"
 	"os"
+	"os/exec"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/tidwall/gjson"
 )
 
 func (server *Kubelet) AddPod(c *gin.Context) {
@@ -295,4 +297,25 @@ func (server *Kubelet) PodRestart(pod *api_obj.Pod) error {
 		return nil
 	}
 	return nil
+}
+
+// PV
+func (k *Kubelet) MountNfs(c *gin.Context) {
+	name := c.Param("name")
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[kubelet/MountNfs] Marshal Error.",
+		})
+		return
+	}
+
+	args := []string{"/mnt/minik8s/" + name}
+	_, _ = exec.Command("mkdir", args...).CombinedOutput()
+	args = []string{util.IpAddressMas + ":/mnt/minik8s/" + name, "/mnt/minik8s/" + name}
+	_, err := exec.Command("mount", args...).CombinedOutput()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[kubelet/MountNfs] Mount nfs failed, " + err.Error(),
+		})
+	}
 }
