@@ -14,7 +14,7 @@ import (
 
 type SL_server struct {
 	Consumer           *message.MsgConsumer
-	FunctionController function.FunctionController
+	FunctionController *function.FunctionController
 	WorkflowController workflow.WorkflowController
 }
 
@@ -59,7 +59,12 @@ func (s *SL_server) OnFunctionCreate(content string) {
 		fmt.Printf("[ERR/serverless/OnFunctionCreate] Failed to unmarshal data.\n")
 		return
 	}
-	s.FunctionController.GenerateFunction(f)
+
+	err = s.FunctionController.GenerateFunction(f)
+	if err != nil {
+		fmt.Printf("[ERR/serverless/OnFunctionCreate] Failed to Create, %s", err.Error())
+		return
+	}
 }
 
 func (s *SL_server) OnFunctionExec(content string) {

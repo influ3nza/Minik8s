@@ -286,3 +286,26 @@ func unzipFile(f *zip.File, destination string) error {
 	}
 	return nil
 }
+
+func DoCopy(src string, dst string) error {
+	s, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer s.Close()
+
+	// 创建目标文件
+	d, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer d.Close()
+
+	// 使用 io.Copy 将源文件的内容复制到目标文件
+	_, err = io.Copy(d, s)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

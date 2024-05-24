@@ -129,7 +129,7 @@ func (s *ApiServer) Bind() {
 
 	s.router.GET(apiserver.API_get_function) //TODO
 	s.router.POST(apiserver.API_add_function, s.AddFunction)
-	s.router.DELETE(apiserver.API_delete_function) //TODO
+	s.router.DELETE(apiserver.API_delete_function, s.DeleteFunction)
 	s.router.GET(apiserver.API_exec_function, s.ExecFunction)
 	s.router.GET(apiserver.API_find_function_ip, s.FindFunctionIp)
 	s.router.GET(apiserver.API_get_function_res, s.GetFunctionRes)
