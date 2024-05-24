@@ -21,4 +21,17 @@ const (
 	ETCD_hpa_prefix = "/registry/hpas/"
 
 	ETCD_workflow_prefix = "/registry/workflows/"
+
+	ETCD_dns_prefix = "/registry/dns/"
+
+	ETCD_function_prefix = "/registry/functions/"
+
+	//用于标记service的clusterip标过几个了
+	ETCD_service_mark_prefix = "/service/mark/"
+)
+
+const (
+	ETCD_pv_prefix = "/pv/pv/"
+
+	ETCD_pvc_prefix = "/pv/pvc/"
 )
