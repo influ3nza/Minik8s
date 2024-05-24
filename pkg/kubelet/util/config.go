@@ -2,7 +2,8 @@ package util
 
 const Cpu string = "2"
 const Memory string = "8Gi"
-const IpAddress string = "192.168.1.13"
+const IpAddressMas string = "192.168.1.13"
+const IpAddressNode1 string = "192.168.1.5"
 const Port string = "20000"
 const ApiServer string = "http://10.119.13.178:50000"
 

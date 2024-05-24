@@ -111,11 +111,11 @@ func (s *ApiServer) AddFunction(c *gin.Context) {
 	}
 
 	//向serverless组件发送消息
-	// s_msg := &message.Message{
-	// 	Type:    message.FUNC_CREATE,
-	// 	Content: string(f_str),
-	// }
-	// s.Producer.Produce(message.TOPIC_Serverless, s_msg)
+	s_msg := &message.Message{
+		Type:    message.FUNC_CREATE,
+		Content: string(f_str),
+	}
+	s.Producer.Produce(message.TOPIC_Serverless, s_msg)
 
 	//返回200
 	c.JSON(http.StatusOK, gin.H{
@@ -268,7 +268,7 @@ func (s *ApiServer) DeleteFunction(c *gin.Context) {
 	}
 
 	dirPath := "/mydata/" + f.Metadata.UUID
-	err = os.Remove(dirPath)
+	err = os.RemoveAll(dirPath)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "[ERR/handler/DeleteFunction] Failed to delete file, " + err.Error(),

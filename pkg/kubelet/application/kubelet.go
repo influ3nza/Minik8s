@@ -28,6 +28,7 @@ type Kubelet struct {
 }
 
 func (server *Kubelet) register() {
+	// fmt.Println(server.IpAddress)
 	hostName, _ := os.Hostname()
 	node := api_obj.Node{
 		APIVersion: "v1",
@@ -76,7 +77,7 @@ func InitKubeletDefault() *Kubelet {
 	return &Kubelet{
 		ApiServerAddress: util.ApiServer,
 		Router:           router,
-		IpAddress:        util.IpAddress,
+		IpAddress:        util.IpAddressMas,
 		Port:             int32(port),
 		Producer:         producer,
 		TotalCpu:         util.Cpu,

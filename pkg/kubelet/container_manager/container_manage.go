@@ -9,7 +9,9 @@ import (
 	"minik8s/pkg/kubelet/image_manager"
 	"minik8s/pkg/kubelet/util"
 	"os"
+	"os/exec"
 	"reflect"
+	"strings"
 	"time"
 
 	v2 "github.com/containerd/cgroups/v2/stats"
@@ -141,19 +143,18 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 		}
 		portLabel["ports"] = string(jsonFy)
 	}
-	// 配置容器snap-shot，将oci opts合并入容器opts
-	containerOpts := []containerd.NewContainerOpts{
-		containerd.WithNewSnapshot(container.Name+"snapshot", image),
-		containerd.WithNewSpec(createOpts...),
-		containerd.WithContainerLabels(nameLabel),
-		containerd.WithAdditionalContainerLabels(podLabel),
-		containerd.WithAdditionalContainerLabels(portLabel),
-	}
-
 	containerId, err := GenerateUUIDForContainer()
 	if err != nil {
 		fmt.Println("Failed At CreateK8sContainer line 155 ", err.Error())
 		return nil, "", err
+	}
+	// 配置容器snap-shot，将oci opts合并入容器opts
+	containerOpts := []containerd.NewContainerOpts{
+		containerd.WithNewSnapshot(container.Name+containerId+"snapshot", image),
+		containerd.WithNewSpec(createOpts...),
+		containerd.WithContainerLabels(nameLabel),
+		containerd.WithAdditionalContainerLabels(podLabel),
+		containerd.WithAdditionalContainerLabels(portLabel),
 	}
 
 	containerCreated, err := client.NewContainer(ctx, containerId, containerOpts...)
@@ -163,6 +164,29 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 	}
 
 	return containerCreated, containerId, nil
+}
+
+func StartFuncContainer(client *containerd.Client, namespace string, name string, podName string) (string, error) {
+	err := image_manager.FetchMasterImage(client, name, namespace)
+	if err != nil {
+		return "", fmt.Errorf("fetch Func Image Failed %s", err.Error())
+	}
+	cmd := []string{"-n", namespace, "run", "-d", "--name", podName, "--net", "flannel", "--label", fmt.Sprintf("podName=%s", podName), name}
+	opt, err := exec.Command("nerdctl", cmd...).CombinedOutput()
+
+	fmt.Println(opt)
+	if err != nil {
+		fmt.Println("Create Func Failed At line 178")
+		return "", err
+	}
+	funcContainerId := strings.TrimSuffix(string(opt), "\n")
+	// 截取后面64个字母
+	if len(funcContainerId) > 64 {
+		funcContainerId = funcContainerId[len(funcContainerId)-64:]
+	}
+	fmt.Println(funcContainerId)
+
+	return funcContainerId, nil
 }
 
 // StartContainer 启动创建好的container

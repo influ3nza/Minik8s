@@ -96,6 +96,6 @@ func DeleteFunctionHandler(name string) {
 	uri := apiserver.API_server_prefix + apiserver.API_delete_function_prefix + name
 	_, err := network.DelRequest(uri)
 	if err != nil {
-		fmt.Printf("[ERR/DeleteFunction] Failed to send DEL request.\n")
+		fmt.Printf("[ERR/DeleteFunction] Failed to send DEL request, %v\n", err)
 	}
 }

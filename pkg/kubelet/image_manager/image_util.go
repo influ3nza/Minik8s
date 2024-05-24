@@ -1,6 +1,7 @@
 package image_manager
 
 import (
+	"fmt"
 	"minik8s/pkg/api_obj/obj_inner"
 	"strings"
 )
@@ -21,7 +22,6 @@ func ParseImage(img *obj_inner.Image) {
 
 	if strings.Contains(img.Img, ":latest") {
 		img.ImgPullPolicy = "Always"
-		return
 	}
-
+	fmt.Println("Parsed Image is ", img.Img)
 }

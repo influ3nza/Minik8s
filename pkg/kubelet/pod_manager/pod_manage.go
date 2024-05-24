@@ -10,6 +10,7 @@ import (
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/kubelet/container_manager"
+	"os/exec"
 	"strings"
 	"time"
 )
@@ -18,28 +19,46 @@ import (
 func AddPod(pod *api_obj.Pod) error {
 	client, err := containerd.New("/run/containerd/containerd.sock")
 	if err != nil {
-		fmt.Println("Create Client Failed At line 14")
+		fmt.Println("Create Client Failed At line 22")
 		return err
 	}
 	defer client.Close()
 	ctx := namespaces.WithNamespace(context.Background(), pod.MetaData.NameSpace)
+
+	if pod.MetaData.Labels["func"] != "" {
+		fmt.Println("function ", pod.MetaData.Labels["func"], " Create")
+		id, err := container_manager.StartFuncContainer(client, pod.MetaData.NameSpace, pod.Spec.Containers[0].Image.Img, pod.MetaData.Name)
+		if err != nil {
+			return fmt.Errorf("start Func Pod Failed %s", err.Error())
+		}
+		pod.MetaData.Annotations["pause"] = id
+		fmt.Println("create pod id is ", id)
+		ip, err := GetPodIp(pod.MetaData.NameSpace, id)
+		if err != nil {
+			return fmt.Errorf("get Pod ip Failed %s", err.Error())
+		}
+
+		pod.PodStatus.PodIP = ip
+		pod.PodStatus.Phase = obj_inner.Running
+		return nil
+	}
+
 	res, err := container_manager.CreatePauseContainer(ctx, client, pod.MetaData.NameSpace,
 		/*fmt.Sprintf("%s-pause", pod.MetaData.Name)*/ pod.MetaData.Name)
-	containerPauseId := ""
 	if err != nil {
-		fmt.Println("Create Pause Failed At line 20")
+		fmt.Println("Create Pause Failed At line 30")
 		return err
 	}
-	containerPauseId = strings.TrimSuffix(res, "\n")
+	containerPauseId := strings.TrimSuffix(res, "\n")
 	// 截取后面64个字母
 	if len(containerPauseId) > 64 {
 		containerPauseId = containerPauseId[len(containerPauseId)-64:]
 	}
-	fmt.Println("Create Pause At AddPod line 23 ", containerPauseId)
+	fmt.Println("Create Pause At AddPod line 38 ", containerPauseId)
 
 	files, err := GetPodNetConfFile(pod.MetaData.NameSpace, containerPauseId)
 	if err != nil {
-		fmt.Println("Add Pod Failed At line 37", err.Error())
+		fmt.Println("Add Pod Failed At line 42", err.Error())
 		container_manager.DeletePauseContainer(pod.MetaData.NameSpace, containerPauseId)
 		return err
 	}
@@ -48,7 +67,7 @@ func AddPod(pod *api_obj.Pod) error {
 
 	pid, err := GetPodPid(pod.MetaData.NameSpace, containerPauseId)
 	if err != nil {
-		fmt.Println("Add Pod Failed At line 44 ", err.Error())
+		fmt.Println("Add Pod Failed At line 51 ", err.Error())
 		container_manager.DeletePauseContainer(pod.MetaData.NameSpace, containerPauseId)
 		return err
 	}
@@ -57,21 +76,21 @@ func AddPod(pod *api_obj.Pod) error {
 	for _, container := range pod.Spec.Containers {
 		startRes, podId, err_ := container_manager.CreateK8sContainer(ctx, client, &container, pod.MetaData.Name, pod.Spec.Volumes, ns)
 		if err_ != nil {
-			fmt.Println("Add Pod Failed At Line 53 ", err_.Error())
+			fmt.Println("Add Pod Failed At Line 60 ", err_.Error())
 			container_manager.DeletePauseContainer(pod.MetaData.NameSpace, containerPauseId)
 			return err_
 		}
 
 		pid_, err_ := container_manager.StartContainer(ctx, startRes)
 		if err_ != nil || pid_ == 0 {
-			fmt.Println("Add Pod Failed At Line 58 ")
+			fmt.Println("Add Pod Failed At Line 67 ")
 			container_manager.DeletePauseContainer(pod.MetaData.NameSpace, containerPauseId)
 			return err_
 		}
 
-		err_ = GenPodNetConfFile(pod.MetaData.NameSpace, podId)
+		err_ = GenPodNetConfFile(pod.MetaData.NameSpace, podId, containerPauseId)
 		if err_ != nil {
-			fmt.Println("Add Pod Failed At line 64", err_.Error())
+			fmt.Println("Add Pod Failed At line 74", err_.Error())
 			container_manager.DeletePauseContainer(pod.MetaData.NameSpace, containerPauseId)
 			return err_
 		}
@@ -79,27 +98,35 @@ func AddPod(pod *api_obj.Pod) error {
 	podIpInPause, err := GetPodIp(pod.MetaData.NameSpace, fmt.Sprintf("%s-pause", pod.MetaData.Name))
 	fmt.Println("create pod success!")
 	if err != nil {
-		fmt.Println("Add Pod Failed At line 72 ", err.Error())
+		fmt.Println("Add Pod Failed At line 82 ", err.Error())
 		container_manager.DeletePauseContainer(pod.MetaData.NameSpace, containerPauseId)
 		return err
 	}
 	pod.PodStatus.PodIP = podIpInPause
+	pod.PodStatus.Phase = obj_inner.Running
+	pod.MetaData.Annotations["pause"] = containerPauseId
 
 	return nil
 }
 
-func DeletePod(podName string, namespace string) error {
+func DeletePod(podName string, namespace string, pauseId string) error {
 	client, err := containerd.New("/run/containerd/containerd.sock")
 	ctx := namespaces.WithNamespace(context.Background(), namespace)
 	if err != nil {
-		fmt.Println("DeletePod Create Client Failed At line 85 ", err.Error())
+		fmt.Println("DeletePod Create Client Failed At line 97 ", err.Error())
 		return err
 	}
 	defer client.Close()
 	err = container_manager.DeleteContainerInPod(ctx, client, podName, namespace, false)
 	if err != nil {
-		fmt.Println("DeletePod DeleteContainer Failed At line 91 ", err.Error())
+		fmt.Println("DeletePod DeleteContainer Failed At line 103 ", err.Error())
 		return err
+	}
+
+	err = delCNIRules(pauseId)
+	if err != nil {
+		fmt.Println("Delete Pod CNI Rules Failed At line 109, ", err.Error())
+		return nil
 	}
 	return nil
 }
@@ -124,7 +151,7 @@ func ReStartPod(podName string, namespace string) error {
 	ctx := namespaces.WithNamespace(context.Background(), namespace)
 	client, err := containerd.New("/run/containerd/containerd.sock")
 	if err != nil {
-		fmt.Println("ReStartPod Create Client Failed At line 122 ", err.Error())
+		fmt.Println("ReStartPod Create Client Failed At line 135 ", err.Error())
 		return err
 	}
 	defer client.Close()
@@ -139,16 +166,16 @@ func ReStartPod(podName string, namespace string) error {
 
 	err_ := container_manager.ReStartPauseContainer(namespace, res[0].ID())
 	containerPauseId := ""
-	fmt.Println("Restart Pause At restartPod line 137 ", res)
+	fmt.Println("Restart Pause At restartPod line 150 ", res)
 	if err_ != nil {
-		fmt.Println("Restart Pause Failed At line 139")
+		fmt.Println("Restart Pause Failed At line 152")
 		return err
 	}
 	containerPauseId = res[0].ID()[:12]
 
 	files, err := GetPodNetConfFile(namespace, containerPauseId)
 	if err != nil {
-		fmt.Println("restart Pod Failed At line 146", err.Error())
+		fmt.Println("restart Pod Failed At line 159", err.Error())
 		_ = container_manager.DeletePauseContainer(namespace, containerPauseId)
 		return err
 	}
@@ -158,7 +185,7 @@ func ReStartPod(podName string, namespace string) error {
 
 	pid, err := GetPodPid(namespace, containerPauseId)
 	if err != nil {
-		fmt.Println("Add Pod Failed At line 161 ", err.Error())
+		fmt.Println("Add Pod Failed At line 169 ", err.Error())
 		_ = container_manager.DeletePauseContainer(namespace, containerPauseId)
 		return err
 	}
@@ -222,7 +249,7 @@ func ReStartPod(podName string, namespace string) error {
 					return fmt.Errorf("reStart Failed At line 465 %s", _err_.Error())
 				}
 
-				_err_ = GenPodNetConfFile(namespace, containerPauseId)
+				_err_ = GenPodNetConfFile(namespace, found.Container.ID(), containerPauseId)
 				if err != nil {
 					return fmt.Errorf("reStart Failed At line 471 %s", _err_.Error())
 				}
@@ -239,7 +266,7 @@ func ReStartPod(podName string, namespace string) error {
 	}
 	_, err = walker.WalkRestart(ctx, filter)
 	if err != nil {
-		fmt.Println("Failed At DeleteContainerInPod line 263 ", err.Error())
+		fmt.Println("Failed At DeleteContainerInPod line 250 ", err.Error())
 		return err
 	}
 
@@ -251,7 +278,7 @@ func MonitorPodContainers(podName string, namespace string) string {
 	client, err := containerd.New("/run/containerd/containerd.sock")
 	ctx := namespaces.WithNamespace(context.Background(), namespace)
 	if err != nil {
-		fmt.Println("MonitorPodContainers Failed At line 121 Create Client Failed ", err.Error())
+		fmt.Println("MonitorPodContainers Failed At line 262 Create Client Failed ", err.Error())
 		return ""
 	}
 	defer client.Close()
@@ -287,7 +314,7 @@ func MonitorPodContainers(podName string, namespace string) string {
 	}
 	res, err := walker.WalkStatus(ctx, filter)
 	if err != nil {
-		fmt.Println("Failed At MonitorPodStatus line 157 ", err.Error())
+		fmt.Println("Failed At MonitorPodStatus line 298 ", err.Error())
 		return ""
 	}
 	return res
@@ -297,7 +324,7 @@ func GetPodMetrics(podName string, namespace string) *api_obj.PodMetrics {
 	client, err := containerd.New("/run/containerd/containerd.sock")
 	ctx := namespaces.WithNamespace(context.Background(), namespace)
 	if err != nil {
-		fmt.Println("GetPodMetrics Failed At line 167 ", err.Error())
+		fmt.Println("GetPodMetrics Failed At line 308 ", err.Error())
 		return nil
 	}
 	defer client.Close()
@@ -312,7 +339,7 @@ func GetPodMetrics(podName string, namespace string) *api_obj.PodMetrics {
 		OnFound: func(ctx context.Context, found container_manager.Found) error {
 			res, erro := container_manager.GetContainersMetrics(ctx, found.Container, podMetric.Window)
 			if erro != nil {
-				fmt.Println("Get Metrics Failed At line 182 ", err.Error())
+				fmt.Println("Get Metrics Failed At line 323 ", err.Error())
 				return erro
 			}
 			podMetric.ContainerMetrics = append(podMetric.ContainerMetrics, *res)
@@ -326,11 +353,20 @@ func GetPodMetrics(podName string, namespace string) *api_obj.PodMetrics {
 
 	count, err := walker.Walk(ctx, filter)
 	if err != nil {
-		fmt.Println("Get Metrics Failed At line 195 ", err.Error())
+		fmt.Println("Get Metrics Failed At line 336 ", err.Error())
 	}
 	for _, containerM := range podMetric.ContainerMetrics {
 		fmt.Println("container metrics is ", containerM)
 	}
 	fmt.Println("container number is ", count)
 	return &podMetric
+}
+
+func delCNIRules(pauseId string) error {
+	shPath := "./tools/setup_scripts/del_flannel_net.sh"
+	_, err := exec.Command(shPath, pauseId).CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("delete Flannel Rules Failed At 344, %s", err.Error())
+	}
+	return nil
 }
