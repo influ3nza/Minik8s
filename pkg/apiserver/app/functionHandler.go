@@ -94,7 +94,12 @@ func (s *ApiServer) AddFunction(c *gin.Context) {
 		return
 	}
 
-	//TODO:复制dockerfile
+	//复制dockerfile等
+	p_path := "/ZTH/Minik8s/pkg/serverless/common/"
+	dirPath += "/" + f.Metadata.Name
+	api.DoCopy(p_path+"Dockerfile", dirPath+"/Dockerfile")
+	api.DoCopy(p_path+"requirement.txt", dirPath+"/requirement.txt")
+	api.DoCopy(p_path+"server.py", dirPath+"/server.py")
 
 	//删除zip
 	err = os.Remove(path)
@@ -106,11 +111,11 @@ func (s *ApiServer) AddFunction(c *gin.Context) {
 	}
 
 	//向serverless组件发送消息
-	s_msg := &message.Message{
-		Type:    message.FUNC_CREATE,
-		Content: string(f_str),
-	}
-	s.Producer.Produce(message.TOPIC_Serverless, s_msg)
+	// s_msg := &message.Message{
+	// 	Type:    message.FUNC_CREATE,
+	// 	Content: string(f_str),
+	// }
+	// s.Producer.Produce(message.TOPIC_Serverless, s_msg)
 
 	//返回200
 	c.JSON(http.StatusOK, gin.H{
@@ -218,4 +223,61 @@ func (s *ApiServer) FindFunctionIp(c *gin.Context) {
 
 func (s *ApiServer) GetFunctionRes(c *gin.Context) {
 	//TODO:通过文件路径获取结果。
+}
+
+func (s *ApiServer) DeleteFunction(c *gin.Context) {
+	name := c.Param("name")
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/DeleteFunction] Empty function name.",
+		})
+		return
+	}
+
+	e_key := apiserver.ETCD_function_prefix + name
+	res, err := s.EtcdWrap.Get(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/DeleteFunction] Failed to get from etcd, " + err.Error(),
+		})
+		return
+	}
+
+	if len(res) != 1 {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/DeleteFunction] Found zero or more than one function",
+		})
+		return
+	}
+
+	err = s.EtcdWrap.Del(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/DeleteFunction] Failed to delete from etcd, " + err.Error(),
+		})
+		return
+	}
+
+	f := &api_obj.Function{}
+	err = json.Unmarshal([]byte(res[0].Value), f)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/DeleteFunction] Failed to unmarshal data, " + err.Error(),
+		})
+		return
+	}
+
+	dirPath := "/mydata/" + f.Metadata.UUID
+	err = os.Remove(dirPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/DeleteFunction] Failed to delete file, " + err.Error(),
+		})
+		return
+	}
+
+	//返回200
+	c.JSON(http.StatusOK, gin.H{
+		"data": "Delete function success",
+	})
 }

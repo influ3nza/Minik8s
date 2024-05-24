@@ -11,7 +11,7 @@ type FunctionWrap struct {
 }
 
 type Function struct {
-	Metadata obj_inner.ObjectMeta
-	FilePath string
-	Coeff    string
+	Metadata  obj_inner.ObjectMeta `json:"metadata" yaml:"metadata"`
+	FilePath  string               `json:"filePath" yaml:"filePath"`
+	Coeff     string
 }

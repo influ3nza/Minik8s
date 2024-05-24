@@ -32,6 +32,9 @@ func DelHandler(cmd *cobra.Command, args []string) {
 			fmt.Println("[ERR] Empty namespace or name. Try -h for help.")
 			return
 		}
+	} else if strings.Count(key, "/") == 0 && apitype == "function" {
+		DeleteFunctionHandler(key)
+		return
 	} else {
 		fmt.Println("[ERR] Wrong format. Try -h for help.")
 		return
@@ -86,5 +89,13 @@ func DeleteDnsHandler(namespace string, name string) {
 	_, err := network.DelRequest(uri)
 	if err != nil {
 		fmt.Printf("[ERR/DeleteDns] Failed to send DEL request.\n")
+	}
+}
+
+func DeleteFunctionHandler(name string) {
+	uri := apiserver.API_server_prefix + apiserver.API_delete_function_prefix + name
+	_, err := network.DelRequest(uri)
+	if err != nil {
+		fmt.Printf("[ERR/DeleteFunction] Failed to send DEL request.\n")
 	}
 }
