@@ -156,8 +156,6 @@ func (fc *FunctionController) TriggerFunction(f *api_obj.Function) (string, erro
 	}
 	defer resp.Body.Close()
 
-	fmt.Printf("[FunctionExec] resp.Body: %v\n", resp.Body)
-
 	var result map[string]interface{}
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&result)
@@ -169,6 +167,9 @@ func (fc *FunctionController) TriggerFunction(f *api_obj.Function) (string, erro
 	if err != nil {
 		return "", fmt.Errorf("marshal Result Failed %s", err.Error())
 	}
+
+	fmt.Println(string(res))
+
 	return string(res), nil
 }
 
