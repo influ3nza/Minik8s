@@ -31,7 +31,7 @@ type Kubelet struct {
 func (server *Kubelet) register() {
 	// fmt.Println(server.IpAddress)
 	hostName, _ := os.Hostname()
-	node := api_obj.Node{
+	node := &api_obj.Node{
 		APIVersion: "v1",
 		NodeMetadata: obj_inner.ObjectMeta{
 			Name: hostName,
@@ -56,6 +56,11 @@ func (server *Kubelet) register() {
 		},
 	}
 
+	server.registerNodeToApiServer(node)
+
+}
+
+func (server *Kubelet) registerNodeToApiServer(node *api_obj.Node) {
 	nodeJson, _ := json.Marshal(node)
 	request, err := network.PostRequest(server.ApiServerAddress+apiserver.API_add_node, nodeJson)
 	if err != nil {
@@ -63,8 +68,11 @@ func (server *Kubelet) register() {
 		return
 	}
 	fmt.Println("Response data on register to apiServer is ", request)
+}
 
-	request, err = network.PostRequest(monitor.RegisterNode, nodeJson)
+func (server *Kubelet) registerNodeToMonitor(node *api_obj.Node) {
+	nodeJson, _ := json.Marshal(node)
+	request, err := network.PostRequest(monitor.RegisterNode, nodeJson)
 	if err != nil {
 		fmt.Println("Send Register  At line 69 ", err.Error())
 	}
