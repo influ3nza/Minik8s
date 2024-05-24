@@ -55,6 +55,7 @@ func StartRegistry() (string, error) {
 
 func CreateImage(function *api_obj.Function) error {
 	path := "/mydata/" + function.Metadata.UUID + "/" + function.Metadata.Name + "/"
+	fmt.Printf("[CreateImage] Path: %s.\n", path)
 	cmd := exec.Command("nerdctl", "build", "-t", function.Metadata.Name, path)
 	err := cmd.Run()
 	if err != nil {

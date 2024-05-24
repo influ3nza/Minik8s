@@ -71,7 +71,7 @@ func (rc *ReplicasetController) GetAllReplicasets() ([]api_obj.ReplicaSet, error
 
 	var rss []api_obj.ReplicaSet
 	if dataStr == "" {
-		fmt.Printf("[ReplicasetController/GETALL] Not any Replicaset available, return.\n")
+		// fmt.Printf("[ReplicasetController/GETALL] Not any Replicaset available, return.\n")
 		return nil, errors.New("no rs.")
 	} else {
 		err = json.Unmarshal([]byte(dataStr), &rss)
