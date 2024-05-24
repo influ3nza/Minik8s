@@ -26,12 +26,13 @@ func GenerateNodeStruct(node *api_obj.Node) (*ConsulConfig, error) {
 		},
 		Checks: []Check{
 			{
-				Http:     "http://" + Ip + "9100/metrics",
+				Http:     "http://" + Ip + ":9100/metrics",
 				Interval: "15s",
 			},
 		},
 	}
 
+	fmt.Println(*config)
 	return config, nil
 }
 

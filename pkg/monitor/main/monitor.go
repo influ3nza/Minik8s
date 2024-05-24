@@ -20,3 +20,10 @@ func Run() error {
 	}
 	return nil
 }
+
+func main() {
+	err := Run()
+	if err != nil {
+		fmt.Println("Main Failed, ", err.Error())
+	}
+}
