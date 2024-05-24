@@ -46,12 +46,6 @@ func (s *ApiServer) AddReplicaSet(c *gin.Context) {
 		return
 	}
 
-	/*
-		if tools.Test_enabled {
-			tools.Count_Test_Endpoint_Create += 1
-		}
-	*/
-
 	//返回200
 	c.JSON(http.StatusOK, gin.H{
 		"data": "[replicasethandler/AddReplicaSet] Add replicaset success",
