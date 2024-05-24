@@ -96,6 +96,7 @@ func (s *ApiServer) AddFunction(c *gin.Context) {
 
 	//复制dockerfile等
 	p_path := "/ZTH/Minik8s/pkg/serverless/common/"
+	dirPath += "/" + f.Metadata.Name
 	api.DoCopy(p_path+"Dockerfile", dirPath+"/Dockerfile")
 	api.DoCopy(p_path+"requirement.txt", dirPath+"/requirement.txt")
 	api.DoCopy(p_path+"server.py", dirPath+"/server.py")
