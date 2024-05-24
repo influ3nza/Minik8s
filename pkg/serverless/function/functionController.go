@@ -119,7 +119,7 @@ func (fc *FunctionController) MakePods(f *api_obj.Function) ([]string, error) {
 			return []string{}, fmt.Errorf("get Pod Ips Failed, %s", err.Error())
 		}
 
-		if len(res) < 3 {
+		if len(res) < 1 {
 			time.Sleep(2 * time.Second)
 		} else {
 			return res, nil
@@ -128,7 +128,9 @@ func (fc *FunctionController) MakePods(f *api_obj.Function) ([]string, error) {
 }
 
 func (fc *FunctionController) Schedule(funcName string, ips []string) string {
-
+	if len(ips) > 0 {
+		return ips[0]
+	}
 	return ""
 }
 
