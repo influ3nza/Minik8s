@@ -37,12 +37,6 @@ const (
 	DEL_POD_NOT_EXIST string = "del_pod_not_exist"
 )
 
-const (
-	DEL_POD_SUCCESS   string = "del_pod_success"
-	DEL_POD_FAILED    string = "del_pod_failed"
-	DEL_POD_NOT_EXIST string = "del_pod_not_exist"
-)
-
 type Message struct {
 	Type    string
 	Content string
