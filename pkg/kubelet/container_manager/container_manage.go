@@ -169,9 +169,11 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 func StartFuncContainer(client *containerd.Client, namespace string, name string, podName string) (string, error) {
 	err := image_manager.FetchMasterImage(client, name, namespace)
 	if err != nil {
+		fmt.Println("Fetch Img Error, ", err.Error())
 		return "", fmt.Errorf("fetch Func Image Failed %s", err.Error())
 	}
 	cmd := []string{"-n", namespace, "run", "-d", "--name", podName, "--net", "flannel", "--label", fmt.Sprintf("podName=%s", podName), name}
+	// util.PrintCmd(namespace, cmd...)
 	opt, err := exec.Command("nerdctl", cmd...).CombinedOutput()
 
 	fmt.Println(opt)
