@@ -8,7 +8,7 @@ app = Flask(__name__)
 def handle_request():
     # `params` is a dict
     params = request.json
-    headers = {'Content-Type': 'text/plain'}
+    headers = {'Content-Type': 'content/json'}
     try:
         result = func.run(**params)
         response = Response(str(result), headers=headers, status=200)
