@@ -37,7 +37,7 @@ func CreateNewFunctionControllerInstance() *FunctionController {
 }
 
 func (fc *FunctionController) GetFunctionPodIps(f *api_obj.Function) ([]string, error) {
-	array := []string{}
+	var array []string
 	url := apiserver.API_server_prefix + apiserver.API_find_function_ip_prefix + f.Metadata.Name
 	err := network.GetRequestAndParse(url, &array)
 	if err != nil {
@@ -146,7 +146,7 @@ func (fc *FunctionController) TriggerFunction(f *api_obj.Function) (string, erro
 	}
 
 	param := []byte(f.Coeff)
-	fmt.Println(param)
+	fmt.Println(param, f.Coeff)
 
 	body := bytes.NewReader(param)
 	uri := "http://" + ip + ":8080"
@@ -156,9 +156,14 @@ func (fc *FunctionController) TriggerFunction(f *api_obj.Function) (string, erro
 	}
 	defer resp.Body.Close()
 
+	fmt.Printf("[FunctionExec] resp.Body: %v\n", resp.Body)
+
 	var result map[string]interface{}
 	decoder := json.NewDecoder(resp.Body)
-	_ = decoder.Decode(&result)
+	err = decoder.Decode(&result)
+	if err != nil {
+		fmt.Printf("[FunctionExec] Error in returning http, %v", err)
+	}
 	fmt.Println(result)
 	res, err := json.Marshal(result)
 	if err != nil {

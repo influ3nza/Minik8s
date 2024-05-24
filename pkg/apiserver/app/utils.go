@@ -216,6 +216,11 @@ func (s *ApiServer) U_ScaleReplicaSet(funcName string, offset int) error {
 		return err
 	}
 
+	//如果还没创建完毕，则不重复增加。用于冷启动。
+	if rs.Status.ReadyReplicas < rs.Spec.Replicas {
+		return nil
+	}
+
 	rs.Spec.Replicas += offset
 	if rs.Spec.Replicas < 0 {
 		rs.Spec.Replicas = 0
