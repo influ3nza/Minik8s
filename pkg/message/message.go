@@ -14,8 +14,27 @@ const (
 )
 
 const (
-	TOPIC_EndpointController string = "EndpointController"
-	TOPIC_ApiServer_FromNode string = "ApiServerFromNode"
+	FUNC_CREATE string = "func_create"
+	WF_CREATE   string = "wf_create"
+	FUNC_EXEC   string = "func_exec"
+)
+
+const (
+	SCHED string = "scheduler"
+)
+
+const (
+	TOPIC_EndpointController       string = "EndpointController"
+	TOPIC_ApiServer_FromNode       string = "ApiServerFromNode"
+	TOPIC_ApiServer_FromServerless string = "ApiServerFromServerless"
+	TOPIC_Scheduler                string = "Scheduler"
+	TOPIC_Serverless               string = "Serverless"
+)
+
+const (
+	DEL_POD_SUCCESS   string = "del_pod_success"
+	DEL_POD_FAILED    string = "del_pod_failed"
+	DEL_POD_NOT_EXIST string = "del_pod_not_exist"
 )
 
 type Message struct {
