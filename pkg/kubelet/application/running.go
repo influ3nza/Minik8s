@@ -8,6 +8,7 @@ import (
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/config/apiserver"
+	"minik8s/pkg/config/monitor"
 	"minik8s/pkg/kubelet/pod_manager"
 	"minik8s/pkg/kubelet/util"
 	"minik8s/pkg/message"
@@ -31,17 +32,18 @@ func (server *Kubelet) AddPod(c *gin.Context) {
 	})
 
 	go func() {
+		errPod := api_obj.Pod{
+			ApiVersion: "",
+			Kind:       "",
+			MetaData:   obj_inner.ObjectMeta{},
+			Spec:       api_obj.PodSpec{},
+			PodStatus: api_obj.PodStatus{
+				PodIP: "error",
+			},
+		}
+
 		util.RegisterPod(pod.MetaData.Name, pod.MetaData.NameSpace)
 		if !util.Lock(pod.MetaData.Name, pod.MetaData.NameSpace) {
-			errPod := api_obj.Pod{
-				ApiVersion: "",
-				Kind:       "",
-				MetaData:   obj_inner.ObjectMeta{},
-				Spec:       api_obj.PodSpec{},
-				PodStatus: api_obj.PodStatus{
-					PodIP: "error",
-				},
-			}
 			errPodJson, _ := json.Marshal(errPod)
 			msg := &message.Message{
 				Type:    message.POD_CREATE,
@@ -50,26 +52,19 @@ func (server *Kubelet) AddPod(c *gin.Context) {
 				Backup2: "",
 			}
 			server.Producer.Produce(message.TOPIC_ApiServer_FromNode, msg)
+			return
 		}
 		err_ := pod_manager.AddPod(pod)
 		util.UnLock(pod.MetaData.Name, pod.MetaData.NameSpace)
 		fmt.Println("Pod Pause Id is ", pod.MetaData.Annotations["pause"])
 		if err_ != nil {
+			// create Pod Failed
 			pod.PodStatus.PodIP = "error"
 			msg := &message.Message{
 				Type: message.POD_CREATE,
 			}
 			errPodJson, err_ := json.Marshal(*pod)
 			if err_ != nil {
-				errPod := api_obj.Pod{
-					ApiVersion: "",
-					Kind:       "",
-					MetaData:   obj_inner.ObjectMeta{},
-					Spec:       api_obj.PodSpec{},
-					PodStatus: api_obj.PodStatus{
-						PodIP: "error",
-					},
-				}
 				errPodJson, _ = json.Marshal(errPod)
 				msg.Content = string(errPodJson)
 			} else {
@@ -89,6 +84,15 @@ func (server *Kubelet) AddPod(c *gin.Context) {
 				Content: string(msgPod),
 			}
 			server.Producer.Produce(message.TOPIC_ApiServer_FromNode, msg)
+			if pod.MetaData.Labels["metricsPort"] != "" {
+				targetUrl := monitor.RegisterPod
+				data, err_ := network.PostRequest(targetUrl, msgPod)
+				if err_ != nil {
+					fmt.Println("[Kubelet/Add/Register] RegisterPod Failed")
+				} else {
+					fmt.Println("[Kubelet/Add/Register] RegisterPod Success, ", data)
+				}
+			}
 			return
 		}
 	}()
@@ -133,6 +137,14 @@ func (server *Kubelet) DelPod(c *gin.Context) {
 
 		msg.Content = message.DEL_POD_SUCCESS
 		server.Producer.Produce(message.TOPIC_ApiServer_FromNode, msg)
+
+		targetUrl := monitor.UnRegisterPodPrefix + namespace + "/" + name
+		data, err := network.DelRequest(targetUrl)
+		if err != nil {
+			fmt.Println("[Kubelet/Del/UnRegister] Failed to Unregister"+namespace, " "+name, " "+err.Error())
+		} else {
+			fmt.Println("[Kubelet/Del/UnRegister] Success ", data)
+		}
 	}()
 
 	return
