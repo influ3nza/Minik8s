@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"minik8s/pkg/api_obj"
+	"minik8s/pkg/config/monitor"
 	"net/http"
 )
 
@@ -71,15 +72,51 @@ func (mc *MonitorController) RegisterPod(c *gin.Context) {
 	}
 }
 
-func (mc *MonitorController) registerHandler() {
-	mc.Router.POST()
-}
-
-func Run() error {
-	mc := InitController()
-	if mc == nil {
-		fmt.Println("Start Failed")
-		return fmt.Errorf("gin engine init failed")
+func (mc *MonitorController) UnRegisterNode(c *gin.Context) {
+	hostname := c.Param("hostname")
+	if hostname == "" {
+		fmt.Println("No Hostname Here")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "no hostname in param",
+		})
+		return
 	}
 
+	err := UnRegisterNode(hostname)
+	if err != nil {
+		fmt.Println("UnRegister Node Failed, ", err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "unregister node failed",
+		})
+		return
+	}
+}
+
+func (mc *MonitorController) UnRegisterPod(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+	if namespace == "" || name == "" {
+		fmt.Println("No NameSpace or Name Here")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "no namespace or name in param",
+		})
+		return
+	}
+
+	err := UnRegisterPod(namespace, name)
+
+	if err != nil {
+		fmt.Println("UnRegister Pod Failed, ", err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "unregister pod failed",
+		})
+		return
+	}
+}
+
+func (mc *MonitorController) RegisterHandler() {
+	mc.Router.POST(monitor.RegisterNode, mc.RegisterNode)
+	mc.Router.POST(monitor.RegisterPod, mc.RegisterPod)
+	mc.Router.DELETE(monitor.UnRegisterNode, mc.UnRegisterNode)
+	mc.Router.DELETE(monitor.UnRegisterPod, mc.UnRegisterPod)
 }

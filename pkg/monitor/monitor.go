@@ -41,19 +41,57 @@ func RegisterNode(node *api_obj.Node) error {
 		fmt.Println("Err Register Node ", err.Error())
 		return err
 	}
-	targetUrl := "https://192.168.1.13:8500/v1/agent/service/register"
+	targetUrl := "http://192.168.1.13:8500/v1/agent/service/register"
 	jsonCfg, err := json.Marshal(*cfg)
 	payLoad := strings.NewReader(string(jsonCfg))
 	req, err := http.NewRequest(http.MethodPut, targetUrl, payLoad)
 	if err != nil {
-		fmt.Println("Create PUT Failed, ", err.Error())
+		fmt.Println("Create PUT RegisterNode Failed, ", err.Error())
 		return err
 	}
 	req.Header.Add("Content-Type", "application/json")
 	_, err = http.DefaultClient.Do(req)
 
 	if err != nil {
-		fmt.Println("Send PUT Failed, ", err.Error())
+		fmt.Println("Send PUT RegisterNode Failed, ", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func UnRegisterNode(hostname string) error {
+	key := "node-exporter-" + hostname
+	targetUrl := "http://192.168.1.13:8500/v1/agent/service/deregister" + key
+	payLoad := strings.NewReader("")
+	req, err := http.NewRequest(http.MethodPut, targetUrl, payLoad)
+	if err != nil {
+		fmt.Println("Create PUT UnregisterNode Failed, ", err.Error())
+		return err
+	}
+
+	_, err = http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println("Send PUT UnregisterNode Failed, ", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func UnRegisterPod(namespace string, name string) error {
+	key := namespace + "-" + name
+	targetUrl := "http://192.168.1.13:8500/v1/agent/service/deregister/" + key
+	payLoad := strings.NewReader("")
+	req, err := http.NewRequest(http.MethodPut, targetUrl, payLoad)
+	if err != nil {
+		fmt.Println("Create PUT UnregisterPod Failed, ", err.Error())
+		return err
+	}
+
+	_, err = http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println("Send PUT UnregisterNode Failed, ", err.Error())
 		return err
 	}
 
@@ -90,14 +128,14 @@ func RegisterPod(pod *api_obj.Pod) error {
 	payLoad := strings.NewReader(string(jsonCfg))
 	req, err := http.NewRequest(http.MethodPut, targetUrl, payLoad)
 	if err != nil {
-		fmt.Println("Create PUT Failed, ", err.Error())
+		fmt.Println("Create PUT RegisterPod Failed, ", err.Error())
 		return err
 	}
 	req.Header.Add("Content-Type", "application/json")
 	_, err = http.DefaultClient.Do(req)
 
 	if err != nil {
-		fmt.Println("Send PUT Failed, ", err.Error())
+		fmt.Println("Send PUT RegisterPod Failed, ", err.Error())
 		return err
 	}
 
