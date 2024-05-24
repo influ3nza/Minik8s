@@ -19,8 +19,10 @@ func GetImageFromLocal(client *containerd.Client, name string, ctx context.Conte
 
 func FetchMasterImage(client *containerd.Client, imgName string, namespace string) error {
 	cmd := []string{"-n", namespace, "pull", "--insecure-registry", imgName}
+	// util.PrintCmd(namespace, cmd...)
 	err := exec.Command("nerdctl", cmd...).Run()
 	if err != nil {
+		fmt.Printf("fetch From Master Failed %s", err.Error())
 		return fmt.Errorf("fetch From Master Failed %s", err.Error())
 	}
 	return nil
