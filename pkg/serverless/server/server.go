@@ -34,6 +34,7 @@ func CreateNewSLServerInstance() (*SL_server, error) {
 }
 
 func (s *SL_server) MsgHandler(msg *message.Message) {
+	fmt.Printf("[SL_server/MsgHandler] Received message!\n")
 	content := msg.Content
 
 	switch msg.Type {
@@ -50,6 +51,8 @@ func (s *SL_server) MsgHandler(msg *message.Message) {
 		s.OnFunctionCreate(content)
 	case message.WF_CREATE:
 		s.OnWorkflowExec(content)
+	case message.FUNC_DEL:
+		s.OnFunctionDel(content)
 	}
 }
 
@@ -76,6 +79,16 @@ func (s *SL_server) OnFunctionExec(content string) {
 		return
 	}
 	s.FunctionController.TriggerFunction(f)
+}
+
+func (s *SL_server) OnFunctionDel(content string) {
+	f := &api_obj.Function{}
+	err := json.Unmarshal([]byte(content), f)
+	if err != nil {
+		fmt.Printf("[ERR/serverless/OnFunctionDel] Failed to unmarshal data.\n")
+		return
+	}
+	s.FunctionController.DeleteFunction(f)
 }
 
 func (s *SL_server) OnWorkflowExec(content string) {
