@@ -169,7 +169,8 @@ func (fc *FunctionController) TriggerFunction(f *api_obj.Function) (string, erro
 
 func (fc *FunctionController) DeleteFunction(f *api_obj.Function) error {
 	replicName := utils.RS_name_prefix + f.Metadata.Name
-	url := apiserver.API_server_prefix + apiserver.API_delete_replicaset_prefix + replicName
+	url := apiserver.API_server_prefix +
+		apiserver.API_delete_replicaset_prefix + apiserver.API_default_namespace + "/" + replicName
 	_, err := network.DelRequest(url)
 	if err != nil {
 		return fmt.Errorf("send Delete Rep Failed, %s", err.Error())

@@ -168,7 +168,7 @@ func (s *Scheduler) GetNodes() ([]api_obj.Node, error) {
 }
 
 func CreateSchedulerInstance() (*Scheduler, error) {
-	consumer, err := message.NewConsumer("scheduler", "scheduler")
+	consumer, err := message.NewConsumer(message.TOPIC_Scheduler, message.TOPIC_Scheduler)
 	producer := message.NewProducer()
 
 	c := DefaultSchedulerConfig()
@@ -191,7 +191,7 @@ func (s *Scheduler) Run() {
 		s.Clean()
 	}()
 
-	go s.Consumer.Consume([]string{"scheduler"}, s.MsgHandler)
+	go s.Consumer.Consume([]string{message.TOPIC_Scheduler}, s.MsgHandler)
 }
 
 func (s *Scheduler) Clean() {

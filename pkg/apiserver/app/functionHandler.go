@@ -207,13 +207,17 @@ func (s *ApiServer) FindFunctionIp(c *gin.Context) {
 		}
 	}
 
-	pack_str, err := json.Marshal(pack)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[ERR/handler/FindFunctionIp] Failed to marshal data, " + err.Error(),
-		})
-		return
+	pack_str := "["
+	for id, ip := range pack {
+		pack_str += ip
+
+		//返回值以逗号隔开
+		if id < len(pack)-1 {
+			pack_str += ","
+		}
 	}
+
+	pack_str += "]"
 
 	//返回200
 	c.JSON(http.StatusOK, gin.H{

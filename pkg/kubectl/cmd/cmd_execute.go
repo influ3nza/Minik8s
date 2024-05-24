@@ -27,6 +27,7 @@ func init() {
 func ExecHandler(cmd *cobra.Command, args []string) {
 	func_name := args[0]
 	coeff := "{}"
+	fmt.Println(args, len(args))
 	if len(args) == 2 {
 		coeff = args[1]
 	} else if len(args) > 2 {
@@ -44,6 +45,6 @@ func ExecHandler(cmd *cobra.Command, args []string) {
 		}
 	} else {
 		//向apiserver请求函数执行结果。
-		
+
 	}
 }

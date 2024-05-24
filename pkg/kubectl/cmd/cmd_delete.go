@@ -23,6 +23,12 @@ func DelHandler(cmd *cobra.Command, args []string) {
 	apitype := args[0]
 	key := args[1]
 	namespace, name := "", ""
+
+	if apitype == "registry" {
+		DeleteRegistryHandler()
+		return
+	}
+
 	if strings.Count(key, "/") == 1 {
 		index := strings.Index(key, "/") + 1
 		namespace = key[0 : index-1]
@@ -98,4 +104,9 @@ func DeleteFunctionHandler(name string) {
 	if err != nil {
 		fmt.Printf("[ERR/DeleteFunction] Failed to send DEL request, %v\n", err)
 	}
+}
+
+func DeleteRegistryHandler() {
+	uri := apiserver.API_server_prefix + apiserver.API_delete_registry
+	_, _ = network.DelRequest(uri)
 }
