@@ -13,19 +13,16 @@ def handle_request():
     headers = {'Content-Type': 'application/json'}
     try:
         result = func.run(**params)
-        response = jsonify(result)
-        response.headers = headers
-        response.status = 200
+        response = Response(json.dumps(result), headers=headers, status=200)
         return response
     except TypeError as e:
-        response = jsonify({"error": str(e)})
-        response.status_code = 400
-        response.headers = headers
+        err = {
+            "err": e
+        }
+        response = Response(json.dumps(err), headers=headers, status=200)
         return response
     except Exception as e:
-        response = jsonify({"error": str(e)})
-        response.status_code = 500
-        response.headers = headers
+        response = Response(json.dumps(err), headers=headers, status=500)
         return response
 
 
