@@ -4,46 +4,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"minik8s/pkg/api_obj"
-	"net"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 )
 
-func GetLocalIP() (ipv4 string, err error) {
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		return
-	}
-	for _, addr := range addrs {
-		ipNet, isIpNet := addr.(*net.IPNet)
-		if isIpNet && !ipNet.IP.IsLoopback() {
-			if ipNet.IP.To4() != nil {
-				ipv4 = ipNet.IP.String()
-				return
-			}
-		}
-	}
-	return
-}
+func GenerateNodeStruct(node *api_obj.Node) (*ConsulConfig, error) {
+	hostname := node.NodeMetadata.Name
 
-func GenerateNodeStruct() (*ConsulConfig, error) {
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, fmt.Errorf("get Hostname Failed, %s", err.Error())
-	}
-
-	localIp, err := GetLocalIP()
-	if err != nil {
-		return nil, fmt.Errorf("get Local Ip Failed, %s", err.Error())
-	}
+	Ip := node.NodeStatus.Addresses.InternalIp
 
 	config := &ConsulConfig{
 		Id:      "node-exporter-" + hostname,
-		Name:    "node-exporter-" + localIp,
+		Name:    "node-exporter-" + Ip,
 		Tags:    []string{"node"},
-		Address: localIp,
+		Address: Ip,
 		Port:    9100,
 		Meta: map[string]string{
 			"app":  "node",
@@ -51,7 +26,7 @@ func GenerateNodeStruct() (*ConsulConfig, error) {
 		},
 		Checks: []Check{
 			{
-				Http:     "http://" + localIp + "9100/metrics",
+				Http:     "http://" + Ip + "9100/metrics",
 				Interval: "15s",
 			},
 		},
@@ -60,8 +35,8 @@ func GenerateNodeStruct() (*ConsulConfig, error) {
 	return config, nil
 }
 
-func RegisterNode() error {
-	cfg, err := GenerateNodeStruct()
+func RegisterNode(node *api_obj.Node) error {
+	cfg, err := GenerateNodeStruct(node)
 	if err != nil {
 		fmt.Println("Err Register Node ", err.Error())
 		return err
@@ -104,7 +79,7 @@ func RegisterPod(pod *api_obj.Pod) error {
 		},
 		Checks: []Check{
 			{
-				Http:     "http://" + serverIp + ":" + strconv.Itoa(port) + "/metrics",
+				Http:     "http://" + serverIp + ":" + fmt.Sprintf("%d", port) + "/metrics",
 				Interval: "15s",
 			},
 		},
