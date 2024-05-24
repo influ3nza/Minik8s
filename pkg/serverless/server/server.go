@@ -14,6 +14,7 @@ import (
 
 type SL_server struct {
 	Consumer           *message.MsgConsumer
+	Producer           *message.MsgProducer
 	FunctionController *function.FunctionController
 	WorkflowController workflow.WorkflowController
 }
