@@ -30,6 +30,7 @@ func GetRequest(uri string) (string, error) {
 
 	errs := result["error"]
 	if errs != nil {
+		fmt.Printf(fmt.Sprint(errs) + "\n")
 		err = errors.New(fmt.Sprint(errs))
 	}
 
@@ -57,6 +58,7 @@ func GetRequestAndParse(uri string, pack interface{}) error {
 
 	errs := result["error"]
 	if errs != nil {
+		fmt.Printf(fmt.Sprint(errs) + "\n")
 		return errors.New(fmt.Sprint(errs))
 	}
 
@@ -86,6 +88,7 @@ func PostRequest(uri string, req_body []byte) (string, error) {
 
 	errs := result["error"]
 	if errs != nil {
+		fmt.Printf(fmt.Sprint(errs) + "\n")
 		err = errors.New(fmt.Sprint(errs))
 	}
 
@@ -114,6 +117,7 @@ func PostRequestAndParse(uri string, req_body []byte, pack interface{}) error {
 
 	errs := result["error"]
 	if errs != nil {
+		fmt.Printf(fmt.Sprint(errs) + "\n")
 		return errors.New(fmt.Sprint(errs))
 	}
 
@@ -147,6 +151,7 @@ func DelRequest(uri string) (string, error) {
 
 	errs := result["error"]
 	if errs != nil {
+		fmt.Printf(fmt.Sprint(errs) + "\n")
 		err = errors.New(fmt.Sprint(errs))
 	}
 

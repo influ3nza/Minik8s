@@ -27,7 +27,8 @@ const (
 	API_get_pods_by_namespace        string = "/pods/getByNamespace/:namespace"
 	API_delete_pod_prefix            string = "/pods/delete/"
 	API_delete_pod                   string = "/pods/delete/:namespace/:name"
-	API_get_pod_metrix               string = "/pods/getMetrix/:namespace/:name"
+	API_get_pod_metrics              string = "/pods/getMetrics/:namespace/:name"
+	API_get_pod_metrics_prefix       string = "/pods/getMetrics/"
 
 	API_add_service           string = "/services/add"
 	API_get_services          string = "/services/getAll"
@@ -44,14 +45,17 @@ const (
 	API_delete_endpoint                string = "/endpoints/delete/:namespace/:name"
 	API_get_endpoint_prefix            string = "/endpoints/"
 	API_get_endpoint                   string = "/endpoints/:namespace/:name"
-	API_get_endpoint_by_service_prefix string = "/endpoints/"
-	API_get_endpoint_by_service        string = "/endpoints/:srvname"
+	API_get_endpoint_by_service_prefix string = "/endpoints/getBySrv/"
+	API_get_endpoint_by_service        string = "/endpoints/getBySrv/:srvname"
 
 	API_get_replicasets          string = "/replicasets/getAll"
 	API_delete_replicaset_prefix string = "/replicasets/delete/"
 	API_delete_replicaset        string = "/replicasets/delete/:namespace/:name"
 	API_update_replicaset        string = "/replicasets/update"
 	API_add_replicaset           string = "/replicasets/add"
+
+	API_scale_replicaset_prefix string = "/replicasets/scaleup/"
+	API_scale_replicaset        string = "/replicasets/scaleup/:name/:method"
 
 	API_add_hpa           string = "/hpas/add"
 	API_get_hpas          string = "/hpas/getAll"
@@ -72,12 +76,28 @@ const (
 	API_update_workflow        string = "/workflows/update"
 	API_delete_workflow_prefix string = "/workflows/delete/"
 	API_delete_workflow        string = "/workflows/delete/:namespace/:name"
+	API_exec_workflow_prefix   string = "/workflows/exec/"
+	API_exec_workflow          string = "/worlflows/exec/:name"
 
-	API_get_function_prefix    string = "/functions/"
-	API_get_function           string = "/functions/:namespace/:name"
-	API_add_function           string = "/functions/add"
-	API_delete_function_prefix string = "/functions/delete/"
-	API_delete_function        string = "/functions/delete/:namespace/:name"
+	API_get_function_prefix     string = "/functions/"
+	API_get_function            string = "/functions/:name"
+	API_add_function            string = "/functions/add"
+	API_delete_function_prefix  string = "/functions/delete/"
+	API_delete_function         string = "/functions/delete/:name"
+	API_exec_function_prefix    string = "/functions/exec/"
+	API_exec_function           string = "/functions/exec/:name/:coeff"
+	API_find_function_ip_prefix string = "/function/findByIp/"
+	API_find_function_ip        string = "/function/findByIp/:name"
+	API_get_function_res_prefix string = "/function/getRes/"
+	API_get_function_res        string = "/function/getRes/:name"
+
+	API_add_pv           string = "/pv/add"
+	API_delete_pv_prefix string = "/pv/delete/"
+	API_delete_pv        string = "/pv/delete/:name"
+
+	API_add_pvc           string = "/pvc/add"
+	API_delete_pvc_prefix string = "/pvc/delete/"
+	API_delete_pvc        string = "/pvc/delete/:name"
 )
 
 type ServerConfig struct {
