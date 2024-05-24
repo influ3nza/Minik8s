@@ -59,7 +59,7 @@ func (s *SL_server) OnFunctionCreate(content string) {
 		fmt.Printf("[ERR/serverless/OnFunctionCreate] Failed to unmarshal data.\n")
 		return
 	}
-
+	s.FunctionController.GenerateFunction(f)
 }
 
 func (s *SL_server) OnFunctionExec(content string) {
@@ -69,6 +69,7 @@ func (s *SL_server) OnFunctionExec(content string) {
 		fmt.Printf("[ERR/serverless/OnFunctionExec] Failed to unmarshal data.\n")
 		return
 	}
+	s.FunctionController.TriggerFunction(f)
 }
 
 func (s *SL_server) OnWorkflowExec(content string) {
@@ -80,10 +81,6 @@ func (s *SL_server) OnWorkflowExec(content string) {
 	}
 }
 
-func (s *SL_server) PollApiserver() {
-	//TODO:
-}
-
 func (s *SL_server) Run() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT)
@@ -93,7 +90,6 @@ func (s *SL_server) Run() {
 	}()
 
 	go s.Consumer.Consume([]string{message.TOPIC_Serverless}, s.MsgHandler)
-	go s.PollApiserver()
 }
 
 func (s *SL_server) Clean() {
