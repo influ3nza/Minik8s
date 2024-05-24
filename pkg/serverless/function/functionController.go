@@ -32,8 +32,8 @@ func (fc *FunctionController) GenerateFunction(f *api_obj.Function) error {
 	return nil
 }
 
-func CreateNewFunctionControllerInstance() FunctionController {
-	return FunctionController{}
+func CreateNewFunctionControllerInstance() *FunctionController {
+	return &FunctionController{}
 }
 
 func (fc *FunctionController) GetFunctionPodIps(f *api_obj.Function) ([]string, error) {
