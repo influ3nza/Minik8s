@@ -348,3 +348,35 @@ func (server *Kubelet) MountNfs(c *gin.Context) {
 		"data": "[kubelet/MountNfs] Mount success.",
 	})
 }
+
+func (server *Kubelet) UnmountNfs(c *gin.Context) {
+	path := c.Param("path")
+	if path == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[kubelet/UnmountNfs] Empty path name.",
+		})
+		return
+	}
+
+	dirPath := tools.PV_mount_master_path + "/" + path
+	_, err := exec.Command("umount", dirPath).CombinedOutput()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[kubelet/UnmountNfs] Failed to unmount pv, " + err.Error(),
+		})
+		return
+	}
+
+	_, err = exec.Command("rm", "-r", dirPath).CombinedOutput()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[kubelet/UnmountNfs] Failed to delete dir, " + err.Error(),
+		})
+		return
+	}
+
+	//TODO
+	c.JSON(http.StatusOK, gin.H{
+		"data": "[kubelet/UnmountNfs] Unmount success.",
+	})
+}
