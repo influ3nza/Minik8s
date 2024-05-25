@@ -86,7 +86,7 @@ func (server *Kubelet) registerHandler() {
 	server.Router.POST(kubelet.AddPod, server.AddPod)
 
 	//PV
-	server.Router.GET(kubelet.MountNfs, server.MountNfs)
+	server.Router.POST(kubelet.MountNfs, server.MountNfs)
 }
 
 func InitKubeletDefault() *Kubelet {
