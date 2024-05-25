@@ -68,6 +68,18 @@ func (s *ApiServer) AddPV(c *gin.Context) {
 	//本地创建文件夹
 	_, _ = exec.Command("mkdir", tools.PV_mount_master_path+pv.Spec.Nfs.Path).CombinedOutput()
 
+	//修改/etc/exports文件
+	args := []string{"\"" + tools.PV_mount_master_path + pv.Spec.Nfs.Path + tools.PV_mount_params + "\"", ">>", tools.PV_mount_config_file}
+	_, err = exec.Command("echo", args...).CombinedOutput()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/AddPV] Failed to update exports file, " + err.Error(),
+		})
+		return
+	}
+
+	_, _ = exec.Command("exportfs", "-r").CombinedOutput()
+
 	//向所有node发送绑定消息
 	for _, ip := range tools.NodesIpMap {
 		uri := ip + strconv.Itoa(int(kubelet.Port)) + kubelet.MountNfs
@@ -88,4 +100,26 @@ func (s *ApiServer) AddPV(c *gin.Context) {
 
 func (s *ApiServer) DeletePV(c *gin.Context) {
 	// TODO
+	name := c.Param("name")
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/DeletePV] Empty PV name.",
+		})
+		return
+	}
+
+	e_key := apiserver.ETCD_pv_prefix + name
+	err := s.EtcdWrap.Del(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/DeletePV] Failed to delete from etcd, " + err.Error(),
+		})
+		return
+	}
+
+	//TODO:向node发送删除请求
+	//返回200
+	c.JSON(http.StatusOK, gin.H{
+		"data": "Delete pv success.",
+	})
 }

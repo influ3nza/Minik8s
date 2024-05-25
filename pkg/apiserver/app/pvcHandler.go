@@ -41,7 +41,7 @@ func (s *ApiServer) AddPVC(c *gin.Context) {
 
 	if len(res) != 0 {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[ERR/handler/AddPV] PV name already exists.",
+			"error": "[ERR/handler/AddPVC] PV name already exists.",
 		})
 		return
 	}
@@ -97,7 +97,7 @@ func (s *ApiServer) AddPVC(c *gin.Context) {
 	err = s.EtcdWrap.Put(e_key, pvc_str)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[ERR/handler/AddPV] Failed to write into etcd, " + err.Error(),
+			"error": "[ERR/handler/AddPVC] Failed to write into etcd, " + err.Error(),
 		})
 		return
 	}
@@ -110,4 +110,25 @@ func (s *ApiServer) AddPVC(c *gin.Context) {
 
 func (s *ApiServer) DeletePVC(c *gin.Context) {
 	// TODO
+	name := c.Param("name")
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/DeletePVC] Empty PVC name.",
+		})
+		return
+	}
+
+	e_key := apiserver.ETCD_pvc_prefix + name
+	err := s.EtcdWrap.Del(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/DeletePVC] Failed to delete from etcd, " + err.Error(),
+		})
+		return
+	}
+
+	//返回200
+	c.JSON(http.StatusOK, gin.H{
+		"data": "Delete pvc success.",
+	})
 }

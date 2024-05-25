@@ -7,6 +7,6 @@ metaData:
   nameSpace: q
 host: www.example.com
 paths:
-  - serviceName: srv-example1
+  - serviceName: srv-1
     port: 10000
     subPath: path
