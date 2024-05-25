@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: dns
+metaData:
+  labels:
+    app: test
+  name: dns-1
+  nameSpace: q
+host: www.example.com
+paths:
+  - serviceName: srv-1
+    port: 10000
+    subPath: path
