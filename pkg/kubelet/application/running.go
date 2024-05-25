@@ -313,7 +313,7 @@ func (server *Kubelet) PodRestart(pod *api_obj.Pod) error {
 }
 
 // PV
-func (k *Kubelet) MountNfs(c *gin.Context) {
+func (server *Kubelet) MountNfs(c *gin.Context) {
 	pv := &api_obj.PV{}
 	err := c.ShouldBind(pv)
 	if err != nil {
