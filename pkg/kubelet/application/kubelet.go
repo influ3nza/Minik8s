@@ -89,6 +89,7 @@ func (server *Kubelet) registerHandler() {
 
 	//PV
 	server.Router.POST(kubelet.MountNfs, server.MountNfs)
+	server.Router.DELETE(kubelet.UnmountNfs, server.UnmountNfs)
 }
 
 func InitKubeletDefault() *Kubelet {
