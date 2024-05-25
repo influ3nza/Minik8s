@@ -88,7 +88,7 @@ func (server *Kubelet) AddPod(c *gin.Context) {
 			}
 			server.Producer.Produce(message.TOPIC_ApiServer_FromNode, msg)
 			if pod.MetaData.Labels["metricsPort"] != "" {
-				targetUrl := monitor.RegisterPod
+				targetUrl := monitor.Server + monitor.RegisterPod
 				data, err_ := network.PostRequest(targetUrl, msgPod)
 				if err_ != nil {
 					fmt.Println("[Kubelet/Add/Register] RegisterPod Failed")
@@ -141,7 +141,7 @@ func (server *Kubelet) DelPod(c *gin.Context) {
 		msg.Content = message.DEL_POD_SUCCESS
 		server.Producer.Produce(message.TOPIC_ApiServer_FromNode, msg)
 
-		targetUrl := monitor.UnRegisterPodPrefix + namespace + "/" + name
+		targetUrl := monitor.Server + monitor.UnRegisterPodPrefix + namespace + "/" + name
 		data, err := network.DelRequest(targetUrl)
 		if err != nil {
 			fmt.Println("[Kubelet/Del/UnRegister] Failed to Unregister"+namespace, " "+name, " "+err.Error())
