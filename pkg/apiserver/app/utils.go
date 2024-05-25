@@ -90,7 +90,7 @@ func (s *ApiServer) UpdatePodPhase(pod api_obj.Pod, needCheckRestart bool) (stri
 	if needCheckRestart && old_pod.PodStatus.Phase != pod.PodStatus.Phase {
 		old_pod.PodStatus.Restarts += 1
 	}
-	fmt.Printf("[Apiserver/UpdatePodPhase] Update pod phase: %s -> %s", old_pod.PodStatus.Phase, pod.PodStatus.Phase)
+	fmt.Printf("[Apiserver/UpdatePodPhase] Update pod phase: %s -> %s\n", old_pod.PodStatus.Phase, pod.PodStatus.Phase)
 	old_pod.PodStatus.Phase = pod.PodStatus.Phase
 
 	//存入etcd中。
@@ -359,6 +359,7 @@ func (s *ApiServer) RewriteMountPath(pod *api_obj.Pod) error {
 
 func (s *ApiServer) DeleteRegistry(c *gin.Context) {
 	s.EtcdWrap.DeleteByPrefix("/registry")
+	s.EtcdWrap.DeleteByPrefix("/pv")
 	c.JSON(http.StatusOK, gin.H{
 		"data": "Delete all success",
 	})

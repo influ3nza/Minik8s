@@ -11,6 +11,7 @@ import (
 	"minik8s/pkg/kubelet/util"
 	"minik8s/pkg/message"
 	"minik8s/pkg/network"
+	"minik8s/tools"
 	"net/http"
 	"os"
 	"os/exec"
@@ -312,8 +313,17 @@ func (server *Kubelet) PodRestart(pod *api_obj.Pod) error {
 }
 
 // PV
-func (k *Kubelet) MountNfs(c *gin.Context) {
-	name := c.Param("name")
+func (server *Kubelet) MountNfs(c *gin.Context) {
+	pv := &api_obj.PV{}
+	err := c.ShouldBind(pv)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[kubelet/MountNfs] Failed to parse pv, " + err.Error(),
+		})
+		return
+	}
+
+	name := pv.Metadata.Name
 	if name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "[kubelet/MountNfs] Empty pv name.",
@@ -322,19 +332,52 @@ func (k *Kubelet) MountNfs(c *gin.Context) {
 	}
 
 	//准备挂载
-	dirPath := "/mnt/minik8s/" + name
+	dirPath := tools.PV_mount_master_path + pv.Spec.Nfs.Path
 	_, _ = exec.Command("mkdir", dirPath).CombinedOutput()
 
-	args := []string{util.IpAddressMas + ":/mnt/minik8s/" + name, dirPath}
-	_, err := exec.Command("mount", args...).CombinedOutput()
+	args := []string{pv.Spec.Nfs.ServerIp + ":" + dirPath, dirPath}
+	fmt.Println("Using args, ", args)
+	_, err = exec.Command("mount", args...).CombinedOutput()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[kubelet/MountNfs] Failed to mount pv.",
+			"error": "[kubelet/MountNfs] Failed to mount pv, err: " + err.Error(),
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": "[kubelet/MountNfs] Mount success.",
+	})
+}
+
+func (server *Kubelet) UnmountNfs(c *gin.Context) {
+	path := c.Param("path")
+	if path == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[kubelet/UnmountNfs] Empty path name.",
+		})
+		return
+	}
+
+	dirPath := tools.PV_mount_master_path + "/" + path
+	_, err := exec.Command("umount", dirPath).CombinedOutput()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[kubelet/UnmountNfs] Failed to unmount pv, " + err.Error(),
+		})
+		return
+	}
+
+	_, err = exec.Command("rm", "-r", dirPath).CombinedOutput()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[kubelet/UnmountNfs] Failed to delete dir, " + err.Error(),
+		})
+		return
+	}
+
+	//TODO
+	c.JSON(http.StatusOK, gin.H{
+		"data": "[kubelet/UnmountNfs] Unmount success.",
 	})
 }

@@ -12,7 +12,9 @@ import (
 	"minik8s/pkg/message"
 	"minik8s/pkg/network"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -86,7 +88,8 @@ func (server *Kubelet) registerHandler() {
 	server.Router.POST(kubelet.AddPod, server.AddPod)
 
 	//PV
-	server.Router.GET(kubelet.MountNfs, server.MountNfs)
+	server.Router.POST(kubelet.MountNfs, server.MountNfs)
+	server.Router.DELETE(kubelet.UnmountNfs, server.UnmountNfs)
 }
 
 func InitKubeletDefault() *Kubelet {
@@ -120,10 +123,30 @@ func InitKubelet(config util.KubeConfig) *Kubelet {
 	}
 }
 
+func (server *Kubelet) unregisterNodeToMonitor() {
+	targetUrl := monitor.Server + monitor.UnRegisterNodePrefix
+	hostname, _ := os.Hostname()
+	targetUrl += hostname
+	data, err := network.DelRequest(targetUrl)
+	if err != nil {
+		fmt.Println("unregisterNodeToMonitor Failed, ", err.Error())
+		return
+	}
+	fmt.Println("unregisterNodeToMonitor Success, ", data)
+}
+
 func (server *Kubelet) Run() {
 	server.register()
 	server.registerHandler()
 	go server.GetPodStatus()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT)
+	go func() {
+		<-sigChan
+		server.unregisterNodeToMonitor()
+	}()
+
 	err := server.Router.Run(fmt.Sprintf(":%d", server.Port))
 	if err != nil {
 		return

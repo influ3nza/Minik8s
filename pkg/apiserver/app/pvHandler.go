@@ -109,7 +109,34 @@ func (s *ApiServer) DeletePV(c *gin.Context) {
 	}
 
 	e_key := apiserver.ETCD_pv_prefix + name
-	err := s.EtcdWrap.Del(e_key)
+
+	res, err := s.EtcdWrap.Get(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/DeletePV] Failed to get from etcd, " + err.Error(),
+		})
+		return
+	}
+
+	if len(res) != 1 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/DeletePV] Found zero or more than one PV.",
+		})
+		return
+	}
+
+	pv := &api_obj.PV{}
+	err = json.Unmarshal([]byte(res[0].Value), pv)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/DeletePV] Failed to unmarshal data, " + err.Error(),
+		})
+		return
+	}
+
+	path := pv.Spec.Nfs.Path
+
+	err = s.EtcdWrap.Del(e_key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "[ERR/handler/DeletePV] Failed to delete from etcd, " + err.Error(),
@@ -117,9 +144,9 @@ func (s *ApiServer) DeletePV(c *gin.Context) {
 		return
 	}
 
-	//TODO:向所有node发送删除请求
+	//向所有node发送删除请求
 	for _, ip := range tools.NodesIpMap {
-		uri := ip + strconv.Itoa(int(kubelet.Port)) + kubelet
+		uri := ip + strconv.Itoa(int(kubelet.Port)) + kubelet.UnmountNfs_prefix + path
 		_, err := network.DelRequest(uri)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
