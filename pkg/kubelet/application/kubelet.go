@@ -3,7 +3,6 @@ package application
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/config/apiserver"
@@ -15,6 +14,8 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 type Kubelet struct {
@@ -83,6 +84,9 @@ func (server *Kubelet) registerHandler() {
 	server.Router.GET(kubelet.GetMatrix, server.GetPodMatrix)
 	server.Router.DELETE(kubelet.DelPod, server.DelPod)
 	server.Router.POST(kubelet.AddPod, server.AddPod)
+
+	//PV
+	server.Router.GET(kubelet.MountNfs, server.MountNfs)
 }
 
 func InitKubeletDefault() *Kubelet {
