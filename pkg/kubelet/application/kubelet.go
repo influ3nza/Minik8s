@@ -58,11 +58,11 @@ func (server *Kubelet) register() {
 	}
 
 	server.registerNodeToApiServer(node)
-
+	server.registerNodeToMonitor(node)
 }
 
 func (server *Kubelet) registerNodeToApiServer(node *api_obj.Node) {
-	nodeJson, _ := json.Marshal(node)
+	nodeJson, _ := json.Marshal(*node)
 	request, err := network.PostRequest(server.ApiServerAddress+apiserver.API_add_node, nodeJson)
 	if err != nil {
 		fmt.Println("Send Register At line 62 ", err.Error())
@@ -72,8 +72,8 @@ func (server *Kubelet) registerNodeToApiServer(node *api_obj.Node) {
 }
 
 func (server *Kubelet) registerNodeToMonitor(node *api_obj.Node) {
-	nodeJson, _ := json.Marshal(node)
-	request, err := network.PostRequest(monitor.RegisterNode, nodeJson)
+	nodeJson, _ := json.Marshal(*node)
+	request, err := network.PostRequest(monitor.Server+monitor.RegisterNode, nodeJson)
 	if err != nil {
 		fmt.Println("Send Register  At line 69 ", err.Error())
 	}
