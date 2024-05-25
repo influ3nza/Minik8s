@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/containerd/containerd/namespaces"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/kubelet/image_manager"
@@ -37,7 +38,8 @@ import (
 //	container : containerd.Container
 func CreateK8sContainer(ctx context.Context, client *containerd.Client, container *api_obj.Container, metaName string, podVolumes []obj_inner.Volume, linuxNamespace string) (containerd.Container, string, error) {
 	// 解析image，配置容器image选项
-	image, err := image_manager.GetImage(client, &container.Image, ctx)
+	namespace, _ := namespaces.Namespace(ctx)
+	image, err := image_manager.GetImage(client, &container.Image, ctx, namespace)
 	if err != nil {
 		return nil, "", err
 	}
@@ -297,7 +299,7 @@ func CreatePauseContainer(ctx context.Context, client *containerd.Client, namesp
 		Img:           util.FirstSandbox,
 		ImgPullPolicy: "Always",
 	}
-	_, err := image_manager.GetImage(client, &img, ctx)
+	_, err := image_manager.GetImage(client, &img, ctx, namespace)
 	if err != nil {
 		fmt.Println("Pull Pause Image Failed At CreatePauseContainer line 276, ", err.Error())
 		return "", err

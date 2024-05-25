@@ -145,6 +145,7 @@ func (server *Kubelet) Run() {
 	go func() {
 		<-sigChan
 		server.unregisterNodeToMonitor()
+		os.Exit(0)
 	}()
 
 	err := server.Router.Run(fmt.Sprintf(":%d", server.Port))

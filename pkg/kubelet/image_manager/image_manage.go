@@ -7,6 +7,7 @@ import (
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/kubelet/util"
 	"os/exec"
+	"strings"
 )
 
 func GetImageFromLocal(client *containerd.Client, name string, ctx context.Context) (containerd.Image, error) {
@@ -53,9 +54,20 @@ func DeleteImage(namespace string, imgName string) (string, error) {
 	return res, err
 }
 
-func GetImage(client *containerd.Client, image *obj_inner.Image, ctx context.Context) (containerd.Image, error) {
+func GetImage(client *containerd.Client, image *obj_inner.Image, ctx context.Context, namespace string) (containerd.Image, error) {
 	ParseImage(image)
 	if image.ImgPullPolicy == "Always" {
+		if strings.Contains(image.Img, "my-registry.io") {
+			err := FetchMasterImage(client, image.Img, namespace)
+			if err != nil {
+				return nil, err
+			}
+			img, err := GetImageFromLocal(client, image.Img, ctx)
+			if err != nil {
+				return nil, err
+			}
+			return img, nil
+		}
 		res, err := FetchImage(client, image.Img, ctx)
 		if err != nil {
 			return nil, err
