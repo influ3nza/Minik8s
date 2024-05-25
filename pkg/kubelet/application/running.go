@@ -336,10 +336,11 @@ func (server *Kubelet) MountNfs(c *gin.Context) {
 	_, _ = exec.Command("mkdir", dirPath).CombinedOutput()
 
 	args := []string{pv.Spec.Nfs.ServerIp + ":" + dirPath, dirPath}
+	fmt.Println("Using args, ", args)
 	_, err = exec.Command("mount", args...).CombinedOutput()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[kubelet/MountNfs] Failed to mount pv.",
+			"error": "[kubelet/MountNfs] Failed to mount pv, err: " + err.Error(),
 		})
 		return
 	}

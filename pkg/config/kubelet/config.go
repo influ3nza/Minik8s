@@ -9,8 +9,7 @@ const GetMatrix string = "/pod/GetMatrix/:namespace/:name"
 
 // PV
 const (
-	MountNfs_prefix   string = "/pv/MountNfs/"
-	MountNfs          string = "/pv/MountNfs/:name"
+	MountNfs          string = "/pv/MountNfs/"
 	UnmountNfs_prefix string = "/pv/UnmountNfs/"
 	UnmountNfs        string = "/pv/UnmountNfs/:path"
 )
