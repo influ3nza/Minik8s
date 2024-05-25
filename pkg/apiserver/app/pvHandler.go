@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/config/kubelet"
@@ -69,8 +70,12 @@ func (s *ApiServer) AddPV(c *gin.Context) {
 	_, _ = exec.Command("mkdir", tools.PV_mount_master_path+pv.Spec.Nfs.Path).CombinedOutput()
 
 	//修改/etc/exports文件
-	args := []string{"\"" + tools.PV_mount_master_path + pv.Spec.Nfs.Path + tools.PV_mount_params + "\"", ">>", tools.PV_mount_config_file}
-	_, err = exec.Command("echo", args...).CombinedOutput()
+	args := "echo " +
+		"\"" + tools.PV_mount_master_path + pv.Spec.Nfs.Path + tools.PV_mount_params + "\"" +
+		" >> " + tools.PV_mount_config_file
+	fmt.Println("Using args, ", args)
+	opt, err := exec.Command("bash", "-c", args).CombinedOutput()
+	fmt.Println(string(opt))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "[ERR/handler/AddPV] Failed to update exports file, " + err.Error(),

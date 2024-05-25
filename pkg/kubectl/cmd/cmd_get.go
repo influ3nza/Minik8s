@@ -72,13 +72,13 @@ func GetHandler(cmd *cobra.Command, args []string) {
 			fmt.Println("[ERR] Too many arguments to get pv. Try -h for help.")
 			return
 		}
-		GetPVHandler(namespace)
+		GetPVHandler()
 	case "pvc":
 		if name != "" && namespace != "" {
 			fmt.Println("[ERR] Too many arguments to get pvc. Try -h for help.")
 			return
 		}
-		GetPVCHandler(namespace)
+		GetPVCHandler()
 	default:
 		fmt.Println("[ERR] Wrong api kind. Available: pod, node, service, replicaset, hpa.")
 	}
@@ -167,13 +167,9 @@ func GetHpaHandler(namespace string, name string) {
 
 }
 
-func GetPVHandler(name string) {
+func GetPVHandler() {
 	uri := apiserver.API_server_prefix
 	pvs := []api_obj.PV{}
-	if name == "" {
-		fmt.Printf("[ERR/GetPVHandler] Empty pv name.\n")
-		return
-	}
 
 	uri += apiserver.API_get_pvs
 	err := network.GetRequestAndParse(uri, &pvs)
@@ -185,13 +181,9 @@ func GetPVHandler(name string) {
 	PrintPVHandler(pvs)
 }
 
-func GetPVCHandler(name string) {
+func GetPVCHandler() {
 	uri := apiserver.API_server_prefix
 	pvcs := []api_obj.PVC{}
-	if name == "" {
-		fmt.Printf("[ERR/GetPVCHandler] Empty pvc name.\n")
-		return
-	}
 
 	uri += apiserver.API_get_pvcs
 	err := network.GetRequestAndParse(uri, &pvcs)
