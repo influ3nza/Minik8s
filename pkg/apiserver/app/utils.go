@@ -282,3 +282,62 @@ func (s *ApiServer) DynamicCreatePV(pvc *api_obj.PVC) error {
 
 	return nil
 }
+
+// PV:只用于通过PVC改写mount路径。
+func (s *ApiServer) RewriteMountPath(pod *api_obj.Pod) error {
+	//通过pvc的名字，找到bind的pv的名字，进而确定mount路径。
+	//WARN:注意根据nfs，理应在node节点保存一张表格，记录每一个mount dir对应的nfs ip地址，
+	//但由于在这里只有一个nfs server，所以不保存表格，采用更简单的设计。
+
+	//这里默认需要绑定pvc的pod只有一个volume
+	pvc_name := pod.Spec.Volumes[0].PVCName
+	if pvc_name == "" {
+		return nil
+	}
+
+	e_key := apiserver.ETCD_pvc_prefix + pvc_name
+	res, err := s.EtcdWrap.Get(e_key)
+	if err != nil {
+		fmt.Printf("[ERR/RewriteMountPath] Failed to get from etcd, %s\n", err.Error())
+		return err
+	}
+	if len(res) != 1 {
+		fmt.Printf("[ERR/RewriteMountPath] Found zero or more than one pvc.\n")
+		return errors.New("zero or more than one pvc")
+	}
+
+	pvc := &api_obj.PVC{}
+	err = json.Unmarshal([]byte(res[0].Value), pvc)
+	if err != nil {
+		fmt.Printf("[ERR/RewriteMountPath] Failed to unmarshal data, %s\n", err.Error())
+		return err
+	}
+
+	pv_name := pvc.Spec.BindPV
+	if pv_name == "" {
+		fmt.Printf("[ERR/RewriteMountPath] PVC must bind to a PV.\n")
+		return errors.New("no binding pvc")
+	}
+
+	p_key := apiserver.ETCD_pv_prefix + pv_name
+	res, err = s.EtcdWrap.Get(p_key)
+	if err != nil {
+		fmt.Printf("[ERR/RewriteMountPath] Failed to get from etcd, %s\n", err.Error())
+		return err
+	}
+	if len(res) != 1 {
+		fmt.Printf("[ERR/RewriteMountPath] Found zero or more than one pv.\n")
+		return errors.New("zero or more than one pv")
+	}
+
+	pv := &api_obj.PV{}
+	err = json.Unmarshal([]byte(res[0].Value), pv)
+	if err != nil {
+		fmt.Printf("[ERR/RewriteMountPath] Failed to unmarshal data, %s\n", err.Error())
+		return err
+	}
+
+	pod.Spec.Volumes[0].Path = tools.PV_mount_master_path + pv.Spec.Nfs.Path
+
+	return nil
+}
