@@ -94,10 +94,12 @@ const (
 	API_add_pv           string = "/pv/add"
 	API_delete_pv_prefix string = "/pv/delete/"
 	API_delete_pv        string = "/pv/delete/:name"
+	API_get_pvs          string = "/pv/getAll"
 
 	API_add_pvc           string = "/pvc/add"
 	API_delete_pvc_prefix string = "/pvc/delete/"
 	API_delete_pvc        string = "/pvc/delete/:name"
+	API_get_pvcs          string = "/pvc/getAll"
 )
 
 type ServerConfig struct {

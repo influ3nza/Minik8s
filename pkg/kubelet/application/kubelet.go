@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
+	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/config/kubelet"
+	"minik8s/pkg/config/monitor"
 	"minik8s/pkg/kubelet/util"
 	"minik8s/pkg/message"
 	"minik8s/pkg/network"
@@ -30,7 +32,7 @@ type Kubelet struct {
 func (server *Kubelet) register() {
 	// fmt.Println(server.IpAddress)
 	hostName, _ := os.Hostname()
-	node := api_obj.Node{
+	node := &api_obj.Node{
 		APIVersion: "v1",
 		NodeMetadata: obj_inner.ObjectMeta{
 			Name: hostName,
@@ -55,19 +57,36 @@ func (server *Kubelet) register() {
 		},
 	}
 
-	nodeJson, _ := json.Marshal(node)
-	request, err := network.PostRequest(server.ApiServerAddress+"/nodes/add", nodeJson)
+	server.registerNodeToApiServer(node)
+	server.registerNodeToMonitor(node)
+}
+
+func (server *Kubelet) registerNodeToApiServer(node *api_obj.Node) {
+	nodeJson, _ := json.Marshal(*node)
+	request, err := network.PostRequest(server.ApiServerAddress+apiserver.API_add_node, nodeJson)
 	if err != nil {
-		fmt.Println("Send Register At line 54 ", err.Error())
+		fmt.Println("Send Register At line 62 ", err.Error())
 		return
 	}
-	fmt.Println("Response data is ", request)
+	fmt.Println("Response data on register to apiServer is ", request)
+}
+
+func (server *Kubelet) registerNodeToMonitor(node *api_obj.Node) {
+	nodeJson, _ := json.Marshal(*node)
+	request, err := network.PostRequest(monitor.Server+monitor.RegisterNode, nodeJson)
+	if err != nil {
+		fmt.Println("Send Register  At line 69 ", err.Error())
+	}
+	fmt.Println("Response data on register to monitor is ", request)
 }
 
 func (server *Kubelet) registerHandler() {
 	server.Router.GET(kubelet.GetMatrix, server.GetPodMatrix)
 	server.Router.DELETE(kubelet.DelPod, server.DelPod)
 	server.Router.POST(kubelet.AddPod, server.AddPod)
+
+	//PV
+	server.Router.GET(kubelet.MountNfs, server.MountNfs)
 }
 
 func InitKubeletDefault() *Kubelet {

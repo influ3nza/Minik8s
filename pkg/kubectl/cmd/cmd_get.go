@@ -5,7 +5,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/config/apiserver"
@@ -68,6 +67,18 @@ func GetHandler(cmd *cobra.Command, args []string) {
 		GetReplicasetHandler(namespace, name)
 	case "hpa":
 		GetHpaHandler(namespace, name)
+	case "pv":
+		if name != "" && namespace != "" {
+			fmt.Println("[ERR] Too many arguments to get pv. Try -h for help.")
+			return
+		}
+		GetPVHandler(namespace)
+	case "pvc":
+		if name != "" && namespace != "" {
+			fmt.Println("[ERR] Too many arguments to get pvc. Try -h for help.")
+			return
+		}
+		GetPVCHandler(namespace)
 	default:
 		fmt.Println("[ERR] Wrong api kind. Available: pod, node, service, replicaset, hpa.")
 	}
@@ -156,21 +167,59 @@ func GetHpaHandler(namespace string, name string) {
 
 }
 
+func GetPVHandler(name string) {
+	uri := apiserver.API_server_prefix
+	pvs := []api_obj.PV{}
+	if name == "" {
+		fmt.Printf("[ERR/GetPVHandler] Empty pv name.\n")
+		return
+	}
+
+	uri += apiserver.API_get_pvs
+	err := network.GetRequestAndParse(uri, &pvs)
+	if err != nil {
+		fmt.Printf("[ERR/GetPVHandler] %v\n", err)
+		return
+	}
+
+	PrintPVHandler(pvs)
+}
+
+func GetPVCHandler(name string) {
+	uri := apiserver.API_server_prefix
+	pvcs := []api_obj.PVC{}
+	if name == "" {
+		fmt.Printf("[ERR/GetPVCHandler] Empty pvc name.\n")
+		return
+	}
+
+	uri += apiserver.API_get_pvcs
+	err := network.GetRequestAndParse(uri, &pvcs)
+	if err != nil {
+		fmt.Printf("[ERR/GetPVCHandler] %v\n", err)
+		return
+	}
+
+	PrintPVCHandler(pvcs)
+}
+
 func PrintPodHandler(pods []api_obj.Pod) {
 	//打印相关信息
-	layout := "2006-01-02 15:04:05"
+	// layout := "2006-01-02 15:04:05"
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"NAMESPACE", "NAME", "STATUS", "RESTARTS", "AGE"})
+	table.SetHeader([]string{"NAMESPACE", "NAME", "STATUS", "RESTARTS", "IP"})
 	for _, pod := range pods {
-		up_time, _ := time.Parse(layout, pod.PodStatus.CreateTime)
-		now_time := time.Now()
-		delta := now_time.Sub(up_time)
+		// up_time, _ := time.Parse(layout, pod.PodStatus.CreateTime)
+		// now_time := time.Now()
+		// delta := now_time.Sub(up_time)
 		table.Append([]string{
 			pod.MetaData.NameSpace,
 			pod.MetaData.Name,
 			pod.PodStatus.Phase,
 			strconv.Itoa(int(pod.PodStatus.Restarts)),
-			delta.String()})
+			// delta.String(),
+			pod.PodStatus.PodIP,
+		})
 	}
 	table.Render()
 }
@@ -211,4 +260,29 @@ func PrintReplicasetHandler(rps []api_obj.ReplicaSet) {
 
 func PrintHpaHandler() {
 
+}
+
+func PrintPVHandler(pvs []api_obj.PV) {
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"NAME", "SERVERIP", "PATH"})
+	for _, pv := range pvs {
+		table.Append([]string{
+			pv.Metadata.Name,
+			pv.Spec.Nfs.ServerIp,
+			pv.Spec.Nfs.Path,
+		})
+	}
+	table.Render()
+}
+
+func PrintPVCHandler(pvcs []api_obj.PVC) {
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"NAME", "BINDPV"})
+	for _, pvc := range pvcs {
+		table.Append([]string{
+			pvc.Metadata.Name,
+			pvc.Spec.BindPV,
+		})
+	}
+	table.Render()
 }

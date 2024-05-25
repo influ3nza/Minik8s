@@ -11,6 +11,7 @@ import (
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/etcd"
+	"minik8s/pkg/kubelet/util"
 	"minik8s/pkg/message"
 	"minik8s/pkg/network"
 	"minik8s/tools"
@@ -246,4 +247,38 @@ func (s *ApiServer) ReadServiceMark() int {
 	}
 
 	return ret
+}
+
+func (s *ApiServer) DynamicCreatePV(pvc *api_obj.PVC) error {
+	pv := &api_obj.PV{
+		Metadata: obj_inner.ObjectMeta{
+			Name:      "pv-" + pvc.Metadata.Name,
+			NameSpace: pvc.Metadata.NameSpace,
+			Labels:    pvc.Spec.Selector,
+		},
+		Spec: api_obj.PV_spec{
+			Nfs: api_obj.Nfs_bind{
+				Path:     "/" + pvc.Metadata.Name,
+				ServerIp: util.IpAddressMas,
+			},
+			AccessMode: api_obj.ReadWriteMany,
+		},
+	}
+
+	pv_str, err := json.Marshal(pv)
+	if err != nil {
+		fmt.Printf("[ERR/DynamicCreatePV] Failed to marshal data, %s.\n", err)
+		return err
+	}
+
+	uri := apiserver.API_server_prefix + apiserver.API_add_pv
+	_, err = network.PostRequest(uri, pv_str)
+	if err != nil {
+		fmt.Printf("[ERR/DynamicCreatePV] Failed to send POST request, %s.\n", err)
+		return err
+	}
+
+	pvc.Spec.BindPV = pv.Metadata.Name
+
+	return nil
 }

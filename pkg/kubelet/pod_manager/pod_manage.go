@@ -26,6 +26,7 @@ func AddPod(pod *api_obj.Pod) error {
 	ctx := namespaces.WithNamespace(context.Background(), pod.MetaData.NameSpace)
 
 	if pod.MetaData.Labels["func"] != "" {
+		fmt.Println(*pod)
 		fmt.Println("function ", pod.MetaData.Labels["func"], " Create")
 		id, err := container_manager.StartFuncContainer(client, pod.MetaData.NameSpace, pod.Spec.Containers[0].Image.Img, pod.MetaData.Name)
 		if err != nil {
