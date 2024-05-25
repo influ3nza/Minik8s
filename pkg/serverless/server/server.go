@@ -48,7 +48,7 @@ func (s *SL_server) MsgHandler(msg *message.Message) {
 	case message.FUNC_CREATE:
 		s.OnFunctionCreate(content)
 	case message.FUNC_EXEC:
-		s.OnFunctionCreate(content)
+		s.OnFunctionExec(content)
 	case message.WF_CREATE:
 		s.OnWorkflowExec(content)
 	case message.FUNC_DEL:

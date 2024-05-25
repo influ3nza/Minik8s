@@ -37,7 +37,7 @@ func CreateNewFunctionControllerInstance() *FunctionController {
 }
 
 func (fc *FunctionController) GetFunctionPodIps(f *api_obj.Function) ([]string, error) {
-	array := []string{}
+	var array []string
 	url := apiserver.API_server_prefix + apiserver.API_find_function_ip_prefix + f.Metadata.Name
 	err := network.GetRequestAndParse(url, &array)
 	if err != nil {
@@ -119,7 +119,7 @@ func (fc *FunctionController) MakePods(f *api_obj.Function) ([]string, error) {
 			return []string{}, fmt.Errorf("get Pod Ips Failed, %s", err.Error())
 		}
 
-		if len(res) < 3 {
+		if len(res) < 1 {
 			time.Sleep(2 * time.Second)
 		} else {
 			return res, nil
@@ -128,7 +128,9 @@ func (fc *FunctionController) MakePods(f *api_obj.Function) ([]string, error) {
 }
 
 func (fc *FunctionController) Schedule(funcName string, ips []string) string {
-
+	if len(ips) > 0 {
+		return ips[0]
+	}
 	return ""
 }
 
@@ -144,7 +146,7 @@ func (fc *FunctionController) TriggerFunction(f *api_obj.Function) (string, erro
 	}
 
 	param := []byte(f.Coeff)
-	fmt.Println(param)
+	fmt.Println(param, f.Coeff)
 
 	body := bytes.NewReader(param)
 	uri := "http://" + ip + ":8080"
@@ -156,18 +158,25 @@ func (fc *FunctionController) TriggerFunction(f *api_obj.Function) (string, erro
 
 	var result map[string]interface{}
 	decoder := json.NewDecoder(resp.Body)
-	_ = decoder.Decode(&result)
+	err = decoder.Decode(&result)
+	if err != nil {
+		fmt.Printf("[FunctionExec] Error in returning http, %v", err)
+	}
 	fmt.Println(result)
 	res, err := json.Marshal(result)
 	if err != nil {
 		return "", fmt.Errorf("marshal Result Failed %s", err.Error())
 	}
+
+	fmt.Println(string(res))
+
 	return string(res), nil
 }
 
 func (fc *FunctionController) DeleteFunction(f *api_obj.Function) error {
 	replicName := utils.RS_name_prefix + f.Metadata.Name
-	url := apiserver.API_server_prefix + apiserver.API_delete_replicaset_prefix + replicName
+	url := apiserver.API_server_prefix +
+		apiserver.API_delete_replicaset_prefix + apiserver.API_default_namespace + "/" + replicName
 	_, err := network.DelRequest(url)
 	if err != nil {
 		return fmt.Errorf("send Delete Rep Failed, %s", err.Error())

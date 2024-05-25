@@ -4,17 +4,21 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
+	"minik8s/pkg/apiserver/controller/utils"
 	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/etcd"
 	"minik8s/pkg/kubelet/util"
 	"minik8s/pkg/message"
 	"minik8s/pkg/network"
 	"minik8s/tools"
+
+	"github.com/gin-gonic/gin"
 )
 
 func (s *ApiServer) PodNeedRestart(pod api_obj.Pod) {
@@ -193,7 +197,9 @@ func (s *ApiServer) GetPodsOfFunction(funcName string) ([]string, error) {
 }
 
 func (s *ApiServer) U_ScaleReplicaSet(funcName string, offset int) error {
-	e_key := apiserver.ETCD_replicaset_prefix + funcName
+	e_key := apiserver.ETCD_replicaset_prefix +
+		apiserver.API_default_namespace + "/" + utils.RS_name_prefix + funcName
+	fmt.Printf("[U_ScaleRS] e_key: %s\n", e_key)
 	res, err := s.EtcdWrap.Get(e_key)
 	if err != nil {
 		fmt.Printf("[ERR/U_ScaleReplicaSet] Failed to get from etcd, %s.\n", err.Error())
@@ -209,6 +215,11 @@ func (s *ApiServer) U_ScaleReplicaSet(funcName string, offset int) error {
 	if err != nil {
 		fmt.Printf("[ERR/U_ScaleReplicaSet] Failed to unmarshal data, %s.\n", err.Error())
 		return err
+	}
+
+	//如果还没创建完毕，则不重复增加。用于冷启动。
+	if rs.Status.ReadyReplicas < rs.Spec.Replicas {
+		return nil
 	}
 
 	rs.Spec.Replicas += offset
@@ -289,6 +300,10 @@ func (s *ApiServer) RewriteMountPath(pod *api_obj.Pod) error {
 	//WARN:注意根据nfs，理应在node节点保存一张表格，记录每一个mount dir对应的nfs ip地址，
 	//但由于在这里只有一个nfs server，所以不保存表格，采用更简单的设计。
 
+	if len(pod.Spec.Volumes) == 0 {
+		return nil
+	}
+
 	//这里默认需要绑定pvc的pod只有一个volume
 	pvc_name := pod.Spec.Volumes[0].PVCName
 	if pvc_name == "" {
@@ -340,4 +355,11 @@ func (s *ApiServer) RewriteMountPath(pod *api_obj.Pod) error {
 	pod.Spec.Volumes[0].Path = tools.PV_mount_master_path + pv.Spec.Nfs.Path
 
 	return nil
+}
+
+func (s *ApiServer) DeleteRegistry(c *gin.Context) {
+	s.EtcdWrap.DeleteByPrefix("/registry")
+	c.JSON(http.StatusOK, gin.H{
+		"data": "Delete all success",
+	})
 }

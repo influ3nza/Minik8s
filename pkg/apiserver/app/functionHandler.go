@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/kubectl/api"
@@ -189,6 +190,8 @@ func (s *ApiServer) FindFunctionIp(c *gin.Context) {
 	}
 
 	pack, err := s.GetPodsOfFunction(name)
+	fmt.Printf("[handler/FindFunctionIp] Get ip: %s\n", pack)
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "[ERR/handler/FindFunctionIp] Failed to get pod ip, " + err.Error(),
@@ -207,13 +210,19 @@ func (s *ApiServer) FindFunctionIp(c *gin.Context) {
 		}
 	}
 
-	pack_str, err := json.Marshal(pack)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[ERR/handler/FindFunctionIp] Failed to marshal data, " + err.Error(),
-		})
-		return
+	pack_str := "["
+	for id, ip := range pack {
+		pack_str += "\"" + ip + "\""
+
+		//返回值以逗号隔开
+		if id < len(pack)-1 {
+			pack_str += ","
+		}
 	}
+
+	pack_str += "]"
+
+	fmt.Printf("[handler/FindFunctionIp] Parse: %s\n", pack_str)
 
 	//返回200
 	c.JSON(http.StatusOK, gin.H{

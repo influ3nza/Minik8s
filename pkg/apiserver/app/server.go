@@ -136,6 +136,8 @@ func (s *ApiServer) Bind() {
 
 	s.router.GET(apiserver.API_add_pv, s.AddPV)
 	s.router.DELETE(apiserver.API_delete_pv, s.DeletePV)
+
+	s.router.DELETE(apiserver.API_delete_registry, s.DeleteRegistry)
 }
 
 // 在进行测试/实际运行时，第2步调用此函数。默认端口为8080

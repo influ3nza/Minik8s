@@ -100,6 +100,8 @@ const (
 	API_delete_pvc_prefix string = "/pvc/delete/"
 	API_delete_pvc        string = "/pvc/delete/:name"
 	API_get_pvcs          string = "/pvc/getAll"
+
+	API_delete_registry string = "/deleteRegistry"
 )
 
 type ServerConfig struct {

@@ -96,7 +96,7 @@ func InitKubeletDefault() *Kubelet {
 	return &Kubelet{
 		ApiServerAddress: util.ApiServer,
 		Router:           router,
-		IpAddress:        util.IpAddressMas,
+		IpAddress:        util.IpAddressNode1,
 		Port:             int32(port),
 		Producer:         producer,
 		TotalCpu:         util.Cpu,
@@ -121,7 +121,7 @@ func InitKubelet(config util.KubeConfig) *Kubelet {
 }
 
 func (server *Kubelet) Run() {
-	// server.register()
+	server.register()
 	server.registerHandler()
 	go server.GetPodStatus()
 	err := server.Router.Run(fmt.Sprintf(":%d", server.Port))

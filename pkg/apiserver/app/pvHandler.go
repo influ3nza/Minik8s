@@ -117,7 +117,18 @@ func (s *ApiServer) DeletePV(c *gin.Context) {
 		return
 	}
 
-	//TODO:向node发送删除请求
+	//TODO:向所有node发送删除请求
+	for _, ip := range tools.NodesIpMap {
+		uri := ip + strconv.Itoa(int(kubelet.Port)) + kubelet
+		_, err := network.DelRequest(uri)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "[ERR/handler/DeletePV] Failed to send DEL request, " + err.Error(),
+			})
+			return
+		}
+	}
+
 	//返回200
 	c.JSON(http.StatusOK, gin.H{
 		"data": "Delete pv success.",
