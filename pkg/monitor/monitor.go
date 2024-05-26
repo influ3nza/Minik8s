@@ -63,7 +63,8 @@ func RegisterNode(node *api_obj.Node) error {
 
 func UnRegisterNode(hostname string) error {
 	key := "node-exporter-" + hostname
-	targetUrl := "http://192.168.1.13:8500/v1/agent/service/deregister" + key
+	targetUrl := "http://192.168.1.13:8500/v1/agent/service/deregister/" + key
+	fmt.Println(targetUrl)
 	payLoad := strings.NewReader("")
 	req, err := http.NewRequest(http.MethodPut, targetUrl, payLoad)
 	if err != nil {
@@ -124,7 +125,7 @@ func RegisterPod(pod *api_obj.Pod) error {
 		},
 	}
 
-	targetUrl := "https://192.168.1.13:8500/v1/agent/service/register"
+	targetUrl := "http://192.168.1.13:8500/v1/agent/service/register"
 	jsonCfg, err := json.Marshal(*config)
 	payLoad := strings.NewReader(string(jsonCfg))
 	req, err := http.NewRequest(http.MethodPut, targetUrl, payLoad)
