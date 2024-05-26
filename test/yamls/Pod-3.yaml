@@ -9,7 +9,7 @@ metaData:
 spec:
   containers:
     - image:
-        imgName: my-register.io:5000/ubuntu:latest
+        imgName: my-registry.io:5000/monitor:latest
         imgPullPolicy: Always
       name: testContainer-1
       entryPoint:
