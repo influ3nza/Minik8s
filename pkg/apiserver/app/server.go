@@ -133,6 +133,8 @@ func (s *ApiServer) Bind() {
 	s.router.GET(apiserver.API_exec_function, s.ExecFunction)
 	s.router.GET(apiserver.API_find_function_ip, s.FindFunctionIp)
 	s.router.GET(apiserver.API_get_function_res, s.GetFunctionRes)
+
+	s.router.DELETE(apiserver.API_delete_registry, s.DeleteRegistry)
 }
 
 // 在进行测试/实际运行时，第2步调用此函数。默认端口为8080

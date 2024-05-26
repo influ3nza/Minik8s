@@ -120,7 +120,7 @@ func (s *ApiServer) DeleteReplicaSet(c *gin.Context) {
 }
 
 func (s *ApiServer) GetReplicaSets(c *gin.Context) {
-	fmt.Printf("[replicasethandler/GetReplicaSets] Try to get ReplicaSets.\n")
+	// fmt.Printf("[replicasethandler/GetReplicaSets] Try to get ReplicaSets.\n")
 	key := apiserver.ETCD_replicaset_prefix
 	replicasets, err := s.EtcdWrap.GetByPrefix(key)
 	if err != nil {

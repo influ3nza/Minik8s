@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-var serverDns string = "my-register.io"
+var serverDns string = "my-registry.io"
 
 func IsRegistryStarted() bool {
 	cmd := exec.Command("nerdctl", "ps")
@@ -55,6 +55,7 @@ func StartRegistry() (string, error) {
 
 func CreateImage(function *api_obj.Function) error {
 	path := "/mydata/" + function.Metadata.UUID + "/" + function.Metadata.Name + "/"
+	fmt.Printf("[CreateImage] Path: %s.\n", path)
 	cmd := exec.Command("nerdctl", "build", "-t", function.Metadata.Name, path)
 	err := cmd.Run()
 	if err != nil {
@@ -68,8 +69,9 @@ func CreateImage(function *api_obj.Function) error {
 
 	imgName := serverDns + ":5000/" + function.Metadata.Name + ":latest"
 	cmd = exec.Command("nerdctl", "push", "--insecure-registry", imgName)
-	err = cmd.Run()
+	opt, err := cmd.CombinedOutput()
 	if err != nil {
+		fmt.Println("Opt is :", string(opt))
 		return fmt.Errorf("push Image Failed %s", err.Error())
 	}
 

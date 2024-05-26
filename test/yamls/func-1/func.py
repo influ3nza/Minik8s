@@ -3,4 +3,9 @@ def run(x, y):
     x = x - y
     y = y - x
     print(z)
-    return x, y, z
+    result = {
+        "x": x,
+        "y": y,
+        "z": z
+    }
+    return result

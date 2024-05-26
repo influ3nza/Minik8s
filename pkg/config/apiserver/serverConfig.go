@@ -90,6 +90,8 @@ const (
 	API_find_function_ip        string = "/function/findByIp/:name"
 	API_get_function_res_prefix string = "/function/getRes/"
 	API_get_function_res        string = "/function/getRes/:name"
+
+	API_delete_registry string = "/deleteRegistry"
 )
 
 type ServerConfig struct {

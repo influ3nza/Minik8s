@@ -4,16 +4,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
+	"minik8s/pkg/apiserver/controller/utils"
 	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/etcd"
 	"minik8s/pkg/message"
 	"minik8s/pkg/network"
 	"minik8s/tools"
+
+	"github.com/gin-gonic/gin"
 )
 
 func (s *ApiServer) PodNeedRestart(pod api_obj.Pod) {
@@ -192,7 +196,9 @@ func (s *ApiServer) GetPodsOfFunction(funcName string) ([]string, error) {
 }
 
 func (s *ApiServer) U_ScaleReplicaSet(funcName string, offset int) error {
-	e_key := apiserver.ETCD_replicaset_prefix + funcName
+	e_key := apiserver.ETCD_replicaset_prefix +
+		apiserver.API_default_namespace + "/" + utils.RS_name_prefix + funcName
+	fmt.Printf("[U_ScaleRS] e_key: %s\n", e_key)
 	res, err := s.EtcdWrap.Get(e_key)
 	if err != nil {
 		fmt.Printf("[ERR/U_ScaleReplicaSet] Failed to get from etcd, %s.\n", err.Error())
@@ -208,6 +214,11 @@ func (s *ApiServer) U_ScaleReplicaSet(funcName string, offset int) error {
 	if err != nil {
 		fmt.Printf("[ERR/U_ScaleReplicaSet] Failed to unmarshal data, %s.\n", err.Error())
 		return err
+	}
+
+	//如果还没创建完毕，则不重复增加。用于冷启动。
+	if rs.Status.ReadyReplicas < rs.Spec.Replicas {
+		return nil
 	}
 
 	rs.Spec.Replicas += offset
@@ -246,4 +257,11 @@ func (s *ApiServer) ReadServiceMark() int {
 	}
 
 	return ret
+}
+
+func (s *ApiServer) DeleteRegistry(c *gin.Context) {
+	s.EtcdWrap.DeleteByPrefix("/registry")
+	c.JSON(http.StatusOK, gin.H{
+		"data": "Delete all success",
+	})
 }
