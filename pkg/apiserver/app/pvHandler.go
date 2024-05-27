@@ -151,7 +151,7 @@ func (s *ApiServer) DeletePV(c *gin.Context) {
 
 	//向所有node发送删除请求
 	for _, ip := range tools.NodesIpMap {
-		uri := ip + strconv.Itoa(int(kubelet.Port)) + kubelet.UnmountNfs_prefix + path
+		uri := ip + strconv.Itoa(int(kubelet.Port)) + kubelet.UnmountNfs_prefix + path[1:]
 		_, err := network.DelRequest(uri)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -160,6 +160,9 @@ func (s *ApiServer) DeletePV(c *gin.Context) {
 			return
 		}
 	}
+
+	//本地删除文件夹
+	_, _ = exec.Command("rm", "-r", tools.PV_mount_master_path+path).CombinedOutput()
 
 	//返回200
 	c.JSON(http.StatusOK, gin.H{

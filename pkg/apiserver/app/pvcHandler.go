@@ -109,7 +109,6 @@ func (s *ApiServer) AddPVC(c *gin.Context) {
 }
 
 func (s *ApiServer) DeletePVC(c *gin.Context) {
-	// TODO
 	name := c.Param("name")
 	if name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{

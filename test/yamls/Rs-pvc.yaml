@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: replicaset
+metaData:
+  labels:
+    app: test
+  name: rs-pvc
+  nameSpace: q
+spec:
+  replicas: 3
+  selector:
+    app: rs-test
+  template:
+    metaData:
+      name: rs-pod
+      labels:
+        app: rs-test
+    spec:
+      containers:
+        - image: 
+            imgName: docker.io/library/ubuntu:latest
+            imgPullPolicy: Always
+          name: testContainer-1
+          entryPoint:
+            workingDir: /
+          ports:
+            - containerPort: 80
+              hostIP: 0.0.0.0
+              hostPort: 0
+              name: no name
+              protocol: TCP
+          env: 
+            - name: www
+              value: sdg
+          volumeMounts:
+            - mountPath: /home
+              subPath: config
+              name: testMount
+              readOnly: false
+          resources: 
+            limits:
+              memory: 100MiB
+      volumes:
+        - name: testMount
+          type: ttype
+          pvcName: pvc-1 

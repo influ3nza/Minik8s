@@ -352,7 +352,7 @@ func (s *ApiServer) RewriteMountPath(pod *api_obj.Pod) error {
 		return err
 	}
 
-	pod.Spec.Volumes[0].Path = tools.PV_mount_master_path + pv.Spec.Nfs.Path
+	pod.Spec.Volumes[0].Path = tools.PV_mount_node_path + pv.Spec.Nfs.Path
 
 	return nil
 }
