@@ -49,16 +49,19 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 	createOpts = append(createOpts, oci.WithHostname(metaName))
 
 	//配置容器资源
-	limitOpts, err := ParseResources(container.Resources)
-	if err == nil {
-		fmt.Println("append opts")
-		createOpts = append(createOpts, limitOpts...)
+	if container.Resources.Limits != nil && container.Resources.Requests != nil {
+		limitOpts, err := ParseResources(container.Resources)
+		if err == nil {
+			fmt.Println("append opts")
+			createOpts = append(createOpts, limitOpts...)
+		}
 	}
 
 	// 配置容器环境
 	if container.Env != nil {
 		envs := convertEnv(container)
 		envOci := oci.WithEnv(envs)
+		fmt.Println("container envs ", envs)
 		createOpts = append(createOpts, envOci)
 	}
 
@@ -114,7 +117,7 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 	// 配置容器namespace pid net ipc uts /proc/%pid/ns/
 	if linuxNamespace != "" {
 		var linuxNamespaces = map[string]string{
-			"pid":     linuxNamespace + "pid",
+			// "pid":     linuxNamespace + "pid",
 			"network": linuxNamespace + "net",
 			"ipc":     linuxNamespace + "ipc",
 			"uts":     linuxNamespace + "uts",

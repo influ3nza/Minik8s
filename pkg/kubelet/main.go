@@ -11,6 +11,7 @@ import (
 	"minik8s/pkg/kubelet/pod_manager"
 	"minik8s/pkg/kubelet/util"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -22,11 +23,11 @@ var pod = api_obj.Pod{
 	Kind:       "pod",
 	MetaData: obj_inner.ObjectMeta{
 		Name:      "testpod",
-		NameSpace: "qwerty",
+		NameSpace: "default",
 		Labels: map[string]string{
 			"testlabel": "podlabel",
 		},
-		Annotations: nil,
+		Annotations: map[string]string{},
 		UUID:        "",
 	},
 	Spec: api_obj.PodSpec{
@@ -34,7 +35,7 @@ var pod = api_obj.Pod{
 			{
 				Name: "testubuntu",
 				Image: obj_inner.Image{
-					Img:           "docker.io/library/mysql:latest",
+					Img:           "docker.io/library/ubuntu:latest",
 					ImgPullPolicy: "Always",
 				},
 				EntryPoint: obj_inner.EntryPoint{
@@ -66,7 +67,7 @@ var pod = api_obj.Pod{
 				Resources: obj_inner.ResourceRequirements{
 					Limits: map[string]obj_inner.Quantity{
 						obj_inner.CPU_LIMIT:    obj_inner.Quantity("0.5"),
-						obj_inner.MEMORY_LIMIT: obj_inner.Quantity("200MiB"),
+						obj_inner.MEMORY_LIMIT: obj_inner.Quantity("500MiB"),
 					},
 					Requests: map[string]obj_inner.Quantity{
 						obj_inner.CPU_REQUEST:    obj_inner.Quantity("0.25"),
@@ -93,8 +94,8 @@ var pod = api_obj.Pod{
 				},
 				Env: []obj_inner.EnvVar{
 					{
-						Name:  "env2",
-						Value: "env2Value",
+						Name:  "MYSQL_ROOT_PASSWORD",
+						Value: "123456",
 					},
 				},
 				VolumeMounts: []obj_inner.VolumeMount{
@@ -108,7 +109,7 @@ var pod = api_obj.Pod{
 				Resources: obj_inner.ResourceRequirements{
 					Limits: map[string]obj_inner.Quantity{
 						obj_inner.CPU_LIMIT:    obj_inner.Quantity("0.5"),
-						obj_inner.MEMORY_LIMIT: obj_inner.Quantity("200MiB"),
+						obj_inner.MEMORY_LIMIT: obj_inner.Quantity("500MiB"),
 					},
 					Requests: map[string]obj_inner.Quantity{
 						obj_inner.CPU_REQUEST:    obj_inner.Quantity("0.25"),
@@ -287,47 +288,51 @@ func testCreateMonitor() {
 
 	util.RegisterPod(pod.MetaData.Name, pod.MetaData.NameSpace)
 	fmt.Println("Register success, ", pod.MetaData.Labels["pause"])
-
-	wg.Add(2)
+	str := make(chan string)
+	//wg.Add(2)
 	go func() {
 		for {
 			if util.Lock(pod.MetaData.Name, pod.MetaData.NameSpace) {
 				res := pod_manager.MonitorPodContainers(pod.MetaData.Name, pod.MetaData.NameSpace)
-				fmt.Println("Monitor Pod is ", res)
+				// fmt.Println("Monitor Pod is ", res)
+				if strings.Contains(res, "stopped") {
+					pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace, pod.MetaData.Annotations["pause"])
+				}
 				util.UnLock(pod.MetaData.Name, pod.MetaData.NameSpace)
 			} else {
 				break
 			}
 			time.Sleep(2 * time.Second)
 		}
-		wg.Done()
+		// wg.Done()
 	}()
 
-	go func() {
-		time.Sleep(4 * time.Second)
-		res := pod_manager.GetPodMetrics(pod.MetaData.Name, pod.MetaData.NameSpace)
-		if res != nil {
-			id1 := res.ContainerMetrics[0].Name
-			force, err_ := util.RmForce(pod.MetaData.NameSpace, id1)
-			if err_ != nil {
-				fmt.Println("Force Err ", force)
-				return
-			}
-		}
-		time.Sleep(4 * time.Second)
-		for {
-			if ok := util.UnRegisterPod(pod.MetaData.Name, pod.MetaData.NameSpace); ok == 0 {
-				fmt.Println("UnRegister Success")
-				break
-			} else if ok == 2 {
-				fmt.Println("UnRegister NonExist")
-			}
-		}
-		//err = pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace, pod.MetaData.Labels["pause"])
-		//if err != nil {
-		//	fmt.Println("Main Failed At line 268 ", err.Error())
-		//}
-		wg.Done()
-	}()
-	wg.Wait()
+	//go func() {
+	//	time.Sleep(4 * time.Second)
+	//	pod_manager.GetPodMetrics(pod.MetaData.Name, pod.MetaData.NameSpace)
+	//if res != nil {
+	//		id1 := res.ContainerMetrics[0].Name
+	//		force, err_ := util.RmForce(pod.MetaData.NameSpace, id1)
+	//		if err_ != nil {
+	//			fmt.Println("Force Err ", force)
+	//			return
+	//		}
+	//}
+	//time.Sleep(4 * time.Second)
+	//for {
+	//		if ok := util.UnRegisterPod(pod.MetaData.Name, pod.MetaData.NameSpace); ok == 0 {
+	//			fmt.Println("UnRegister Success")
+	//			break
+	//		} else if ok == 2 {
+	//			fmt.Println("UnRegister NonExist")
+	//		}
+	//}
+	//err = pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace, pod.MetaData.Labels["pause"])
+	//if err != nil {
+	//		fmt.Println("Main Failed At line 268 ", err.Error())
+	//}
+	// wg.Done()
+	// }()
+	// wg.Wait()
+	<-str
 }
