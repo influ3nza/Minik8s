@@ -34,7 +34,7 @@ var pod = api_obj.Pod{
 			{
 				Name: "testubuntu",
 				Image: obj_inner.Image{
-					Img:           "docker.io/library/nginx:latest",
+					Img:           "docker.io/library/mysql:latest",
 					ImgPullPolicy: "Always",
 				},
 				EntryPoint: obj_inner.EntryPoint{
@@ -51,8 +51,8 @@ var pod = api_obj.Pod{
 				},
 				Env: []obj_inner.EnvVar{
 					{
-						Name:  "env1",
-						Value: "env1Value",
+						Name:  "MYSQL_ROOT_PASSWORD",
+						Value: "123456",
 					},
 				},
 				VolumeMounts: []obj_inner.VolumeMount{
@@ -131,8 +131,8 @@ var pod = api_obj.Pod{
 }
 
 func main() {
-	// testCreateMonitor()
-	testFunc()
+	testCreateMonitor()
+	// testFunc()
 }
 
 func testFunc() {
@@ -304,16 +304,16 @@ func testCreateMonitor() {
 	}()
 
 	go func() {
-		//time.Sleep(4 * time.Second)
-		//res := pod_manager.GetPodMetrics(pod.MetaData.Name, pod.MetaData.NameSpace)
-		//if res != nil {
-		//	id1 := res.ContainerMetrics[0].Name
-		//	force, err_ := util.RmForce(pod.MetaData.NameSpace, id1)
-		//	if err_ != nil {
-		//		fmt.Println("Force Err ", force)
-		//		return
-		//	}
-		//}
+		time.Sleep(4 * time.Second)
+		res := pod_manager.GetPodMetrics(pod.MetaData.Name, pod.MetaData.NameSpace)
+		if res != nil {
+			id1 := res.ContainerMetrics[0].Name
+			force, err_ := util.RmForce(pod.MetaData.NameSpace, id1)
+			if err_ != nil {
+				fmt.Println("Force Err ", force)
+				return
+			}
+		}
 		time.Sleep(4 * time.Second)
 		for {
 			if ok := util.UnRegisterPod(pod.MetaData.Name, pod.MetaData.NameSpace); ok == 0 {
