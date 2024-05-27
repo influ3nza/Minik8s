@@ -32,9 +32,10 @@ type EnvVar struct {
 }
 
 type Volume struct {
-	Name string `json:"name" yaml:"name"`
-	Type string `json:"type" yaml:"type"`
-	Path string `json:"path" yaml:"path"`
+	Name    string `json:"name" yaml:"name"`
+	Type    string `json:"type" yaml:"type"`
+	Path    string `json:"path" yaml:"path"`
+	PVCName string `json:"pvcName" yaml:"pvcName"`
 }
 
 type VolumeMount struct {
