@@ -21,6 +21,8 @@ var (
 	RecordMutex sync.RWMutex
 )
 
+//-----------------在trigger后调用----------------------//
+
 func (fc *FunctionController) UpdateFunction(f *api_obj.Function) {
 	// 获取写锁以防止并发写入
 	RecordMutex.Lock()
@@ -39,6 +41,8 @@ func (fc *FunctionController) UpdateFunction(f *api_obj.Function) {
 		RecordMap[f.Metadata.Name].CallCount += 26 - 2*RecordMap[f.Metadata.Name].Replicas
 	}
 }
+
+//-------------------------------以下是协程的内容----------------------------------//
 
 func (fc *FunctionController) watch() {
 	// 获取写锁以防止并发写入
