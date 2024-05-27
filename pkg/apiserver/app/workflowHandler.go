@@ -157,3 +157,59 @@ func (s *ApiServer) DeleteWorkflow(c *gin.Context) {
 func (s *ApiServer) ExecWorkflow(c *gin.Context) {
 	//TODO
 }
+
+func (s *ApiServer) CheckWorkflow(c *gin.Context) {
+	wf := &api_obj.Workflow{}
+	err := c.ShouldBind(wf)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/apiserver/CheckWorkflow] Failed to parse data.",
+		})
+		return
+	}
+
+	funcMap := make(map[string]api_obj.Function)
+	for _, node := range wf.Spec.Nodes {
+		if node.Type == api_obj.WF_Fork {
+			continue
+		}
+
+		e_key := apiserver.ETCD_function_prefix + node.FuncSpec.Name
+		res, err := s.EtcdWrap.Get(e_key)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "[ERR/apiserver/CheckWorkflow] Failed to get from etcd, " + err.Error(),
+			})
+			return
+		}
+		if len(res) != 1 {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "[ERR/apiserver/CheckWorkflow] Found zero or more than one function.",
+			})
+			return
+		}
+
+		f := &api_obj.Function{}
+		err = json.Unmarshal([]byte(res[0].Value), f)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "[ERR/apiserver/CheckWorkflow] Failed to unmarshal data, " + err.Error(),
+			})
+			return
+		}
+
+		funcMap[node.FuncSpec.Name] = *f
+	}
+
+	map_str, err := json.Marshal(funcMap)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/apiserver/CheckWorkflow] Failed to marshal data, " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": map_str,
+	})
+}

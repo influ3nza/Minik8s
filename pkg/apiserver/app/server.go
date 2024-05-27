@@ -126,6 +126,7 @@ func (s *ApiServer) Bind() {
 	s.router.GET(apiserver.API_exec_workflow, s.ExecWorkflow)
 	s.router.POST(apiserver.API_add_workflow, s.AddWorkflow)
 	s.router.GET(apiserver.API_get_workflow, s.GetWorkflow)
+	s.router.GET(apiserver.API_check_workflow, )
 
 	s.router.GET(apiserver.API_get_function) //TODO
 	s.router.POST(apiserver.API_add_function, s.AddFunction)

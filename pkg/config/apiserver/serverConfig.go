@@ -78,6 +78,7 @@ const (
 	API_delete_workflow        string = "/workflows/delete/:namespace/:name"
 	API_exec_workflow_prefix   string = "/workflows/exec/"
 	API_exec_workflow          string = "/worlflows/exec/:name"
+	API_check_workflow         string = "/workflow/check"
 
 	API_get_function_prefix     string = "/functions/"
 	API_get_function            string = "/functions/:name"

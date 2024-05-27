@@ -13,6 +13,11 @@ const (
 )
 
 const (
+	WF_ByNum string = "Num"
+	WF_ByStr string = "Str"
+)
+
+const (
 	WF_ByNumEqual    CompareType = "NumE"
 	WF_ByNumGreater  CompareType = "NumG"
 	WF_ByNumLess     CompareType = "NumL"

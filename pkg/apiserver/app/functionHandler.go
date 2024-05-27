@@ -77,7 +77,6 @@ func (s *ApiServer) AddFunction(c *gin.Context) {
 	}
 	defer file.Close()
 
-	// 2. Write the []byte data to the file
 	_, err = file.Write(fw.Content)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

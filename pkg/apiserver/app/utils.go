@@ -172,11 +172,24 @@ func (s *ApiServer) RefreshNodeIp() error {
 func (s *ApiServer) GetPodsOfFunction(funcName string) ([]string, error) {
 	//搜索所有pod，找出function所在的所有pod的ip地址。
 	//所有是function的pod都会在label中有func: function_name的记录。
-	pack := []string{}
-	e_key := apiserver.ETCD_pod_prefix
-	res, err := s.EtcdWrap.GetByPrefix(e_key)
+
+	//先检查是否存在这个函数，如果不存在就直接返回错误。
+	e_key := apiserver.ETCD_function_prefix + funcName
+	res, err := s.EtcdWrap.Get(e_key)
 	if err != nil {
-		fmt.Printf("[ERR/GetPodsOfFunction] Failed to get from etcd, %v", err)
+		fmt.Printf("[ERR/GetPodsOfFunction] Failed to get from etcd, %v\n", err)
+		return []string{}, nil
+	}
+	if len(res) != 1 {
+		fmt.Printf("[ERR/GetPodsOfFunction] Function bad definition.\n")
+		return []string{}, errors.New("defined zero or more than one func")
+	}
+
+	pack := []string{}
+	e_key = apiserver.ETCD_pod_prefix
+	res, err = s.EtcdWrap.GetByPrefix(e_key)
+	if err != nil {
+		fmt.Printf("[ERR/GetPodsOfFunction] Failed to get from etcd, %v\n", err)
 		return pack, nil
 	}
 
@@ -184,7 +197,7 @@ func (s *ApiServer) GetPodsOfFunction(funcName string) ([]string, error) {
 		pod := &api_obj.Pod{}
 		err := json.Unmarshal([]byte(kv.Value), pod)
 		if err != nil {
-			fmt.Printf("[ERR/GetPodsOfFunction] Failed to unmarshal data, %v", err)
+			fmt.Printf("[ERR/GetPodsOfFunction] Failed to unmarshal data, %v\n", err)
 			return []string{}, nil
 		}
 		if pod.MetaData.Labels["func"] == funcName && pod.PodStatus.Phase == obj_inner.Running {
