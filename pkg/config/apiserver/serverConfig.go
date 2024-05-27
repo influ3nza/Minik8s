@@ -91,7 +91,13 @@ const (
 	API_get_function_res_prefix string = "/function/getRes/"
 	API_get_function_res        string = "/function/getRes/:name"
 
-	API_delete_registry string = "/deleteRegistry"
+	API_add_pv           string = "/pv/add"
+	API_delete_pv_prefix string = "/pv/delete/"
+	API_delete_pv        string = "/pv/delete/:name"
+
+	API_add_pvc           string = "/pvc/add"
+	API_delete_pvc_prefix string = "/pvc/delete/"
+	API_delete_pvc        string = "/pvc/delete/:name"
 )
 
 type ServerConfig struct {
