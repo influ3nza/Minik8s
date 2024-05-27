@@ -79,6 +79,8 @@ func (s *SL_server) OnFunctionExec(content string) {
 		return
 	}
 	s.FunctionController.TriggerFunction(f)
+	s.FunctionController.UpdateFunction(f)
+
 }
 
 func (s *SL_server) OnFunctionDel(content string) {
