@@ -332,10 +332,11 @@ func (server *Kubelet) MountNfs(c *gin.Context) {
 	}
 
 	//准备挂载
-	dirPath := tools.PV_mount_master_path + pv.Spec.Nfs.Path
+	masDirPath := tools.PV_mount_master_path + pv.Spec.Nfs.Path
+	dirPath := tools.PV_mount_node_path + pv.Spec.Nfs.Path
 	_, _ = exec.Command("mkdir", dirPath).CombinedOutput()
 
-	args := []string{pv.Spec.Nfs.ServerIp + ":" + dirPath, dirPath}
+	args := []string{pv.Spec.Nfs.ServerIp + ":" + masDirPath, dirPath}
 	fmt.Println("Using args, ", args)
 	_, err = exec.Command("mount", args...).CombinedOutput()
 	if err != nil {
@@ -359,7 +360,7 @@ func (server *Kubelet) UnmountNfs(c *gin.Context) {
 		return
 	}
 
-	dirPath := tools.PV_mount_master_path + "/" + path
+	dirPath := tools.PV_mount_node_path + "/" + path
 	_, err := exec.Command("umount", dirPath).CombinedOutput()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
