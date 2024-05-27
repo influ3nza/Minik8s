@@ -208,30 +208,30 @@ func (s *ApiServer) GetPodsOfFunction(funcName string) ([]string, error) {
 	return pack, nil
 }
 
-func (s *ApiServer) U_ScaleReplicaSet(funcName string, offset int) error {
+func (s *ApiServer) U_ScaleReplicaSet(funcName string, offset int) (int, error) {
 	e_key := apiserver.ETCD_replicaset_prefix +
 		apiserver.API_default_namespace + "/" + utils.RS_name_prefix + funcName
 	fmt.Printf("[U_ScaleRS] e_key: %s\n", e_key)
 	res, err := s.EtcdWrap.Get(e_key)
 	if err != nil {
 		fmt.Printf("[ERR/U_ScaleReplicaSet] Failed to get from etcd, %s.\n", err.Error())
-		return err
+		return 0, err
 	}
 	if len(res) != 1 {
 		fmt.Printf("[ERR/U_ScaleReplicaSet] Found zero or more than one rs.\n")
-		return errors.New("found zero or more than one rs")
+		return 0, errors.New("found zero or more than one rs")
 	}
 
 	rs := &api_obj.ReplicaSet{}
 	err = json.Unmarshal([]byte(res[0].Value), rs)
 	if err != nil {
 		fmt.Printf("[ERR/U_ScaleReplicaSet] Failed to unmarshal data, %s.\n", err.Error())
-		return err
+		return 0, err
 	}
 
 	//如果还没创建完毕，则不重复增加。用于冷启动。
 	if rs.Status.ReadyReplicas < rs.Spec.Replicas {
-		return nil
+		return rs.Spec.Replicas, nil
 	}
 
 	rs.Spec.Replicas += offset
@@ -245,16 +245,16 @@ func (s *ApiServer) U_ScaleReplicaSet(funcName string, offset int) error {
 	rs_str, err := json.Marshal(rs)
 	if err != nil {
 		fmt.Printf("[ERR/U_ScaleReplicaSet] Failed to marshal data, %s.\n", err.Error())
-		return err
+		return 0, err
 	}
 
 	err = s.EtcdWrap.Put(e_key, rs_str)
 	if err != nil {
 		fmt.Printf("[ERR/U_ScaleReplicaSet] Failed to put into etcd, %s.\n", err.Error())
-		return err
+		return 0, err
 	}
 
-	return nil
+	return rs.Spec.Replicas, nil
 }
 
 func (s *ApiServer) ReadServiceMark() int {

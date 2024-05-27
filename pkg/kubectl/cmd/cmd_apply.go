@@ -177,6 +177,21 @@ func ApplyHandler(cmd *cobra.Command, args []string) {
 					return
 				}
 			}
+		case "workflow":
+			{
+				var wf = &api_obj.Workflow{}
+				err = json.Unmarshal(fileToJson, wf)
+				if err != nil {
+					fmt.Printf("[ERR] Cannot parse file to wf, err: %s\n", err.Error())
+					return
+				}
+
+				err = api.SendObjectTo(fileToJson, "workflow")
+				if err != nil {
+					fmt.Printf("[ERR] Cannot send wf to server, err: %s\n", err.Error())
+					return
+				}
+			}
 		}
 	}
 }

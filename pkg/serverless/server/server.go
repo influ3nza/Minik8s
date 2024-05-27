@@ -49,7 +49,7 @@ func (s *SL_server) MsgHandler(msg *message.Message) {
 		s.OnFunctionCreate(content)
 	case message.FUNC_EXEC:
 		s.OnFunctionExec(content)
-	case message.WF_CREATE:
+	case message.WF_EXEC:
 		s.OnWorkflowExec(content)
 	case message.FUNC_DEL:
 		s.OnFunctionDel(content)
@@ -92,12 +92,14 @@ func (s *SL_server) OnFunctionDel(content string) {
 }
 
 func (s *SL_server) OnWorkflowExec(content string) {
-	f := &api_obj.Workflow{}
-	err := json.Unmarshal([]byte(content), f)
+	wf := &api_obj.Workflow{}
+	err := json.Unmarshal([]byte(content), wf)
 	if err != nil {
 		fmt.Printf("[ERR/serverless/OnFunctionExec] Failed to unmarshal data.\n")
 		return
 	}
+
+	s.WorkflowController.ExecuteWorkflow(*wf, s.FunctionController)
 }
 
 func (s *SL_server) Run() {

@@ -77,7 +77,7 @@ const (
 	API_delete_workflow_prefix string = "/workflows/delete/"
 	API_delete_workflow        string = "/workflows/delete/:namespace/:name"
 	API_exec_workflow_prefix   string = "/workflows/exec/"
-	API_exec_workflow          string = "/worlflows/exec/:name"
+	API_exec_workflow          string = "/workflows/exec/:name"
 	API_check_workflow         string = "/workflow/check"
 
 	API_get_function_prefix     string = "/functions/"
@@ -95,10 +95,14 @@ const (
 	API_add_pv           string = "/pv/add"
 	API_delete_pv_prefix string = "/pv/delete/"
 	API_delete_pv        string = "/pv/delete/:name"
+	API_get_pvs          string = "/pv/getAll"
 
 	API_add_pvc           string = "/pvc/add"
 	API_delete_pvc_prefix string = "/pvc/delete/"
 	API_delete_pvc        string = "/pvc/delete/:name"
+	API_get_pvcs          string = "/pvc/getAll"
+
+	API_delete_registry string = "/deleteRegistry"
 )
 
 type ServerConfig struct {

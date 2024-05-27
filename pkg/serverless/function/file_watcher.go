@@ -2,10 +2,11 @@ package function
 
 import (
 	"fmt"
-	"github.com/fsnotify/fsnotify"
 	"log"
 	"os"
 	"sync"
+
+	"github.com/fsnotify/fsnotify"
 )
 
 type FileWatcher struct {
@@ -13,7 +14,7 @@ type FileWatcher struct {
 	Mutex   sync.Mutex
 }
 
-var Watcher *FileWatcher
+var Watcher *FileWatcher = &FileWatcher{}
 
 func init() {
 	watcher, err := fsnotify.NewWatcher()

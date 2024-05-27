@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/config/apiserver"
+	"minik8s/pkg/message"
 	"minik8s/tools"
 	"net/http"
 
@@ -24,9 +25,8 @@ func (s *ApiServer) AddWorkflow(c *gin.Context) {
 	}
 
 	wf_name := wf.MetaData.Name
-	wf_namespace := wf.MetaData.NameSpace
 
-	if wf_name == "" || wf_namespace == "" {
+	if wf_name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "[ERR/apiserver/AddWorkflow] Empty workflow name or namespace",
 		})
@@ -34,7 +34,7 @@ func (s *ApiServer) AddWorkflow(c *gin.Context) {
 	}
 
 	//查找是否已经存在相同的workflow
-	e_key := apiserver.ETCD_workflow_prefix + wf_namespace + "/" + wf_name
+	e_key := apiserver.ETCD_workflow_prefix + wf_name
 	res, err := s.EtcdWrap.Get(e_key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -155,7 +155,74 @@ func (s *ApiServer) DeleteWorkflow(c *gin.Context) {
 }
 
 func (s *ApiServer) ExecWorkflow(c *gin.Context) {
-	//TODO
+	name := c.Param("name")
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/apiserver/ExecWorkflow] Empty workflow name.",
+		})
+		return
+	}
+
+	var requestBody map[string]interface{}
+	if err := c.ShouldBindJSON(&requestBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/apiserver/ExecWorkflow]" + err.Error(),
+		})
+		return
+	}
+
+	req_str, err := json.Marshal(requestBody)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/apiserver/ExecWorkflow]" + err.Error(),
+		})
+		return
+	}
+
+	e_key := apiserver.ETCD_workflow_prefix + name
+	res, err := s.EtcdWrap.Get(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/apiserver/ExecWorkflow] Failed to get from etcd, " + err.Error(),
+		})
+		return
+	}
+
+	if len(res) != 1 {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/apiserver/ExecWorkflow] Found zero or more than one wf.",
+		})
+		return
+	}
+
+	wf := &api_obj.Workflow{}
+	err = json.Unmarshal([]byte(res[0].Value), wf)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/apiserver/ExecWorkflow] Failed to unmarshal data, " + err.Error(),
+		})
+		return
+	}
+
+	wf.Spec.StartCoeff = string(req_str)
+
+	wf_str, err := json.Marshal(wf)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/apiserver/ExecWorkflow] Failed to marshal data, " + err.Error(),
+		})
+		return
+	}
+
+	s_msg := &message.Message{
+		Type:    message.WF_EXEC,
+		Content: string(wf_str),
+	}
+	s.Producer.Produce(message.TOPIC_Serverless, s_msg)
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": "Sent exec request.",
+	})
 }
 
 func (s *ApiServer) CheckWorkflow(c *gin.Context) {
@@ -163,10 +230,12 @@ func (s *ApiServer) CheckWorkflow(c *gin.Context) {
 	err := c.ShouldBind(wf)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[ERR/apiserver/CheckWorkflow] Failed to parse data.",
+			"error": "[ERR/apiserver/CheckWorkflow] Failed to parse data, " + err.Error(),
 		})
 		return
 	}
+
+	fmt.Printf("[apiserver/CheckWorkflow] %v\n", wf)
 
 	funcMap := make(map[string]api_obj.Function)
 	for _, node := range wf.Spec.Nodes {
@@ -199,6 +268,7 @@ func (s *ApiServer) CheckWorkflow(c *gin.Context) {
 		}
 
 		funcMap[node.FuncSpec.Name] = *f
+		fmt.Println(node.FuncSpec.Name)
 	}
 
 	map_str, err := json.Marshal(funcMap)
@@ -210,6 +280,6 @@ func (s *ApiServer) CheckWorkflow(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"data": map_str,
+		"data": string(map_str),
 	})
 }

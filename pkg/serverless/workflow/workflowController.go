@@ -53,6 +53,7 @@ func (wfc *WorkflowController) ExecuteWorkflow(wf api_obj.Workflow, fc *function
 			if err != nil {
 				fmt.Printf("[ERR/WorkflowController] Failed to execute func, %v", err)
 			}
+			pos = node.FuncSpec.Next
 		case api_obj.WF_Fork:
 			var err error = nil
 			pos, err = wfc.DecideFork(coeff, node)
@@ -68,9 +69,15 @@ func (wfc *WorkflowController) CheckNodeFunc(wf api_obj.Workflow) (map[string]ap
 	//检查workflow调用的函数是否都有pod实例。如果没有需要冷启动。
 	funcMap := make(map[string]api_obj.Function)
 	uri := apiserver.API_server_prefix + apiserver.API_check_workflow
-	err := network.GetRequestAndParse(uri, &funcMap)
+	wf_str, err := json.Marshal(wf)
 	if err != nil {
-		fmt.Printf("[ERR/CheckNodeFunc] Failed to send GET request.\n")
+		fmt.Printf("[CheckNodeFunc] Failed to marshal data.\n")
+		return funcMap, false
+	}
+
+	err = network.PostRequestAndParse(uri, wf_str, &funcMap)
+	if err != nil {
+		fmt.Printf("[ERR/CheckNodeFunc] Failed to send POST request, %s\n", err.Error())
 		return funcMap, false
 	}
 
@@ -79,13 +86,19 @@ func (wfc *WorkflowController) CheckNodeFunc(wf api_obj.Workflow) (map[string]ap
 
 func (wfc *WorkflowController) DecideFork(coeff string, node api_obj.WorkflowNode) (string, error) {
 	//比较
-	coeffMap := make(map[string]string)
+	coeffMap := make(map[string]interface{})
 	err := json.Unmarshal([]byte(coeff), &coeffMap)
 	if err != nil {
 		return "", err
 	}
 
 	for _, spec := range node.ForkSpecs {
+		fmt.Printf("[FORK] %s\n", spec.CompareBy)
+		if spec.CompareBy == api_obj.WF_AllPass {
+			return spec.Next, nil
+		}
+
+		// 先检查default
 		v := coeffMap[spec.Variable]
 		if wfc.DoCompare(v, spec.CompareBy, spec.CompareTo) {
 			return spec.Next, nil
@@ -101,18 +114,25 @@ func (wfc *WorkflowController) DoFunc(coeff string, f api_obj.Function, fc *func
 	return res, err
 }
 
-func (wfc *WorkflowController) DoCompare(v string, by api_obj.CompareType, to string) bool {
-	v_int := 0
-	t_int := 0
+func (wfc *WorkflowController) DoCompare(v interface{}, by api_obj.CompareType, to string) bool {
+	var v_num float64
+	var t_int float64
 	var err error = nil
 	if strings.Count(string(by), api_obj.WF_ByNum) > 0 {
-		v_int, err = strconv.Atoi(v)
-		if err != nil {
-			fmt.Printf("[ERR/DoCompare] v is not a number!\n")
-			return false
+		switch value := v.(type) {
+		case int:
+			v_num = float64(value)
+		case float64:
+			v_num = value
+		case string:
+			v_num, err = strconv.ParseFloat(value, 64)
+			if err != nil {
+				fmt.Printf("[ERR/DoCompare] v is not a number!\n")
+				return false
+			}
 		}
 
-		t_int, err = strconv.Atoi(to)
+		t_int, err = strconv.ParseFloat(to, 64)
 		if err != nil {
 			fmt.Printf("[ERR/DoCompare] t is not a number!\n")
 			return false
@@ -121,15 +141,15 @@ func (wfc *WorkflowController) DoCompare(v string, by api_obj.CompareType, to st
 
 	switch by {
 	case api_obj.WF_ByNumEqual:
-		return v_int == t_int
+		return v_num == t_int
 	case api_obj.WF_ByNumGreater:
-		return v_int > t_int
+		return v_num > t_int
 	case api_obj.WF_ByNumLess:
-		return v_int < t_int
+		return v_num < t_int
 	case api_obj.WF_ByStrEqual:
-		return v == to
+		return v.(string) == to
 	case api_obj.WF_ByStrNotEqual:
-		return v != to
+		return v.(string) != to
 	default:
 		return false
 	}

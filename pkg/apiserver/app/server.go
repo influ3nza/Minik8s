@@ -123,10 +123,10 @@ func (s *ApiServer) Bind() {
 
 	s.router.POST(apiserver.API_update_workflow) //TODO
 	s.router.DELETE(apiserver.API_delete_workflow, s.DeleteWorkflow)
-	s.router.GET(apiserver.API_exec_workflow, s.ExecWorkflow)
+	s.router.POST(apiserver.API_exec_workflow, s.ExecWorkflow)
 	s.router.POST(apiserver.API_add_workflow, s.AddWorkflow)
 	s.router.GET(apiserver.API_get_workflow, s.GetWorkflow)
-	s.router.GET(apiserver.API_check_workflow, )
+	s.router.POST(apiserver.API_check_workflow, s.CheckWorkflow)
 
 	s.router.GET(apiserver.API_get_function) //TODO
 	s.router.POST(apiserver.API_add_function, s.AddFunction)

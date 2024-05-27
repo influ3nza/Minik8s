@@ -208,7 +208,7 @@ func (s *ApiServer) ScaleReplicaSet(c *gin.Context) {
 	if method != "add" {
 		offset = -1
 	}
-	err := s.U_ScaleReplicaSet(name, offset)
+	cnt, err := s.U_ScaleReplicaSet(name, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "[ERR/replicasethandler/ScaleUpReplicaSet] Failed, " + err.Error(),
@@ -217,6 +217,6 @@ func (s *ApiServer) ScaleReplicaSet(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"data": "[replicasethandler/ScaleUpReplicaSet] Scale rs success",
+		"data": strconv.Itoa(cnt),
 	})
 }

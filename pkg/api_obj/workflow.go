@@ -24,6 +24,7 @@ const (
 	WF_ByNumNotEqual CompareType = "NumNE"
 	WF_ByStrEqual    CompareType = "StrE"
 	WF_ByStrNotEqual CompareType = "StrNE"
+	WF_AllPass       CompareType = "default"
 )
 
 type WF_FuncSpec struct {
@@ -34,7 +35,7 @@ type WF_FuncSpec struct {
 
 type WF_ForkSpec struct {
 	Variable  string      `json:"variable" yaml:"variable"`
-	CompareBy CompareType `json:"compareType" yaml:"compareType"`
+	CompareBy CompareType `json:"compareBy" yaml:"compareBy"`
 	CompareTo string      `json:"compareTo" yaml:"compareTo"`
 	Next      string      `json:"next" yaml:"next"`
 }

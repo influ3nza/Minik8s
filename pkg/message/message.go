@@ -16,6 +16,7 @@ const (
 const (
 	FUNC_CREATE string = "func_create"
 	WF_CREATE   string = "wf_create"
+	WF_EXEC     string = "wf_exec"
 	FUNC_EXEC   string = "func_exec"
 	FUNC_DEL    string = "func_del"
 )
