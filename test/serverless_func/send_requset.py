@@ -1,7 +1,7 @@
 import requests
 import json
 
-file_path = "./testimg.png"
+file_path = "./testimg"
 with open(file_path, "rb") as file:
     file_content = file.read()
 

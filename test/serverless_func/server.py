@@ -1,7 +1,7 @@
 import json
 
 from flask import Flask, request, Response
-import save
+import compress
 
 app = Flask(__name__)
 
@@ -12,7 +12,7 @@ def handle_request():
     params = request.json
     headers = {'Content-Type': 'application/json'}
     try:
-        result = save.run(**params)
+        result = compress.run(**params)
         response = Response(json.dumps(result), headers=headers, status=200)
         return response
     except TypeError as e:
