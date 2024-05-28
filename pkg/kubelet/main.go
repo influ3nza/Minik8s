@@ -22,7 +22,7 @@ var pod = api_obj.Pod{
 	Kind:       "pod",
 	MetaData: obj_inner.ObjectMeta{
 		Name:      "testpod",
-		NameSpace: "default",
+		NameSpace: "test2",
 		Labels: map[string]string{
 			"testlabel": "podlabel",
 		},
@@ -76,7 +76,7 @@ var pod = api_obj.Pod{
 			},*/{
 				Name: "testName1",
 				Image: obj_inner.Image{
-					Img:           "docker.io/library/mysql:latest",
+					Img:           "docker.io/library/nginx:latest",
 					ImgPullPolicy: "Always",
 				},
 				EntryPoint: obj_inner.EntryPoint{
@@ -106,7 +106,10 @@ var pod = api_obj.Pod{
 					},
 				},
 				Resources: obj_inner.ResourceRequirements{
-					Limits: nil,
+					Limits: map[string]obj_inner.Quantity{
+						obj_inner.CPU_REQUEST:    obj_inner.Quantity("2"),
+						obj_inner.MEMORY_REQUEST: obj_inner.Quantity("1GiB"),
+					},
 					Requests: map[string]obj_inner.Quantity{
 						obj_inner.CPU_REQUEST:    obj_inner.Quantity("0.25"),
 						obj_inner.MEMORY_REQUEST: obj_inner.Quantity("100MiB"),
@@ -304,8 +307,12 @@ func testCreateMonitor() {
 	//}()
 
 	go func() {
-		time.Sleep(120 * time.Second)
-		//pod_manager.GetPodMetrics(pod.MetaData.Name, pod.MetaData.NameSpace)
+		// time.Sleep(120 * time.Second)
+		for {
+			pod_manager.GetPodMetrics(pod.MetaData.Name, pod.MetaData.NameSpace)
+			time.Sleep(4 * time.Second)
+		}
+
 		//if res != nil {
 		//	id1 := res.ContainerMetrics[0].Name
 		//	force, err_ := util.RmForce(pod.MetaData.NameSpace, id1)
@@ -314,20 +321,19 @@ func testCreateMonitor() {
 		//		return
 		//	}
 		//}
-		//time.Sleep(4 * time.Second)
-		for {
-			if ok := util.UnRegisterPod(pod.MetaData.Name, pod.MetaData.NameSpace); ok == 0 {
-				fmt.Println("UnRegister Success")
-				break
-			} else if ok == 2 {
-				fmt.Println("UnRegister NonExist")
-			}
-		}
-		err = pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace, pod.MetaData.Labels["pause"])
-		if err != nil {
-			fmt.Println("Main Failed At line 268 ", err.Error())
-		}
-		str <- "finish"
+		//for {
+		//	if ok := util.UnRegisterPod(pod.MetaData.Name, pod.MetaData.NameSpace); ok == 0 {
+		//		fmt.Println("UnRegister Success")
+		//		break
+		//	} else if ok == 2 {
+		//		fmt.Println("UnRegister NonExist")
+		//	}
+		//}
+		//err = pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace, pod.MetaData.Labels["pause"])
+		//if err != nil {
+		//	fmt.Println("Main Failed At line 268 ", err.Error())
+		//}
+		//str <- "finish"
 		// wg.Done()
 	}()
 	// wg.Wait()

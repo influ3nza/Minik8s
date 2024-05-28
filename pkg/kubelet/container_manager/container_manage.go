@@ -532,6 +532,7 @@ func CollectContainerMetrics(ctx context.Context, collection *MetricsCollection,
 	default:
 		return nil
 	}
+	fmt.Println("[Before] ", currentMetrics)
 	collection.lastTime = curTime
 	collection.lastCPU = currentMetrics.CPU.UsageUsec * 1000
 	collection.memory = currentMetrics.Memory.Usage
@@ -555,11 +556,13 @@ func CollectContainerMetrics(ctx context.Context, collection *MetricsCollection,
 	default:
 		return nil
 	}
+	fmt.Println("[After] ", currentMetrics)
 	collection.memory += currentMetrics.Memory.Usage
 	collection.memory /= 2
 
 	allCPUUsage = currentMetrics.CPU.UsageUsec * 1000
 	cpuNow := allCPUUsage - collection.lastCPU
+	fmt.Printf("[GetContainerMetrics/CPU] is %d", cpuNow)
 
 	timeDelta := curTime.Sub(collection.lastTime)
 	collection.CPUPercent = uint64(float64(cpuNow) / float64(timeDelta.Nanoseconds()))

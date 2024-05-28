@@ -385,7 +385,7 @@ func GetPodMetrics(podName string, namespace string) *api_obj.PodMetrics {
 
 	podMetric := api_obj.PodMetrics{
 		Timestamp:        time.Time{},
-		Window:           3 * time.Second,
+		Window:           1 * time.Second,
 		ContainerMetrics: []api_obj.ContainerMetrics{},
 	}
 	walker := container_manager.ContainerWalker{
