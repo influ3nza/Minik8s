@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// 解析image的pull policy 当有latest tag时，总是pull， 否则如果不设置字段，则先从本地查找
+// ParseImage 解析image的pull policy 当有latest tag时，总是pull， 否则如果不设置字段，则先从本地查找
 /*
  * 参数
  *  img: *obj_inner.Image 镜像
