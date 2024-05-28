@@ -101,7 +101,7 @@ func (s *SL_server) OnWorkflowExec(content string) {
 		return
 	}
 
-	s.WorkflowController.ExecuteWorkflow(*wf, s.FunctionController)
+	s.WorkflowController.ExecuteWorkflow(wf, s.FunctionController)
 }
 
 func (s *SL_server) Run() {

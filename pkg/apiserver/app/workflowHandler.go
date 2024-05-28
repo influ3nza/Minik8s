@@ -85,7 +85,7 @@ func (s *ApiServer) GetWorkflow(c *gin.Context) {
 		return
 	}
 
-	e_key := apiserver.ETCD_workflow_prefix + namespace + "/" + name
+	e_key := apiserver.ETCD_workflow_prefix + name
 	res, err := s.EtcdWrap.Get(e_key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

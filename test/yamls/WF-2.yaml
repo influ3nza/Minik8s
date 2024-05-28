@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: workflow
+metaData:
+  labels:
+    app: test
+  name: wf-1
+spec:
+  startNode: firstNode
+  nodes: 
+    - name: firstNode
+      type: func
+      funcSpec: 
+        namespace: default
+        name: func-1
+        next: forkNode
+    - name: forkNode
+      type: fork
+      forkSpecs:
+        - variable: z
+          compareBy: NumE
+          compareTo: "8"
+          next: leftNode
+        - variable:
+          compareBy: default
+          compareTo:
+          next: rightNode
+    - name: leftNode
+      type: call
+      callSpec:
+        wfName: wf-3
+        inheritCoeff:
+          - "x"
+          - "y"
+        coeff: "{\"a\":3,\"b\":4}" 
+        next: finalSpec
+    - name: rightNode
+      type: func
+      funcSpec:
+        namespace: default
+        name: func-3
+    - name: finalNode
+      type: func
+      funcSpec:
+        namespace: default
+        name: func-4
