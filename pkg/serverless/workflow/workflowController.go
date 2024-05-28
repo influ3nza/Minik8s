@@ -172,7 +172,7 @@ func (wfc *WorkflowController) DoCall(coeff string, node api_obj.WorkflowNode, f
 	wf := &api_obj.Workflow{}
 	err = network.GetRequestAndParse(uri, wf)
 	if err != nil {
-		fmt.Printf("[ERR/DoCall] Failed to send GET request.\n")
+		fmt.Printf("[ERR/DoCall] Failed to send GET request, %v\n", err)
 		return
 	}
 

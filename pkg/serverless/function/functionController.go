@@ -29,7 +29,8 @@ func (fc *FunctionController) GenerateFunction(f *api_obj.Function) error {
 
 	//是否通过监视文件触发（文件夹）
 	if f.NeedWatch {
-		Watcher.AddWatchFile("/mydata/" + f.Metadata.UUID + "/" + f.Metadata.Name + "/")
+		Watcher.AddWatchDir("/mydata/" + f.Metadata.UUID + "/" + f.Metadata.Name + "/")
+		fmt.Printf("[GenerateFunction] Add to file watch success, %s\n", f.Metadata.Name)
 	}
 
 	return nil
@@ -195,8 +196,6 @@ func (fc *FunctionController) DeleteFunction(f *api_obj.Function) error {
 	if err != nil {
 		return fmt.Errorf("send Delete Rep Failed, %s", err.Error())
 	}
-
-	//todo record
 
 	err = DeleteImage(f.Metadata.Name)
 	if err != nil {

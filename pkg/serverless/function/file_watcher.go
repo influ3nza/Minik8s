@@ -49,10 +49,15 @@ func (fw *FileWatcher) FileWatch() {
 					}
 					if ev.Op&fsnotify.Write == fsnotify.Write {
 						log.Println("写入文件 : ", ev.Name)
+						if strings.Count(ev.Name, ".swp") >= 1 {
+							break
+						}
+
 						pathParts := strings.Split(ev.Name, string(filepath.Separator))
+
 						if len(pathParts) >= 2 {
 							fName := pathParts[len(pathParts)-2]
-							uri := apiserver.API_server_prefix + apiserver.API_exec_function_prefix + fName
+							uri := apiserver.API_server_prefix + apiserver.API_exec_function_prefix + fName + "/nil"
 							_, err := network.GetRequest(uri)
 							if err != nil {
 								fmt.Printf("[ERR/FileWatch] Failed to trigger function, %s\n", err.Error())
@@ -88,6 +93,18 @@ func fileExists(filename string) bool {
 		return false
 	}
 	return !info.IsDir()
+}
+
+func (fw *FileWatcher) AddWatchDir(dirName string) error {
+	fw.Mutex.Lock()
+	defer fw.Mutex.Unlock()
+	err := fw.Watcher.Add(dirName)
+	if err != nil {
+		fmt.Println("[Serverless/FileWatcher] Failed To Add Watch File")
+		return err
+	}
+
+	return nil
 }
 
 func (fw *FileWatcher) AddWatchFile(fileName string) error {

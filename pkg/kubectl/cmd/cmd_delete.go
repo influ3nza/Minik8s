@@ -38,8 +38,14 @@ func DelHandler(cmd *cobra.Command, args []string) {
 			fmt.Println("[ERR] Empty namespace or name. Try -h for help.")
 			return
 		}
-	} else if strings.Count(key, "/") == 0 && apitype == "function" {
-		DeleteFunctionHandler(key)
+	} else if strings.Count(key, "/") == 0 {
+		switch apitype {
+		case "function":
+			DeleteFunctionHandler(key)
+		case "workflow":
+			DeleteWorkflowHandler(key)
+		}
+
 		return
 	} else {
 		fmt.Println("[ERR] Wrong format. Try -h for help.")
@@ -103,6 +109,14 @@ func DeleteFunctionHandler(name string) {
 	_, err := network.DelRequest(uri)
 	if err != nil {
 		fmt.Printf("[ERR/DeleteFunction] Failed to send DEL request, %v\n", err)
+	}
+}
+
+func DeleteWorkflowHandler(name string) {
+	uri := apiserver.API_server_prefix + apiserver.API_delete_workflow_prefix + name
+	_, err := network.DelRequest(uri)
+	if err != nil {
+		fmt.Printf("[ERR/DeleteWorkflow] Failed to send DEL request, %v\n", err)
 	}
 }
 

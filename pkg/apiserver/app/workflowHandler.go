@@ -7,7 +7,6 @@ import (
 	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/message"
 	"minik8s/pkg/network"
-	"minik8s/tools"
 	"net/http"
 	"time"
 
@@ -52,7 +51,7 @@ func (s *ApiServer) AddWorkflow(c *gin.Context) {
 		return
 	}
 
-	wf.MetaData.UUID = tools.NewUUID()
+	// wf.MetaData.UUID = tools.NewUUID()
 
 	//存入etcd
 	wf_str, err := json.Marshal(wf)
@@ -78,11 +77,10 @@ func (s *ApiServer) AddWorkflow(c *gin.Context) {
 }
 
 func (s *ApiServer) GetWorkflow(c *gin.Context) {
-	namespace := c.Param("namespace")
 	name := c.Param("name")
-	if name == "" || namespace == "" {
+	if name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[ERR/apiserver/GetWorkflow] Empty name or namespace.",
+			"error": "[ERR/apiserver/GetWorkflow] Empty name.",
 		})
 		return
 	}
@@ -103,31 +101,22 @@ func (s *ApiServer) GetWorkflow(c *gin.Context) {
 		return
 	}
 
-	wf_str, err := json.Marshal(res[0].Value)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[ERR/apiserver/AddWorkflow] Failed to marshal data, " + err.Error(),
-		})
-		return
-	}
-
 	//返回200
 	c.JSON(http.StatusCreated, gin.H{
-		"data": wf_str,
+		"data": res[0].Value,
 	})
 }
 
 func (s *ApiServer) DeleteWorkflow(c *gin.Context) {
-	namespace := c.Param("namespace")
 	name := c.Param("name")
-	if name == "" || namespace == "" {
+	if name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[ERR/apiserver/DeleteWorkflow] Empty name or namespace.",
+			"error": "[ERR/apiserver/DeleteWorkflow] Empty name.",
 		})
 		return
 	}
 
-	e_key := apiserver.ETCD_workflow_prefix + namespace + "/" + name
+	e_key := apiserver.ETCD_workflow_prefix + name
 	res, err := s.EtcdWrap.Get(e_key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

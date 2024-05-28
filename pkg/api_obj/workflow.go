@@ -52,9 +52,9 @@ type WF_CallSpec struct {
 type WorkflowNode struct {
 	Name      string           `json:"name" yaml:"name"`
 	Type      WorkflowNodeType `json:"type" yaml:"type"`
-	FuncSpec  WF_FuncSpec      `json:"funcSpec" yaml:"funcSpec"`
-	ForkSpecs []WF_ForkSpec    `json:"forkSpecs" yaml:"forkSpecs"`
-	CallSpec  WF_CallSpec      `json:"callSpec" yaml:"callSpec"`
+	FuncSpec  WF_FuncSpec      `json:"funcSpec,omitempty" yaml:"funcSpec,omitempty"`
+	ForkSpecs []WF_ForkSpec    `json:"forkSpecs,omitempty" yaml:"forkSpecs,omitempty"`
+	CallSpec  WF_CallSpec      `json:"callSpec,omitempty" yaml:"callSpec,omitempty"`
 }
 
 type WorkflowSpec struct {

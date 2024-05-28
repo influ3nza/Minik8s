@@ -157,7 +157,9 @@ func (s *ApiServer) ExecFunction(c *gin.Context) {
 		return
 	}
 
-	f.Coeff = coeff
+	if coeff != "nil" {
+		f.Coeff = coeff
+	}
 	f_str, err := json.Marshal(f)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

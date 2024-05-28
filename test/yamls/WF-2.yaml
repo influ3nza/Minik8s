@@ -3,7 +3,7 @@ kind: workflow
 metaData:
   labels:
     app: test
-  name: wf-1
+  name: wf-2
 spec:
   startNode: firstNode
   nodes: 
@@ -32,7 +32,7 @@ spec:
           - "x"
           - "y"
         coeff: "{\"a\":3,\"b\":4}" 
-        next: finalSpec
+        next: finalNode
     - name: rightNode
       type: func
       funcSpec:

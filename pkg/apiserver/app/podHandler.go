@@ -290,6 +290,58 @@ func (s *ApiServer) GetPodsByNode(c *gin.Context) {
 	})
 }
 
+func (s *ApiServer) GetPodsByNodeForce(c *gin.Context) {
+	nodename := c.Param("nodename")
+	e_key := apiserver.ETCD_pod_prefix
+
+	res, err := s.EtcdWrap.GetByPrefix(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/GetPodsByNode] Failed to get from etcd, " + err.Error(),
+		})
+		return
+	}
+
+	pack := []api_obj.Pod{}
+	for _, kv := range res {
+		pod := &api_obj.Pod{}
+		err = json.Unmarshal([]byte(kv.Value), pod)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "[ERR/handler/GetPodsByNode] Failed to unmarshal data, " + err.Error(),
+			})
+			return
+		}
+
+		//和上一个函数的唯一区别
+		if pod.Spec.NodeName == nodename {
+			pack = append(pack, *pod)
+		}
+	}
+
+	data := "["
+	for id, p := range pack {
+		p_str, err := json.Marshal(p)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "[ERR/handler/GetPodsByNode] Failed to marshal data, " + err.Error(),
+			})
+			return
+		}
+		data += string(p_str)
+
+		if id < len(res)-1 {
+			data += ","
+		}
+	}
+
+	data += "]"
+
+	c.JSON(http.StatusCreated, gin.H{
+		"data": data,
+	})
+}
+
 func (s *ApiServer) DeletePod(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")

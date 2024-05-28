@@ -1,5 +1,5 @@
-def run(x, y, a, b):
-    total = x + y + a + b
+def run(x, y, z):
+    total = x + y + z + 11
     prod = total * total
     result = {
         "prod": prod
