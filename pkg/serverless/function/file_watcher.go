@@ -3,7 +3,11 @@ package function
 import (
 	"fmt"
 	"log"
+	"minik8s/pkg/config/apiserver"
+	"minik8s/pkg/network"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/fsnotify/fsnotify"
@@ -45,6 +49,17 @@ func (fw *FileWatcher) FileWatch() {
 					}
 					if ev.Op&fsnotify.Write == fsnotify.Write {
 						log.Println("写入文件 : ", ev.Name)
+						pathParts := strings.Split(ev.Name, string(filepath.Separator))
+						if len(pathParts) >= 2 {
+							fName := pathParts[len(pathParts)-2]
+							uri := apiserver.API_server_prefix + apiserver.API_exec_function_prefix + fName
+							_, err := network.GetRequest(uri)
+							if err != nil {
+								fmt.Printf("[ERR/FileWatch] Failed to trigger function, %s\n", err.Error())
+								return
+							}
+							fmt.Printf("[FileWatcher] Send exec function success.\n")
+						}
 					}
 					if ev.Op&fsnotify.Remove == fsnotify.Remove {
 						log.Println("删除文件 : ", ev.Name)

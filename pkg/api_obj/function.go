@@ -14,4 +14,5 @@ type Function struct {
 	Metadata  obj_inner.ObjectMeta `json:"metadata" yaml:"metadata"`
 	FilePath  string               `json:"filePath" yaml:"filePath"`
 	Coeff     string
+	NeedWatch bool `json:"needWatch" yaml:"needWatch"`
 }

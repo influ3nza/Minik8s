@@ -27,7 +27,10 @@ func (fc *FunctionController) GenerateFunction(f *api_obj.Function) error {
 		return fmt.Errorf("gen replica Failed At GF, %s", err.Error())
 	}
 
-	//todo record function
+	//是否通过监视文件触发（文件夹）
+	if f.NeedWatch {
+		Watcher.AddWatchFile("/mydata/" + f.Metadata.UUID + "/" + f.Metadata.Name + "/")
+	}
 
 	return nil
 }
