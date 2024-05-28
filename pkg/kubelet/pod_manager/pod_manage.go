@@ -2,20 +2,28 @@ package pod_manager
 
 import (
 	"fmt"
-	"github.com/containerd/containerd"
-	"github.com/containerd/containerd/namespaces"
-	"github.com/containerd/containerd/oci"
-	"github.com/opencontainers/runtime-spec/specs-go"
-	"golang.org/x/net/context"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/kubelet/container_manager"
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/containerd/containerd"
+	"github.com/containerd/containerd/namespaces"
+	"github.com/containerd/containerd/oci"
+	"github.com/opencontainers/runtime-spec/specs-go"
+	"golang.org/x/net/context"
 )
 
 // AddPod todo 需要Master上有DNS服务器
+/*
+ * 参数
+ *  pod: *api_obj.Pod pod对象
+ *
+ * 返回
+ *  error: 错误信息
+ */
 func AddPod(pod *api_obj.Pod) error {
 	client, err := containerd.New("/run/containerd/containerd.sock")
 	if err != nil {
@@ -110,6 +118,16 @@ func AddPod(pod *api_obj.Pod) error {
 	return nil
 }
 
+// DeletePod 删除Pod
+/*
+ * 参数
+ *  podName: string pod名称
+ *  namespace: string 命名空间
+ *  pauseId: string pause容器id
+ *
+ * 返回
+ *  error: 错误信息
+ */
 func DeletePod(podName string, namespace string, pauseId string) error {
 	client, err := containerd.New("/run/containerd/containerd.sock")
 	ctx := namespaces.WithNamespace(context.Background(), namespace)
@@ -132,6 +150,15 @@ func DeletePod(podName string, namespace string, pauseId string) error {
 	return nil
 }
 
+// StopPod 停止Pod
+/*
+ * 参数
+ *  podName: string pod名称
+ *  namespace: string 命名空间
+ *
+ * 返回
+ *  error: 错误信息
+ */
 func StopPod(podName string, namespace string) error {
 	ctx := namespaces.WithNamespace(context.Background(), namespace)
 	client, err := containerd.New("/run/containerd/containerd.sock")
@@ -148,6 +175,15 @@ func StopPod(podName string, namespace string) error {
 	return nil
 }
 
+// ReStartPod 重启Pod
+/*
+ * 参数
+ *  podName: string pod名称
+ *  namespace: string 命名空间
+ *
+ * 返回
+ *  error: 错误信息
+ */
 func ReStartPod(podName string, namespace string) error {
 	ctx := namespaces.WithNamespace(context.Background(), namespace)
 	client, err := containerd.New("/run/containerd/containerd.sock")
@@ -275,6 +311,14 @@ func ReStartPod(podName string, namespace string) error {
 }
 
 // MonitorPodContainers 监控指定 Pod 中的所有容器
+/*
+ * 参数
+ *  podName: string pod名称
+ *  namespace: string 命名空间
+ *
+ * 返回
+ *  string: 容器状态
+ */
 func MonitorPodContainers(podName string, namespace string) string {
 	client, err := containerd.New("/run/containerd/containerd.sock")
 	ctx := namespaces.WithNamespace(context.Background(), namespace)
@@ -321,6 +365,15 @@ func MonitorPodContainers(podName string, namespace string) string {
 	return res
 }
 
+// GetPodMetrics 获取Pod的指标
+/*
+ * 参数
+ *  podName: string pod名称
+ *  namespace: string 命名空间
+ *
+ * 返回
+ *  *api_obj.PodMetrics: 一个PodMetrics结构
+ */
 func GetPodMetrics(podName string, namespace string) *api_obj.PodMetrics {
 	client, err := containerd.New("/run/containerd/containerd.sock")
 	ctx := namespaces.WithNamespace(context.Background(), namespace)
@@ -363,6 +416,14 @@ func GetPodMetrics(podName string, namespace string) *api_obj.PodMetrics {
 	return &podMetric
 }
 
+// delCNIRules 删除CNI规则
+/*
+ * 参数
+ *  pauseId: string pause容器id
+ *
+ * 返回
+ *  error: 错误信息
+ */
 func delCNIRules(pauseId string) error {
 	shPath := "./tools/setup_scripts/del_flannel_net.sh"
 	_, err := exec.Command(shPath, pauseId).CombinedOutput()

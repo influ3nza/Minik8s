@@ -3,11 +3,23 @@ package container_manager
 
 import (
 	"fmt"
+	"minik8s/pkg/api_obj/obj_inner"
+
 	"github.com/containerd/containerd"
 	"golang.org/x/net/context"
-	"minik8s/pkg/api_obj/obj_inner"
 )
 
+// ListContainers lists containers
+/*
+ * 参数
+ *  client: *containerd.Client 客户端
+ *  ctx: context.Context 上下文
+ *  filter: ...string 过滤器
+ *
+ * 返回
+ *  []containerd.Container: 一个containerd.Container类型的切片
+ *  error: 错误信息
+ */
 func ListContainers(client *containerd.Client, ctx context.Context, filter ...string) ([]containerd.Container, error) {
 	res, err := client.Containers(ctx, filter...)
 	if err != nil {
@@ -31,6 +43,15 @@ type ContainerWalker struct {
 }
 
 // Walk pod
+/*
+ * 参数
+ *  ctx: context.Context 上下文
+ *  filter: map[string]string 过滤器
+ *
+ * 返回
+ *  int: 匹配数量
+ *  error: 错误信息
+ */
 func (walker *ContainerWalker) Walk(ctx context.Context, filter map[string]string) (int, error) {
 	var filters []string
 	for label, value := range filter {
@@ -55,6 +76,16 @@ func (walker *ContainerWalker) Walk(ctx context.Context, filter map[string]strin
 	return matchCount, nil
 }
 
+// WalkRestart pod 重启
+/*
+ * 参数
+ *  ctx: context.Context 上下文
+ *  filter: map[string]string 过滤器
+ *
+ * 返回
+ *  int: 匹配数量
+ *  error: 错误信息
+ */
 func (walker *ContainerWalker) WalkRestart(ctx context.Context, filter map[string]string) (int, error) {
 	var filters []string
 	for label, value := range filter {
@@ -82,6 +113,16 @@ func (walker *ContainerWalker) WalkRestart(ctx context.Context, filter map[strin
 	return matchCount, nil
 }
 
+// WalkStatus pod 状态
+/*
+ * 参数
+ *  ctx: context.Context 上下文
+ *  filter: map[string]string 过滤器
+ *
+ * 返回
+ *  string: 状态
+ *  error: 错误信息
+ */
 func (walker *ContainerWalker) WalkStatus(ctx context.Context, filter map[string]string) (string, error) {
 	var filters []string
 	for label, value := range filter {
