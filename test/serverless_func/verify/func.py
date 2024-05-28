@@ -1,12 +1,10 @@
 import requests
 
 
-def run(image, x, y, r, g, b, mark, mysqlIp, rate, threshold1, threshold2, kernel_x, kernel_y, status):
-    header = 'data:image/png;base64,'
-    image_copy = image
-    if image_copy.startswith(header):
-        image_copy = image_copy[len(header):]
-    img = image_copy.encode("utf-8")
+def run(username, image, x, y, r, g, b, mark, mysqlIp, rate, threshold1, threshold2, kernel_x, kernel_y, status):
+
+    img_slice = image.split(",")[1]
+    img = img_slice.encode("utf-8")
     url = "https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=flmOcOJEQ8mJQGAIydRZWtfo&client_secret=kCyUV5vm0oA8z0DjzwHjofOBPguvAxk0"
 
     payload = ""
@@ -32,13 +30,14 @@ def run(image, x, y, r, g, b, mark, mysqlIp, rate, threshold1, threshold2, kerne
         conclusion = rsp.get("conclusion")
         if conclusion == '合规':
             return {
+                "username": username,
                 "image": image,
-                "mark": "water_mark",
                 "x": x,
                 "y": y,
                 "r": r,
                 "g": g,
                 "b": b,
+                "mark": mark,
                 "mysqlIp": mysqlIp,
                 "rate": rate,
                 "threshold1": threshold1,
@@ -50,7 +49,7 @@ def run(image, x, y, r, g, b, mark, mysqlIp, rate, threshold1, threshold2, kerne
         else:
             return {
                 "image": "",
-                "mark": "water_mark",
+                "mark": mark,
                 "x": x,
                 "y": y,
                 "r": r,
@@ -67,7 +66,7 @@ def run(image, x, y, r, g, b, mark, mysqlIp, rate, threshold1, threshold2, kerne
     else:
         return {
             "image": "",
-            "mark": "water_mark",
+            "mark": mark,
             "x": x,
             "y": y,
             "r": r,
@@ -81,15 +80,3 @@ def run(image, x, y, r, g, b, mark, mysqlIp, rate, threshold1, threshold2, kerne
             "kernel_y": kernel_y,
             "status": "error in verify"
         }
-
-
-def main():
-    file_path = "./testimg.png"
-    with open(file_path, "rb") as file:
-        file_content = file.read()
-    img = file_content
-    run(img)
-
-
-if __name__ == '__main__':
-    main()

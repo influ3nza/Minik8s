@@ -1,7 +1,7 @@
 import mysql.connector
 
 
-def run(username, image, x, y, r, g, b, mark, mysqlIp, rate, threshold1, threshold2, kernel_x, kernel_y, status):
+def run(username, image, mysqlIp, status):
     db = mysql.connector.connect(
         host=mysqlIp,  # MySQL服务器地址
         user="root",  # 用户名
@@ -15,24 +15,23 @@ def run(username, image, x, y, r, g, b, mark, mysqlIp, rate, threshold1, thresho
     db.commit()
     cursor.close()
     db.close()
+    return {
+        "state": "finished"
+    }
 
 
 def main():
+
+    file_path = "./waterb64"
+    with open(file_path, "rb") as file:
+        file_content = file.read()
+
+    val = file_content.decode('utf-8')
+    
     data = {
         "username": "testuser",
-        "image": "nothing",
-        "x": 20,
-        "y": 20,
-        "r": 255,
-        "g": 255,
-        "b": 255,
-        "mark": "water_mark",
+        "image": val,
         "mysqlIp": "10.2.1.24",
-        "rate": 0.8,
-        "threshold1": 50,
-        "threshold2": 150,
-        "kernel_x": 3,
-        "kernel_y": 3,
         "status": "start"
     }
     run(**data)
