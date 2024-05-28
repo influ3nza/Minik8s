@@ -6,8 +6,10 @@ import (
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/message"
+	"minik8s/pkg/network"
 	"minik8s/tools"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -239,8 +241,17 @@ func (s *ApiServer) CheckWorkflow(c *gin.Context) {
 
 	funcMap := make(map[string]api_obj.Function)
 	for _, node := range wf.Spec.Nodes {
-		if node.Type == api_obj.WF_Fork {
+		if node.Type == api_obj.WF_Fork || node.Type == api_obj.WF_Call {
 			continue
+		}
+
+		uri := apiserver.API_server_prefix + apiserver.API_find_function_ip_prefix + node.FuncSpec.Name
+		_, err := network.GetRequest(uri)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "[ERR/apiserver/CheckWorkflow] Failed to get from etcd, " + err.Error(),
+			})
+			return
 		}
 
 		e_key := apiserver.ETCD_function_prefix + node.FuncSpec.Name
@@ -278,6 +289,9 @@ func (s *ApiServer) CheckWorkflow(c *gin.Context) {
 		})
 		return
 	}
+
+	//原因：python服务器启动需要时间，即使获得ip，不代表该pod可用。
+	time.Sleep(3 * time.Second)
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": string(map_str),

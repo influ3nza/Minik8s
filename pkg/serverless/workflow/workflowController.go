@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/config/apiserver"
-	"minik8s/pkg/message"
 	"minik8s/pkg/network"
 	"minik8s/pkg/serverless/function"
 	"strconv"
@@ -16,33 +15,8 @@ import (
 type WorkflowController struct {
 }
 
-type WorkflowExecutor struct {
-	MyTopic    string
-	BlockTopic string
-	Consumer   *message.MsgConsumer
-	Producer   *message.MsgProducer
-	Wf         *api_obj.Workflow
-}
-
 func CreateNewWorkflowControllerInstance() WorkflowController {
 	return WorkflowController{}
-}
-
-func CreateNewWorkflowExecutorInstance(wf *api_obj.Workflow, myTopic string, blockTopic string) (*WorkflowExecutor, error) {
-	producer := message.NewProducer()
-	consumer, err := message.NewConsumer(blockTopic, blockTopic)
-	if err != nil {
-		fmt.Printf("[ERR/WorkflowExecutor] create kafka consumer instance failed, err:%v\n", err)
-		return nil, err
-	}
-
-	return &WorkflowExecutor{
-		MyTopic:    myTopic,
-		BlockTopic: blockTopic,
-		Consumer:   consumer,
-		Producer:   producer,
-		Wf:         wf,
-	}, nil
 }
 
 func (wfc *WorkflowController) ExecuteWorkflow(wf *api_obj.Workflow, fc *function.FunctionController) {
@@ -51,17 +25,7 @@ func (wfc *WorkflowController) ExecuteWorkflow(wf *api_obj.Workflow, fc *functio
 	//检查workflow调用的函数是否都有pod实例。如果没有需要冷启动。
 	//按照DAG的流程依次执行相应的function。
 	//执行完毕之后，将workflow的状态保存在etcd中。
-	exec, f := CreateNewWorkflowExecutorInstance(wf, wf.MetaData.Name, caller)
-	if f != nil {
-		fmt.Printf("[ERR/Execworkflow] Failed to createworkflow executor, %s\n", f.Error())
-		return
-	}
-	
-	exec.ExecuteWorkflow(wf, fc, "")
-}
-
-func (exec *WorkflowExecutor) ExecuteWorkflow(wf *api_obj.Workflow, fc *function.FunctionController, caller string) {
-	funcMap, flag := exec.CheckNodeFunc(wf)
+	funcMap, flag := wfc.CheckNodeFunc(wf)
 	if !flag {
 		fmt.Printf("[ERR/ExecuteWorkflow] Check workflow failed. Quitting.\n")
 		return
@@ -84,29 +48,27 @@ func (exec *WorkflowExecutor) ExecuteWorkflow(wf *api_obj.Workflow, fc *function
 		node := nodesIndex[pos]
 		switch node.Type {
 		case api_obj.WF_Call:
-			//TODO:获取wf，执行，阻塞
-			exec.DoCall()
-			pod = node.CallSpec.Next
+			//获取wf，执行
+			wfc.DoCall(coeff, node, fc)
+			pos = node.CallSpec.Next
 		case api_obj.WF_Func:
 			//执行函数，更新coeff
-			coeff, err = exec.DoFunc(coeff, funcMap[node.FuncSpec.Name], fc)
+			coeff, err = wfc.DoFunc(coeff, funcMap[node.FuncSpec.Name], fc)
 			if err != nil {
 				fmt.Printf("[ERR/WorkflowController] Failed to execute func, %v", err)
 			}
 			pos = node.FuncSpec.Next
 		case api_obj.WF_Fork:
 			var err error = nil
-			pos, err = exec.DecideFork(coeff, node)
+			pos, err = wfc.DecideFork(coeff, node)
 			if err != nil {
 				fmt.Printf("[ERR/WorkflowController] Failed to execute fork, %v", err)
 			}
 		}
 	}
-
-	//TODO:将结果打印到某个文件中
 }
 
-func (exec *WorkflowExecutor) CheckNodeFunc(wf *api_obj.Workflow) (map[string]api_obj.Function, bool) {
+func (wfc *WorkflowController) CheckNodeFunc(wf *api_obj.Workflow) (map[string]api_obj.Function, bool) {
 	//检查workflow是否合法（是否调用存在的函数）
 	//检查workflow调用的函数是否都有pod实例。如果没有需要冷启动。
 	funcMap := make(map[string]api_obj.Function)
@@ -126,7 +88,7 @@ func (exec *WorkflowExecutor) CheckNodeFunc(wf *api_obj.Workflow) (map[string]ap
 	return funcMap, true
 }
 
-func (exec *WorkflowExecutor) DecideFork(coeff string, node api_obj.WorkflowNode) (string, error) {
+func (wfc *WorkflowController) DecideFork(coeff string, node api_obj.WorkflowNode) (string, error) {
 	//比较
 	coeffMap := make(map[string]interface{})
 	err := json.Unmarshal([]byte(coeff), &coeffMap)
@@ -142,7 +104,7 @@ func (exec *WorkflowExecutor) DecideFork(coeff string, node api_obj.WorkflowNode
 
 		// 先检查default
 		v := coeffMap[spec.Variable]
-		if exec.DoCompare(v, spec.CompareBy, spec.CompareTo) {
+		if wfc.DoCompare(v, spec.CompareBy, spec.CompareTo) {
 			return spec.Next, nil
 		}
 	}
@@ -150,13 +112,13 @@ func (exec *WorkflowExecutor) DecideFork(coeff string, node api_obj.WorkflowNode
 	return "", errors.New("shall not reach here")
 }
 
-func (exec *WorkflowExecutor) DoFunc(coeff string, f api_obj.Function, fc *function.FunctionController) (string, error) {
+func (wfc *WorkflowController) DoFunc(coeff string, f api_obj.Function, fc *function.FunctionController) (string, error) {
 	f.Coeff = coeff
 	res, err := fc.TriggerFunction(&f)
 	return res, err
 }
 
-func (exec *WorkflowExecutor) DoCompare(v interface{}, by api_obj.CompareType, to string) bool {
+func (wfc *WorkflowController) DoCompare(v interface{}, by api_obj.CompareType, to string) bool {
 	var v_num float64
 	var t_int float64
 	var err error = nil
@@ -197,8 +159,48 @@ func (exec *WorkflowExecutor) DoCompare(v interface{}, by api_obj.CompareType, t
 	}
 }
 
-func (exec *WorkflowExecutor) DoCall(node api_obj.WorkflowNode) {
+func (wfc *WorkflowController) DoCall(coeff string, node api_obj.WorkflowNode, fc *function.FunctionController) {
 	wfName := node.CallSpec.WfName
+	coeffMap := make(map[string]interface{})
+	err := json.Unmarshal([]byte(coeff), &coeffMap)
+	if err != nil {
+		fmt.Printf("[ERR/DoCall] Failed to unmarshal coeff.\n")
+		return
+	}
 
-	uri := 
+	uri := apiserver.API_server_prefix + apiserver.API_get_workflow_prefix + wfName
+	wf := &api_obj.Workflow{}
+	err = network.GetRequestAndParse(uri, wf)
+	if err != nil {
+		fmt.Printf("[ERR/DoCall] Failed to send GET request.\n")
+		return
+	}
+
+	//TODO:改变wf的初始参数
+	newCoeff := make(map[string]interface{})
+	for _, c := range node.CallSpec.InheritCoeff {
+		newCoeff[c] = coeffMap[c]
+	}
+
+	addCoeff := make(map[string]interface{})
+	err = json.Unmarshal([]byte(node.CallSpec.NewCoeff), &addCoeff)
+	if err != nil {
+		fmt.Printf("[ERR/DoCall] Failed to unmarshal coeff.\n")
+		return
+	}
+
+	for k, v := range addCoeff {
+		newCoeff[k] = v
+	}
+
+	newCoeff_str, err := json.Marshal(newCoeff)
+	if err != nil {
+		fmt.Printf("[ERR/DoCall] Failed to marshal coeff.\n")
+		return
+	}
+
+	wf.Spec.StartCoeff = string(newCoeff_str)
+
+	//开启一个协程
+	go wfc.ExecuteWorkflow(wf, fc)
 }

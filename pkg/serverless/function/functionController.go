@@ -150,11 +150,22 @@ func (fc *FunctionController) TriggerFunction(f *api_obj.Function) (string, erro
 
 	body := bytes.NewReader(param)
 	uri := "http://" + ip + ":8080"
-	resp, err := http.Post(uri, "application/json", body)
-	if err != nil {
-		return "", fmt.Errorf("post Req To Func Failed, %s", err.Error())
+	failCnt := 0
+	var resp *http.Response = nil
+	for {
+		resp, err = http.Post(uri, "application/json", body)
+		if err != nil {
+			failCnt += 1
+			if failCnt >= 3 {
+				return "", fmt.Errorf("post Req To Func Failed, %s", err.Error())
+			}
+			time.Sleep(2 * time.Second)
+			continue
+		}
+
+		defer resp.Body.Close()
+		break
 	}
-	defer resp.Body.Close()
 
 	var result map[string]interface{}
 	decoder := json.NewDecoder(resp.Body)
