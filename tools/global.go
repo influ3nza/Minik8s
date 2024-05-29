@@ -13,3 +13,4 @@ var PV_mount_node_path string = "/mnt/m_minik8s"
 var PV_mount_params string = " 192.168.1.0/24(rw,sync,no_root_squash,no_subtree_check)"
 var PV_mount_config_file string = "/etc/exports"
 var Func_template_path string = "/ZTH/Minik8s/pkg/serverless/common/"
+var Scale_RS_Lock bool = false

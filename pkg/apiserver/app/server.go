@@ -21,6 +21,7 @@ import (
 
 type ApiServer struct {
 	router            *gin.Engine
+	Func_router       *gin.Engine
 	EtcdWrap          *etcd.EtcdWrap
 	port              int32
 	Producer          *message.MsgProducer
@@ -35,6 +36,9 @@ type ApiServer struct {
 func CreateApiServerInstance(c *apiserver.ServerConfig) (*ApiServer, error) {
 	router := gin.Default()
 	router.SetTrustedProxies(c.TrustedProxy)
+
+	f_router := gin.Default()
+	f_router.SetTrustedProxies(c.TrustedProxy)
 
 	wrap, err := etcd.CreateEtcdInstance(c.EtcdEndpoints, c.EtcdTimeout)
 	if err != nil {
@@ -64,6 +68,7 @@ func CreateApiServerInstance(c *apiserver.ServerConfig) (*ApiServer, error) {
 
 	return &ApiServer{
 		router:            router,
+		Func_router:       f_router,
 		EtcdWrap:          wrap,
 		port:              c.Port,
 		Producer:          producer,
@@ -93,7 +98,7 @@ func (s *ApiServer) Bind() {
 	s.router.POST(apiserver.API_update_pod, s.UpdatePodScheduled)
 	s.router.POST(apiserver.API_add_pod, s.AddPod)
 	s.router.GET(apiserver.API_get_pods_by_node, s.GetPodsByNode)
-	s.router.GET(apiserver.API_get_pods_by_node_force, )
+	s.router.GET(apiserver.API_get_pods_by_node_force, s.GetPodsByNodeForce)
 	s.router.GET(apiserver.API_get_pod, s.GetPod)
 	s.router.GET(apiserver.API_get_pods_by_namespace, s.GetPodsByNamespace)
 	s.router.DELETE(apiserver.API_delete_pod, s.DeletePod)
@@ -132,11 +137,13 @@ func (s *ApiServer) Bind() {
 	s.router.GET(apiserver.API_get_function) //TODO
 	s.router.POST(apiserver.API_add_function, s.AddFunction)
 	s.router.DELETE(apiserver.API_delete_function, s.DeleteFunction)
-	s.router.GET(apiserver.API_exec_function, s.ExecFunction)
+	s.router.POST(apiserver.API_exec_function, s.ExecFunction)
 	s.router.GET(apiserver.API_find_function_ip, s.FindFunctionIp)
 	s.router.GET(apiserver.API_get_function_res, s.GetFunctionRes)
 
 	s.router.DELETE(apiserver.API_delete_registry, s.DeleteRegistry)
+
+	s.Func_router.POST(apiserver.API_exec_function, s.ExecFunction)
 }
 
 // 在进行测试/实际运行时，第2步调用此函数。默认端口为8080
@@ -165,6 +172,9 @@ func (s *ApiServer) Run() error {
 	go s.Consumer.Consume([]string{message.TOPIC_ApiServer_FromNode}, s.MsgHandler)
 	go s.S_server.Run()
 
+	go func() {
+		_ = s.Func_router.Run(fmt.Sprintf(":%d", 50001))
+	}()
 	err = s.router.Run(fmt.Sprintf(":%d", s.port))
 	return err
 }

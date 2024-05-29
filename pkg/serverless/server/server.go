@@ -112,6 +112,7 @@ func (s *SL_server) Run() {
 		s.Clean()
 	}()
 
+	go s.FunctionController.RunWatch()
 	go function.Watcher.FileWatch()
 	go s.Consumer.Consume([]string{message.TOPIC_Serverless}, s.MsgHandler)
 }

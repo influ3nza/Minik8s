@@ -10,6 +10,7 @@ import (
 	"minik8s/tools"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -132,11 +133,33 @@ func (s *ApiServer) AddFunction(c *gin.Context) {
 }
 
 func (s *ApiServer) ExecFunction(c *gin.Context) {
+	for {
+		if !tools.Scale_RS_Lock {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
 	name := c.Param("name")
-	coeff := c.Param("coeff")
 	if name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[ERR/handler/ExecFunction] Empty function name.",
+			"error": "[ERR/apiserver/ExecWorkflow] Empty workflow name.",
+		})
+		return
+	}
+
+	var requestBody map[string]interface{}
+	if err := c.ShouldBindJSON(&requestBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/apiserver/ExecWorkflow]" + err.Error(),
+		})
+		return
+	}
+
+	req_str, err := json.Marshal(requestBody)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/apiserver/ExecWorkflow]" + err.Error(),
 		})
 		return
 	}
@@ -165,8 +188,8 @@ func (s *ApiServer) ExecFunction(c *gin.Context) {
 		return
 	}
 
-	if coeff != "nil" {
-		f.Coeff = coeff
+	if len(req_str) != 0 {
+		f.Coeff = string(req_str)
 	}
 	f_str, err := json.Marshal(f)
 	if err != nil {
