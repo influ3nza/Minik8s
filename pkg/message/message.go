@@ -19,6 +19,7 @@ const (
 	WF_EXEC     string = "wf_exec"
 	FUNC_EXEC   string = "func_exec"
 	FUNC_DEL    string = "func_del"
+	FUNC_UPDATE string = "func_update"
 )
 
 const (
