@@ -4,10 +4,10 @@ const Port int32 = 20000
 const AddPod string = "/pod/AddPod"
 const DelPod_prefix = "/pod/DelPod/"
 const DelPod string = "/pod/DelPod/:namespace/:name/:pause"
-const GetMatrix_prefix = "/pod/GetMatrix/"
-const GetMatrix string = "/pod/GetMatrix/:namespace/:name"
+const GetMetrics_prefix = "/pod/GetMetrics/"
+const GetMetrics string = "/pod/GetMetrics/:namespace/:name"
+const GetCpuAndMem string = "/pod/GetCpuAndMem"
 
-// PV
 const (
 	MountNfs          string = "/pv/MountNfs/"
 	UnmountNfs_prefix string = "/pv/UnmountNfs/"
