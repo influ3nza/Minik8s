@@ -17,13 +17,17 @@ def handle_request():
         return response
     except TypeError as e:
         err = {
-            "err": e
+            "status": "error",
+            "error": e,
+            "username": params.username
         }
         response = Response(json.dumps(err), headers=headers, status=200)
         return response
     except Exception as e:
         err = {
-            "err": e
+            "status": "error"
+            "error": e,
+            "username": params.username
         }
         response = Response(json.dumps(err), headers=headers, status=500)
         return response

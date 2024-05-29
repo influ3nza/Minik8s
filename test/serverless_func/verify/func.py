@@ -48,35 +48,9 @@ def run(username, image, x, y, r, g, b, mark, mysqlIp, rate, threshold1, thresho
             }
         else:
             return {
-                "image": "",
-                "mark": mark,
-                "x": x,
-                "y": y,
-                "r": r,
-                "g": g,
-                "b": b,
-                "mysqlIp": mysqlIp,
-                "rate": rate,
-                "threshold1": threshold1,
-                "threshold2": threshold2,
-                "kernel_x": kernel_x,
-                "kernel_y": kernel_y,
-                "status": "error in verify"
+                "status": "error"
             }
     else:
         return {
-            "image": "",
-            "mark": mark,
-            "x": x,
-            "y": y,
-            "r": r,
-            "g": g,
-            "b": b,
-            "mysqlIp": mysqlIp,
-            "rate": rate,
-            "threshold1": threshold1,
-            "threshold2": threshold2,
-            "kernel_x": kernel_x,
-            "kernel_y": kernel_y,
-            "status": "error in verify"
+            "status": "error"
         }
