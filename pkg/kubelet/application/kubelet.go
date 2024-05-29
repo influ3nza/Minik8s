@@ -83,9 +83,10 @@ func (server *Kubelet) registerNodeToMonitor(node *api_obj.Node) {
 }
 
 func (server *Kubelet) registerHandler() {
-	server.Router.GET(kubelet.GetMatrix, server.GetPodMatrix)
+	server.Router.GET(kubelet.GetMetrics, server.GetPodMatrix)
 	server.Router.DELETE(kubelet.DelPod, server.DelPod)
 	server.Router.POST(kubelet.AddPod, server.AddPod)
+	server.Router.GET(kubelet.GetCpuAndMem, server.GetNodeCPUAndMem)
 
 	//PV
 	server.Router.POST(kubelet.MountNfs, server.MountNfs)
