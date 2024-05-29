@@ -95,11 +95,17 @@ func (s *ApiServer) AddFunction(c *gin.Context) {
 	}
 
 	//复制dockerfile等
-	p_path := "/ZTH/Minik8s/pkg/serverless/common/"
-	dirPath += "/" + f.Metadata.Name
-	api.DoCopy(p_path+"Dockerfile", dirPath+"/Dockerfile")
-	api.DoCopy(p_path+"requirements.txt", dirPath+"/requirements.txt")
-	api.DoCopy(p_path+"server.py", dirPath+"/server.py")
+	var p_path string
+	dirPath += "/" + f.Metadata.Name + "/"
+	if f.UseTemplate {
+		p_path = tools.Func_template_path
+	} else {
+		p_path = dirPath
+	}
+
+	api.DoCopy(p_path+"Dockerfile", dirPath+"Dockerfile")
+	api.DoCopy(p_path+"requirements.txt", dirPath+"requirements.txt")
+	api.DoCopy(p_path+"server.py", dirPath+"server.py")
 
 	//删除zip
 	err = os.Remove(path)
