@@ -3,5 +3,5 @@ kind: function
 metaData:
   labels:
     app: test
-  name: func-5
+  name: save
 filePath: /ZTH/Minik8s/test/serverless_func/save

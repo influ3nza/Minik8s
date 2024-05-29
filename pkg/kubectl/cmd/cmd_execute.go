@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/network"
+	"os"
 
 	"github.com/spf13/cobra"
 )
 
 var showResult bool = false
+var useFileCoeff bool = false
 
 var ExecCmd = &cobra.Command{
 	Use:     "exec",
@@ -21,6 +23,7 @@ var ExecCmd = &cobra.Command{
 
 func init() {
 	ExecCmd.PersistentFlags().BoolVarP(&showResult, "result", "r", false, "Show function result")
+	ExecCmd.PersistentFlags().BoolVarP(&useFileCoeff, "file", "f", false, "Import file as coeff")
 }
 
 func ExecHandler(cmd *cobra.Command, args []string) {
@@ -62,7 +65,16 @@ func WorkflowExecHandler(args []string) {
 	coeff := "{}"
 
 	if len(args) == 3 {
-		coeff = args[2]
+		if !useFileCoeff {
+			coeff = args[2]
+		} else {
+			fileBytes, err := os.ReadFile(args[2])
+			if err != nil {
+				fmt.Printf("[ERR/ExecHandler] Failed to read file, %s.\n", err.Error())
+				return
+			}
+			coeff = string(fileBytes)
+		}
 	} else if len(args) > 3 {
 		fmt.Printf("[ERR/ExecHandler] Too many arguments. Try -h for help.\n")
 		return

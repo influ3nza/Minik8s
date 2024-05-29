@@ -57,8 +57,10 @@ func CreateImage(function *api_obj.Function) error {
 	path := "/mydata/" + function.Metadata.UUID + "/" + function.Metadata.Name + "/"
 	fmt.Printf("[CreateImage] Path: %s.\n", path)
 	cmd := exec.Command("nerdctl", "build", "-t", function.Metadata.Name, path)
-	err := cmd.Run()
+	fmt.Println(cmd)
+	opt, err := cmd.CombinedOutput()
 	if err != nil {
+		fmt.Println("Opt is :", string(opt))
 		return fmt.Errorf("create Image Failed %s", err.Error())
 	}
 	cmd = exec.Command("nerdctl", "tag", function.Metadata.Name, serverDns+":5000/"+function.Metadata.Name+":latest")
@@ -69,7 +71,7 @@ func CreateImage(function *api_obj.Function) error {
 
 	imgName := serverDns + ":5000/" + function.Metadata.Name + ":latest"
 	cmd = exec.Command("nerdctl", "push", "--insecure-registry", imgName)
-	opt, err := cmd.CombinedOutput()
+	opt, err = cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println("Opt is :", string(opt))
 		return fmt.Errorf("push Image Failed %s", err.Error())

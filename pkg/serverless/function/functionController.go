@@ -17,6 +17,7 @@ type FunctionController struct {
 }
 
 func (fc *FunctionController) GenerateFunction(f *api_obj.Function) error {
+	//TODO:需要取消注释
 	err := CreateImage(f)
 	if err != nil {
 		return fmt.Errorf("create Img Failed At GF, %s", err.Error())
@@ -197,6 +198,7 @@ func (fc *FunctionController) DeleteFunction(f *api_obj.Function) error {
 		return fmt.Errorf("send Delete Rep Failed, %s", err.Error())
 	}
 
+	//TODO:需要取消注释。
 	err = DeleteImage(f.Metadata.Name)
 	if err != nil {
 		fmt.Printf("no Such Img or Delete Img error, %s", err.Error())

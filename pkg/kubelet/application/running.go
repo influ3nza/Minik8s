@@ -3,18 +3,25 @@ package application
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/tidwall/gjson"
+	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/mem"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/config/apiserver"
+	"minik8s/pkg/config/monitor"
 	"minik8s/pkg/kubelet/pod_manager"
 	"minik8s/pkg/kubelet/util"
 	"minik8s/pkg/message"
 	"minik8s/pkg/network"
+	"minik8s/tools"
 	"net/http"
 	"os"
+	"os/exec"
+	"strconv"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/tidwall/gjson"
 )
 
 func (server *Kubelet) AddPod(c *gin.Context) {
@@ -31,17 +38,18 @@ func (server *Kubelet) AddPod(c *gin.Context) {
 	})
 
 	go func() {
+		errPod := api_obj.Pod{
+			ApiVersion: "",
+			Kind:       "",
+			MetaData:   obj_inner.ObjectMeta{},
+			Spec:       api_obj.PodSpec{},
+			PodStatus: api_obj.PodStatus{
+				PodIP: "error",
+			},
+		}
+
 		util.RegisterPod(pod.MetaData.Name, pod.MetaData.NameSpace)
 		if !util.Lock(pod.MetaData.Name, pod.MetaData.NameSpace) {
-			errPod := api_obj.Pod{
-				ApiVersion: "",
-				Kind:       "",
-				MetaData:   obj_inner.ObjectMeta{},
-				Spec:       api_obj.PodSpec{},
-				PodStatus: api_obj.PodStatus{
-					PodIP: "error",
-				},
-			}
 			errPodJson, _ := json.Marshal(errPod)
 			msg := &message.Message{
 				Type:    message.POD_CREATE,
@@ -50,26 +58,19 @@ func (server *Kubelet) AddPod(c *gin.Context) {
 				Backup2: "",
 			}
 			server.Producer.Produce(message.TOPIC_ApiServer_FromNode, msg)
+			return
 		}
 		err_ := pod_manager.AddPod(pod)
 		util.UnLock(pod.MetaData.Name, pod.MetaData.NameSpace)
 		fmt.Println("Pod Pause Id is ", pod.MetaData.Annotations["pause"])
 		if err_ != nil {
+			// create Pod Failed
 			pod.PodStatus.PodIP = "error"
 			msg := &message.Message{
 				Type: message.POD_CREATE,
 			}
 			errPodJson, err_ := json.Marshal(*pod)
 			if err_ != nil {
-				errPod := api_obj.Pod{
-					ApiVersion: "",
-					Kind:       "",
-					MetaData:   obj_inner.ObjectMeta{},
-					Spec:       api_obj.PodSpec{},
-					PodStatus: api_obj.PodStatus{
-						PodIP: "error",
-					},
-				}
 				errPodJson, _ = json.Marshal(errPod)
 				msg.Content = string(errPodJson)
 			} else {
@@ -89,6 +90,15 @@ func (server *Kubelet) AddPod(c *gin.Context) {
 				Content: string(msgPod),
 			}
 			server.Producer.Produce(message.TOPIC_ApiServer_FromNode, msg)
+			if pod.MetaData.Labels["metricsPort"] != "" {
+				targetUrl := monitor.Server + monitor.RegisterPod
+				data, err_ := network.PostRequest(targetUrl, msgPod)
+				if err_ != nil {
+					fmt.Println("[Kubelet/Add/Register] RegisterPod Failed")
+				} else {
+					fmt.Println("[Kubelet/Add/Register] RegisterPod Success, ", data)
+				}
+			}
 			return
 		}
 	}()
@@ -133,6 +143,14 @@ func (server *Kubelet) DelPod(c *gin.Context) {
 
 		msg.Content = message.DEL_POD_SUCCESS
 		server.Producer.Produce(message.TOPIC_ApiServer_FromNode, msg)
+
+		targetUrl := monitor.Server + monitor.UnRegisterPodPrefix + namespace + "/" + name
+		data, err := network.DelRequest(targetUrl)
+		if err != nil {
+			fmt.Println("[Kubelet/Del/UnRegister] Failed to Unregister"+namespace, " "+name, " "+err.Error())
+		} else {
+			fmt.Println("[Kubelet/Del/UnRegister] Success ", data)
+		}
 	}()
 
 	return
@@ -295,4 +313,91 @@ func (server *Kubelet) PodRestart(pod *api_obj.Pod) error {
 		return nil
 	}
 	return nil
+}
+
+// PV
+func (server *Kubelet) MountNfs(c *gin.Context) {
+	pv := &api_obj.PV{}
+	err := c.ShouldBind(pv)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[kubelet/MountNfs] Failed to parse pv, " + err.Error(),
+		})
+		return
+	}
+
+	name := pv.Metadata.Name
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[kubelet/MountNfs] Empty pv name.",
+		})
+		return
+	}
+
+	//准备挂载
+	masDirPath := tools.PV_mount_master_path + pv.Spec.Nfs.Path
+	dirPath := tools.PV_mount_node_path + pv.Spec.Nfs.Path
+	_, _ = exec.Command("mkdir", dirPath).CombinedOutput()
+
+	args := []string{pv.Spec.Nfs.ServerIp + ":" + masDirPath, dirPath}
+	fmt.Println("Using args, ", args)
+	_, err = exec.Command("mount", args...).CombinedOutput()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[kubelet/MountNfs] Failed to mount pv, err: " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": "[kubelet/MountNfs] Mount success.",
+	})
+}
+
+func (server *Kubelet) UnmountNfs(c *gin.Context) {
+	path := c.Param("path")
+	if path == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[kubelet/UnmountNfs] Empty path name.",
+		})
+		return
+	}
+
+	dirPath := tools.PV_mount_node_path + "/" + path
+	_, err := exec.Command("umount", dirPath).CombinedOutput()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[kubelet/UnmountNfs] Failed to unmount pv, " + err.Error(),
+		})
+		return
+	}
+
+	_, err = exec.Command("rm", "-r", dirPath).CombinedOutput()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[kubelet/UnmountNfs] Failed to delete dir, " + err.Error(),
+		})
+		return
+	}
+
+	//TODO
+	c.JSON(http.StatusOK, gin.H{
+		"data": "[kubelet/UnmountNfs] Unmount success.",
+	})
+}
+
+func (server *Kubelet) GetNodeCPUAndMem(c *gin.Context) {
+	cpuInfo, _ := cpu.Counts(true)
+	memory, _ := mem.VirtualMemory()
+
+	memStr := strconv.FormatUint(memory.Available, 10)
+	retMap := map[string]string{
+		"CPU":    strconv.Itoa(cpuInfo),
+		"Memory": memStr,
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": retMap,
+	})
+	return
 }

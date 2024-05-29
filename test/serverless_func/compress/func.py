@@ -39,7 +39,6 @@ def run(username, image, x, y, r, g, b, mark, mysqlIp, rate, threshold1, thresho
         "g": g,
         "b": b,
         "mark": mark,
-        "rate": rate,
         "mysqlIp": mysqlIp,
         "threshold1": threshold1,
         "threshold2": threshold2,

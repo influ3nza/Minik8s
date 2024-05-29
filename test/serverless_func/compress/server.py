@@ -25,7 +25,7 @@ def handle_request():
         return response
     except Exception as e:
         err = {
-            "status": "error"
+            "status": "error",
             "error": e,
             "username": params.username
         }

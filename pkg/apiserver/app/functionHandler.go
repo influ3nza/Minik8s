@@ -100,8 +100,10 @@ func (s *ApiServer) AddFunction(c *gin.Context) {
 	if f.UseTemplate {
 		p_path = tools.Func_template_path
 	} else {
-		p_path = dirPath
+		p_path = f.FilePath
 	}
+
+	fmt.Printf("[AddFunction] P_path: %s, dirPath: %s\n", p_path, dirPath)
 
 	api.DoCopy(p_path+"Dockerfile", dirPath+"Dockerfile")
 	api.DoCopy(p_path+"requirements.txt", dirPath+"requirements.txt")

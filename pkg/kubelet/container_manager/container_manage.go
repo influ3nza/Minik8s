@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/containerd/containerd/namespaces"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/kubelet/image_manager"
@@ -35,9 +36,12 @@ import (
 // 返回值：
 //
 //	container : containerd.Container
+//	string: containerId
+//	error: if error
 func CreateK8sContainer(ctx context.Context, client *containerd.Client, container *api_obj.Container, metaName string, podVolumes []obj_inner.Volume, linuxNamespace string) (containerd.Container, string, error) {
 	// 解析image，配置容器image选项
-	image, err := image_manager.GetImage(client, &container.Image, ctx)
+	namespace, _ := namespaces.Namespace(ctx)
+	image, err := image_manager.GetImage(client, &container.Image, ctx, namespace)
 	if err != nil {
 		return nil, "", err
 	}
@@ -47,16 +51,19 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 	createOpts = append(createOpts, oci.WithHostname(metaName))
 
 	//配置容器资源
-	limitOpts, err := ParseResources(container.Resources)
-	if err == nil {
-		fmt.Println("append opts")
-		createOpts = append(createOpts, limitOpts...)
+	if container.Resources.Limits != nil && container.Resources.Requests != nil {
+		limitOpts, err := ParseResources(container.Resources)
+		if err == nil {
+			fmt.Println("append opts")
+			createOpts = append(createOpts, limitOpts...)
+		}
 	}
 
 	// 配置容器环境
 	if container.Env != nil {
 		envs := convertEnv(container)
 		envOci := oci.WithEnv(envs)
+		fmt.Println("container envs ", envs)
 		createOpts = append(createOpts, envOci)
 	}
 
@@ -67,17 +74,13 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 	}
 	if len(container.EntryPoint.Command) != 0 {
 		var processArgs []string
-		for _, cmd := range container.EntryPoint.Command {
-			processArgs = append(processArgs, cmd)
-		}
-		for _, arg := range container.EntryPoint.Args {
-			processArgs = append(processArgs, arg)
-		}
+		processArgs = append(processArgs, container.EntryPoint.Command...)
+		processArgs = append(processArgs, container.EntryPoint.Args...)
 		entryOci = append(entryOci, oci.WithProcessArgs(processArgs...))
 	}
 	createOpts = append(createOpts, entryOci...)
 
-	// 配置容器Mount todo source&dest
+	// 配置容器Mount
 	if container.VolumeMounts != nil {
 		mounts, e := convertMounts(podVolumes, container)
 		if e != nil {
@@ -112,7 +115,7 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 	// 配置容器namespace pid net ipc uts /proc/%pid/ns/
 	if linuxNamespace != "" {
 		var linuxNamespaces = map[string]string{
-			"pid":     linuxNamespace + "pid",
+			// "pid":     linuxNamespace + "pid",
 			"network": linuxNamespace + "net",
 			"ipc":     linuxNamespace + "ipc",
 			"uts":     linuxNamespace + "uts",
@@ -166,12 +169,28 @@ func CreateK8sContainer(ctx context.Context, client *containerd.Client, containe
 	return containerCreated, containerId, nil
 }
 
+// StartFuncContainer 启动函数容器
+/*
+ * 参数
+ *
+ *	client *containerd.Client 客户端
+ *	namespace string 命名空间
+ *	name string 函数名
+ *	podName string pod名
+ *
+ * 返回
+ *
+ *	string funcContainerId 函数容器id
+ *	error err 错误
+ */
 func StartFuncContainer(client *containerd.Client, namespace string, name string, podName string) (string, error) {
 	err := image_manager.FetchMasterImage(client, name, namespace)
 	if err != nil {
+		fmt.Println("Fetch Img Error, ", err.Error())
 		return "", fmt.Errorf("fetch Func Image Failed %s", err.Error())
 	}
 	cmd := []string{"-n", namespace, "run", "-d", "--name", podName, "--net", "flannel", "--label", fmt.Sprintf("podName=%s", podName), name}
+	// util.PrintCmd(namespace, cmd...)
 	opt, err := exec.Command("nerdctl", cmd...).CombinedOutput()
 
 	fmt.Println(opt)
@@ -190,15 +209,17 @@ func StartFuncContainer(client *containerd.Client, namespace string, name string
 }
 
 // StartContainer 启动创建好的container
-// 参数
-//
-//	ctx context.Context
-//	container containerd.Container 通过createContainer创建
-//
-// 返回
-//
-//	uint32 pid
-//	err error
+/*
+ *	参数
+ *
+ *	ctx context.Context
+ *	container containerd.Container 通过createContainer创建
+ *
+ * 返回
+ *
+ *	uint32 pid
+ *	err error
+ */
 func StartContainer(ctx context.Context, container containerd.Container) (uint32, error) {
 	newTask, err := container.NewTask(ctx, cio.NewCreator(cio.WithStdio))
 	if err != nil {
@@ -214,6 +235,16 @@ func StartContainer(ctx context.Context, container containerd.Container) (uint32
 	return newTask.Pid(), nil
 }
 
+// StopContainer 停止容器
+/*
+ * 参数
+ *
+ *	namespace string 命名空间
+ *	name string 容器名
+ *
+ * 返回
+ *
+ */
 func StopContainer(namespace string, name string) {
 	_, err := util.StopContainer(namespace, name)
 	if err != nil {
@@ -221,6 +252,19 @@ func StopContainer(namespace string, name string) {
 	}
 }
 
+// StopContainerInPod 停止pod中的容器
+/*
+ * 参数
+ *
+ *	ctx context.Context 上下文
+ *	client *containerd.Client 客户端
+ *	namespace string 命名空间
+ *	podName string pod名
+ *
+ * 返回
+ *
+ *	error 错误
+ */
 func StopContainerInPod(ctx context.Context, client *containerd.Client, namespace string, podName string) error {
 	walker := &ContainerWalker{
 		Client: client,
@@ -243,8 +287,20 @@ func StopContainerInPod(ctx context.Context, client *containerd.Client, namespac
 	return nil
 }
 
+// StopAndRmContainer 停止并删除容器
+/*
+ * 参数
+ *
+ *	namespace string 命名空间
+ *	name string 容器名
+ *	ifForce bool 是否强制删除
+ *
+ * 返回
+ *
+ *	error 错误
+ */
 func StopAndRmContainer(namespace string, name string, ifForce bool) error {
-	if ifForce == false {
+	if !ifForce {
 		_, err := util.StopContainer(namespace, name)
 		if err != nil {
 			fmt.Println("At Func StopAndRmContainer line 226 ", err.Error())
@@ -266,6 +322,20 @@ func StopAndRmContainer(namespace string, name string, ifForce bool) error {
 	return nil
 }
 
+// DeleteContainerInPod 删除pod中的容器
+/*
+ * 参数
+ *
+ *	ctx context.Context 上下文
+ *	client *containerd.Client 客户端
+ *	podName string pod名
+ *	podNamespace string pod命名空间
+ *	ifForce bool 是否强制删除
+ *
+ * 返回
+ *
+ *	error 错误
+ */
 func DeleteContainerInPod(ctx context.Context, client *containerd.Client, podName string, podNamespace string, ifForce bool) error {
 	walker := &ContainerWalker{
 		Client: client,
@@ -290,12 +360,26 @@ func DeleteContainerInPod(ctx context.Context, client *containerd.Client, podNam
 	return nil
 }
 
+// CreatePauseContainer 创建pause容器
+/*
+ * 参数
+ *
+ *	ctx context.Context 上下文
+ *	client *containerd.Client 客户端
+ *	namespace string 命名空间
+ *	name string 容器名
+ *
+ * 返回
+ *
+ *	string 容器id
+ *	error 错误
+ */
 func CreatePauseContainer(ctx context.Context, client *containerd.Client, namespace string, name string) (string, error) {
 	img := obj_inner.Image{
 		Img:           util.FirstSandbox,
 		ImgPullPolicy: "Always",
 	}
-	_, err := image_manager.GetImage(client, &img, ctx)
+	_, err := image_manager.GetImage(client, &img, ctx, namespace)
 	if err != nil {
 		fmt.Println("Pull Pause Image Failed At CreatePauseContainer line 276, ", err.Error())
 		return "", err
@@ -309,6 +393,17 @@ func CreatePauseContainer(ctx context.Context, client *containerd.Client, namesp
 	return res, nil
 }
 
+// ReStartPauseContainer 重启pause容器
+/*
+ * 参数
+ *
+ *	namespace string 命名空间
+ *	id string 容器id
+ *
+ * 返回
+ *
+ *	error 错误
+ */
 func ReStartPauseContainer(namespace string, id string) error {
 	res, err := util.StartContainer(namespace, id)
 	if err != nil {
@@ -318,6 +413,17 @@ func ReStartPauseContainer(namespace string, id string) error {
 	return nil
 }
 
+// DeletePauseContainer 删除pause容器
+/*
+ * 参数
+ *
+ *	namespace string 命名空间
+ *	id string 容器id
+ *
+ * 返回
+ *
+ *	error 错误
+ */
 func DeletePauseContainer(namespace string, id string) error {
 	_, _ = util.StopContainer(namespace, id)
 	_, _ = util.RemoveContainer(namespace, id)
@@ -325,6 +431,18 @@ func DeletePauseContainer(namespace string, id string) error {
 }
 
 // MonitorContainerState 监控容器的状态
+/*
+ * 参数
+ *
+ *	ctx context.Context 上下文
+ *	container containerd.Container 容器
+ *
+ * 返回
+ *
+ *	string 容器状态
+ *	uint32 退出状态
+ *	error 错误
+ */
 func MonitorContainerState(ctx context.Context, container containerd.Container) (string, uint32, error) {
 	// 获取容器的任务
 	task, err := container.Task(ctx, nil)
@@ -344,15 +462,18 @@ func MonitorContainerState(ctx context.Context, container containerd.Container) 
 	return string(status.Status), status.ExitStatus, nil
 }
 
-type metricsCollection struct {
-	begin      time.Time
-	task       containerd.Task
-	lastTime   time.Time
-	lastCPU    uint64
-	CPUPercent uint64
-	memory     uint64
-}
-
+// GetContainersMetrics 获取容器的资源使用情况
+/*
+ * 参数
+ *
+ *	ctx context.Context 上下文
+ *	c containerd.Container 容器
+ *	window time.Duration 时间窗口
+ *
+ * 返回
+ *
+ *	*api_obj.ContainerMetrics 容器资源使用情况
+ */
 func GetContainersMetrics(ctx context.Context, c containerd.Container, window time.Duration) (*api_obj.ContainerMetrics, error) {
 	task, err := c.Task(ctx, nil)
 	if err != nil {
@@ -360,7 +481,7 @@ func GetContainersMetrics(ctx context.Context, c containerd.Container, window ti
 		return nil, err
 	}
 
-	collection := &metricsCollection{
+	collection := &MetricsCollection{
 		begin:      time.Now(),
 		task:       task,
 		lastTime:   time.Now(),
@@ -374,7 +495,19 @@ func GetContainersMetrics(ctx context.Context, c containerd.Container, window ti
 	return cm, nil
 }
 
-func CollectContainerMetrics(ctx context.Context, collection *metricsCollection, window time.Duration, c containerd.Container) *api_obj.ContainerMetrics {
+// CollectContainerMetrics 收集容器的资源使用情况
+/*
+ * 参数
+ *
+ *	ctx context.Context 上下文
+ *	c containerd.Container 容器
+ *	window time.Duration 时间窗口
+ *
+ * 返回
+ *
+ *	*api_obj.ContainerMetrics 容器资源使用情况
+ */
+func CollectContainerMetrics(ctx context.Context, collection *MetricsCollection, window time.Duration, c containerd.Container) *api_obj.ContainerMetrics {
 	var currentMetrics v2.Metrics
 	var temporaryInterface interface{}
 	var curTime time.Time
@@ -399,8 +532,9 @@ func CollectContainerMetrics(ctx context.Context, collection *metricsCollection,
 	default:
 		return nil
 	}
+	fmt.Println("[Before] ", currentMetrics)
 	collection.lastTime = curTime
-	collection.lastCPU = currentMetrics.CPU.UsageUsec
+	collection.lastCPU = currentMetrics.CPU.UsageUsec * 1000
 	collection.memory = currentMetrics.Memory.Usage
 	time.Sleep(window)
 
@@ -422,14 +556,16 @@ func CollectContainerMetrics(ctx context.Context, collection *metricsCollection,
 	default:
 		return nil
 	}
+	fmt.Println("[After] ", currentMetrics)
 	collection.memory += currentMetrics.Memory.Usage
 	collection.memory /= 2
 
-	allCPUUsage = currentMetrics.CPU.UsageUsec
+	allCPUUsage = currentMetrics.CPU.UsageUsec * 1000
 	cpuNow := allCPUUsage - collection.lastCPU
+	fmt.Printf("[GetContainerMetrics/CPU] is %d", cpuNow)
 
 	timeDelta := curTime.Sub(collection.lastTime)
-	collection.CPUPercent = uint64(float64(cpuNow) / float64(timeDelta.Nanoseconds()) * 1000)
+	collection.CPUPercent = uint64(float64(cpuNow) / float64(timeDelta.Nanoseconds()))
 	task1 := collection.task
 	memPercent := 100 * float64(collection.memory) / float64(currentMetrics.Memory.UsageLimit)
 	var cm api_obj.ContainerMetrics

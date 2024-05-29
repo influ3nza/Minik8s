@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -15,6 +16,7 @@ import (
 	"minik8s/pkg/config/kubelet"
 	"minik8s/pkg/message"
 	"minik8s/pkg/network"
+	"minik8s/tools"
 )
 
 var pollIndex int32 = 0
@@ -108,6 +110,8 @@ func (s *Scheduler) DecideNode(pod *api_obj.Pod, avail_pack []api_obj.Node) stri
 		return s.SchedulePoll(avail_pack)
 	case Random:
 		return s.ScheduleRandom(avail_pack)
+	case LeastUsed:
+		return s.ScheduleLeastUsed(avail_pack)
 	default:
 		return ""
 	}
@@ -138,6 +142,30 @@ func (s *Scheduler) ScheduleRandom(avail_pack []api_obj.Node) string {
 	fmt.Printf("[scheduler/ScheduleRandom] Node [%d]:%s chosen for the new pod.\n", i, node_chosen)
 
 	return node_chosen
+}
+
+func (s *Scheduler) ScheduleLeastUsed(avail_pack []api_obj.Node) string {
+	var mem int64 = 0
+	var ret string = ""
+
+	for _, n := range avail_pack {
+		ipaddr := tools.NodesIpMap[n.NodeMetadata.Name]
+		uri := ipaddr + strconv.Itoa(int(kubelet.Port)) + kubelet.GetCpuAndMem
+		metrics := make(map[string]string)
+		err := network.GetRequestAndParse(uri, &metrics)
+		if err != nil {
+			fmt.Printf("[ERR/ScheduleLeastUsed] Failed to send GET request, %s\n", err.Error())
+			return ""
+		}
+
+		n_mem, _ := strconv.ParseInt(metrics["Memory"], 10, 64)
+		if mem == 0 || n_mem > mem {
+			mem = n_mem
+			ret = n.NodeMetadata.Name
+		}
+	}
+
+	return ret
 }
 
 func (s *Scheduler) GetNodes() ([]api_obj.Node, error) {

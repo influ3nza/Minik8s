@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
+	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/config/kubelet"
+	"minik8s/pkg/config/monitor"
 	"minik8s/pkg/kubelet/util"
 	"minik8s/pkg/message"
 	"minik8s/pkg/network"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -30,7 +34,7 @@ type Kubelet struct {
 func (server *Kubelet) register() {
 	// fmt.Println(server.IpAddress)
 	hostName, _ := os.Hostname()
-	node := api_obj.Node{
+	node := &api_obj.Node{
 		APIVersion: "v1",
 		NodeMetadata: obj_inner.ObjectMeta{
 			Name: hostName,
@@ -55,19 +59,38 @@ func (server *Kubelet) register() {
 		},
 	}
 
-	nodeJson, _ := json.Marshal(node)
-	request, err := network.PostRequest(server.ApiServerAddress+"/nodes/add", nodeJson)
+	server.registerNodeToApiServer(node)
+	server.registerNodeToMonitor(node)
+}
+
+func (server *Kubelet) registerNodeToApiServer(node *api_obj.Node) {
+	nodeJson, _ := json.Marshal(*node)
+	request, err := network.PostRequest(server.ApiServerAddress+apiserver.API_add_node, nodeJson)
 	if err != nil {
-		fmt.Println("Send Register At line 54 ", err.Error())
+		fmt.Println("Send Register At line 62 ", err.Error())
 		return
 	}
-	fmt.Println("Response data is ", request)
+	fmt.Println("Response data on register to apiServer is ", request)
+}
+
+func (server *Kubelet) registerNodeToMonitor(node *api_obj.Node) {
+	nodeJson, _ := json.Marshal(*node)
+	request, err := network.PostRequest(monitor.Server+monitor.RegisterNode, nodeJson)
+	if err != nil {
+		fmt.Println("Send Register  At line 69 ", err.Error())
+	}
+	fmt.Println("Response data on register to monitor is ", request)
 }
 
 func (server *Kubelet) registerHandler() {
-	server.Router.GET(kubelet.GetMatrix, server.GetPodMatrix)
+	server.Router.GET(kubelet.GetMetrics, server.GetPodMatrix)
 	server.Router.DELETE(kubelet.DelPod, server.DelPod)
 	server.Router.POST(kubelet.AddPod, server.AddPod)
+	server.Router.GET(kubelet.GetCpuAndMem, server.GetNodeCPUAndMem)
+
+	//PV
+	server.Router.POST(kubelet.MountNfs, server.MountNfs)
+	server.Router.DELETE(kubelet.UnmountNfs, server.UnmountNfs)
 }
 
 func InitKubeletDefault() *Kubelet {
@@ -101,10 +124,31 @@ func InitKubelet(config util.KubeConfig) *Kubelet {
 	}
 }
 
+func (server *Kubelet) unregisterNodeToMonitor() {
+	targetUrl := monitor.Server + monitor.UnRegisterNodePrefix
+	hostname, _ := os.Hostname()
+	targetUrl += hostname
+	data, err := network.DelRequest(targetUrl)
+	if err != nil {
+		fmt.Println("unregisterNodeToMonitor Failed, ", err.Error())
+		return
+	}
+	fmt.Println("unregisterNodeToMonitor Success, ", data)
+}
+
 func (server *Kubelet) Run() {
 	server.register()
 	server.registerHandler()
 	go server.GetPodStatus()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT)
+	go func() {
+		<-sigChan
+		server.unregisterNodeToMonitor()
+		os.Exit(0)
+	}()
+
 	err := server.Router.Run(fmt.Sprintf(":%d", server.Port))
 	if err != nil {
 		return

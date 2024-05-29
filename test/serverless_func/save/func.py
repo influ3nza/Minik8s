@@ -16,7 +16,7 @@ def run(username, image, mysqlIp, status):
     cursor.close()
     db.close()
     return {
-        "state": "finished"
+        "status": "finished"
     }
 
 
