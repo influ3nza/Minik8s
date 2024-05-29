@@ -189,6 +189,19 @@ func (fc *FunctionController) TriggerFunction(f *api_obj.Function) (string, erro
 	return string(res), nil
 }
 
+func (fc *FunctionController) UpdateFunctionBody(f *api_obj.Function) error {
+	err := fc.DeleteFunction(f)
+	if err != nil {
+		return fmt.Errorf("delete Replica Failed In Update Failed, %s", err.Error())
+	}
+
+	err = fc.GenerateFunction(f)
+	if err != nil {
+		return fmt.Errorf("generate Replica Failed In Update Failed, %s", err.Error())
+	}
+	return nil
+}
+
 func (fc *FunctionController) DeleteFunction(f *api_obj.Function) error {
 	replicName := utils.RS_name_prefix + f.Metadata.Name
 	url := apiserver.API_server_prefix +

@@ -42,9 +42,10 @@ func (s *SL_server) MsgHandler(msg *message.Message) {
 	//1. FUNC_CREATE
 	//2. WF_CREATE
 	//3. FUNC_EXEC
+	//4. FUNC_DEL
+	//5. FUNC_UPDATE
 	//有关于DELETE应该在apiserver处就被处理完毕了，注意需要同时删除所有pod
 	//和对应的rs。
-	//UPDATE不考虑。
 	case message.FUNC_CREATE:
 		s.OnFunctionCreate(content)
 	case message.FUNC_EXEC:
@@ -53,6 +54,8 @@ func (s *SL_server) MsgHandler(msg *message.Message) {
 		s.OnWorkflowExec(content)
 	case message.FUNC_DEL:
 		s.OnFunctionDel(content)
+	case message.FUNC_UPDATE:
+		s.OnFunctionUpdate(content)
 	}
 }
 
@@ -78,7 +81,11 @@ func (s *SL_server) OnFunctionExec(content string) {
 		fmt.Printf("[ERR/serverless/OnFunctionExec] Failed to unmarshal data.\n")
 		return
 	}
-	s.FunctionController.TriggerFunction(f)
+	_, err = s.FunctionController.TriggerFunction(f)
+	if err != nil {
+		fmt.Println("[ERR/serverless/OnFunctionExec] ", err.Error())
+	}
+
 	s.FunctionController.UpdateFunction(f)
 
 }
@@ -90,7 +97,14 @@ func (s *SL_server) OnFunctionDel(content string) {
 		fmt.Printf("[ERR/serverless/OnFunctionDel] Failed to unmarshal data.\n")
 		return
 	}
-	s.FunctionController.DeleteFunction(f)
+	err = s.FunctionController.DeleteFunction(f)
+	if err != nil {
+		fmt.Println("[ERR/serverless/OnFunctionDel] ", err.Error())
+	}
+}
+
+func (s *SL_server) OnFunctionUpdate(content string) {
+
 }
 
 func (s *SL_server) OnWorkflowExec(content string) {
