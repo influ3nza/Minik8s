@@ -16,7 +16,7 @@ func SampleHandler(msg *Message) {
 
 func TestMain(m *testing.M) {
 	producerDummy = NewProducer()
-	consumerDummy, _ = NewConsumer("testMsg", "default")
+	consumerDummy, _ = NewConsumer("testMsg", "testMsg")
 	consumerDummy.Consume([]string{"testMsg"}, SampleHandler)
 	m.Run()
 }
