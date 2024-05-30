@@ -15,7 +15,6 @@ import (
 	"minik8s/pkg/dns/dns_op"
 	"minik8s/pkg/etcd"
 	"minik8s/pkg/message"
-	"minik8s/pkg/serverless/server"
 	"minik8s/tools"
 )
 
@@ -28,13 +27,15 @@ type ApiServer struct {
 	DnsService        *dns_op.DnsService
 	ControllerManager manager.ControllerManager
 	NodeIPMap         map[string]string
-	S_server          *server.SL_server
 }
 
 // 在进行测试/实际运行时，第1步调用此函数。
 func CreateApiServerInstance(c *apiserver.ServerConfig) (*ApiServer, error) {
 	router := gin.Default()
 	router.SetTrustedProxies(c.TrustedProxy)
+
+	f_router := gin.Default()
+	f_router.SetTrustedProxies(c.TrustedProxy)
 
 	wrap, err := etcd.CreateEtcdInstance(c.EtcdEndpoints, c.EtcdTimeout)
 	if err != nil {
@@ -50,7 +51,6 @@ func CreateApiServerInstance(c *apiserver.ServerConfig) (*ApiServer, error) {
 	}
 
 	dns_srv := dns.InitDnsService()
-	ss, err := server.CreateNewSLServerInstance()
 	if err != nil {
 		fmt.Printf("[ERR/Apiserver] Failed to create serverless server.\n")
 		return nil, err
@@ -70,7 +70,6 @@ func CreateApiServerInstance(c *apiserver.ServerConfig) (*ApiServer, error) {
 		Consumer:          consumer,
 		DnsService:        dns_srv,
 		ControllerManager: cm,
-		S_server:          ss,
 	}, nil
 }
 
@@ -93,7 +92,7 @@ func (s *ApiServer) Bind() {
 	s.router.POST(apiserver.API_update_pod, s.UpdatePodScheduled)
 	s.router.POST(apiserver.API_add_pod, s.AddPod)
 	s.router.GET(apiserver.API_get_pods_by_node, s.GetPodsByNode)
-	s.router.GET(apiserver.API_get_pods_by_node_force, )
+	s.router.GET(apiserver.API_get_pods_by_node_force, s.GetPodsByNodeForce)
 	s.router.GET(apiserver.API_get_pod, s.GetPod)
 	s.router.GET(apiserver.API_get_pods_by_namespace, s.GetPodsByNamespace)
 	s.router.DELETE(apiserver.API_delete_pod, s.DeletePod)
@@ -132,7 +131,7 @@ func (s *ApiServer) Bind() {
 	s.router.GET(apiserver.API_get_function) //TODO
 	s.router.POST(apiserver.API_add_function, s.AddFunction)
 	s.router.DELETE(apiserver.API_delete_function, s.DeleteFunction)
-	s.router.GET(apiserver.API_exec_function, s.ExecFunction)
+	s.router.POST(apiserver.API_exec_function, s.ExecFunction)
 	s.router.GET(apiserver.API_find_function_ip, s.FindFunctionIp)
 	s.router.GET(apiserver.API_get_function_res, s.GetFunctionRes)
 
@@ -163,7 +162,6 @@ func (s *ApiServer) Run() error {
 
 	go s.ControllerManager.Run()
 	go s.Consumer.Consume([]string{message.TOPIC_ApiServer_FromNode}, s.MsgHandler)
-	go s.S_server.Run()
 
 	err = s.router.Run(fmt.Sprintf(":%d", s.port))
 	return err

@@ -19,8 +19,8 @@ type ReplicasetController struct {
 }
 
 var (
-	timedelay    = 10 * time.Second
-	timeinterval = []time.Duration{10 * time.Second}
+	timedelay    = 4 * time.Second
+	timeinterval = []time.Duration{4 * time.Second}
 )
 
 func (rc *ReplicasetController) PrintHandlerWarning() {
@@ -127,15 +127,13 @@ func (rc *ReplicasetController) watch() {
 		//如果小了就增加
 		if len(correspondPods) < rs.Spec.Replicas {
 			rc.AddReplicaPods(&rs.MetaData, &rs.Spec.Template, rs.Spec.Replicas-len(correspondPods))
-			rc.UpdateReplicaSet(correspondPods, &rs)
 		} else if len(correspondPods) > rs.Spec.Replicas {
 			rc.ReduceReplicaPods(correspondPods, len(correspondPods)-rs.Spec.Replicas)
-			rc.UpdateReplicaSet(correspondPods, &rs)
 		}
 
 		// 3. 根据选择好的pod的状态，更新replicasets的状态
 		// 注意，以上对replicaset的修改不会马上反映在replicaset的status里
-
+		rc.UpdateReplicaSet(correspondPods, &rs)
 	}
 }
 
@@ -215,6 +213,8 @@ func (rc *ReplicasetController) UpdateReplicaSet(pods []api_obj.Pod, rs *api_obj
 	newReplicaSet = *rs
 	newReplicaSet.Status.Replicas = rs.Spec.Replicas
 	newReplicaSet.Status.ReadyReplicas = ready
+
+	fmt.Println(ready)
 
 	replicasetStr, err := json.Marshal(newReplicaSet)
 	if err != nil {

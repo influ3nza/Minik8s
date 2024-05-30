@@ -520,7 +520,7 @@ func (s *ApiServer) GetPodMetrics(c *gin.Context) {
 	}
 
 	uri := tools.NodesIpMap[pod.Spec.NodeName] +
-		strconv.Itoa(int(kubelet.Port)) + kubelet.GetMatrix_prefix + namespace + "/" + name
+		strconv.Itoa(int(kubelet.Port)) + kubelet.GetMetrics_prefix + namespace + "/" + name
 
 	pod_metrics := &api_obj.PodMetrics{}
 	err = network.GetRequestAndParse(uri, pod_metrics)

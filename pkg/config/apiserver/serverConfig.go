@@ -88,7 +88,7 @@ const (
 	API_delete_function_prefix  string = "/functions/delete/"
 	API_delete_function         string = "/functions/delete/:name"
 	API_exec_function_prefix    string = "/functions/exec/"
-	API_exec_function           string = "/functions/exec/:name/:coeff"
+	API_exec_function           string = "/functions/exec/:name"
 	API_find_function_ip_prefix string = "/function/findByIp/"
 	API_find_function_ip        string = "/function/findByIp/:name"
 	API_get_function_res_prefix string = "/function/getRes/"

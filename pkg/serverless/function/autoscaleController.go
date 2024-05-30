@@ -5,6 +5,7 @@ import (
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/network"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -88,6 +89,7 @@ func (fc *FunctionController) watch() {
 		}
 		record.Mutex.Unlock()
 	}
+
 }
 
 func (fc *FunctionController) scaleup(record *Record) (int, error) {
@@ -121,4 +123,24 @@ func (fc *FunctionController) RunWatch() {
 			time.Sleep(time.Second) // 等待一秒钟
 		}
 	}()
+}
+
+func appendIntToFile(filename string, num int) error {
+	// 打开文件，使用追加模式和写模式，如果文件不存在则创建
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// 将 int 转换为字符串
+	str := strconv.Itoa(num)
+
+	// 将字符串写入文件
+	_, err = file.WriteString(str + "\n")
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

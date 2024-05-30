@@ -48,8 +48,8 @@ func FuncExecHandler(args []string) {
 
 	if !showResult {
 		// 向apiserver发送函数执行请求
-		uri := apiserver.API_server_prefix + apiserver.API_exec_function_prefix + func_name + "/" + coeff
-		_, err := network.GetRequest(uri)
+		uri := apiserver.API_server_prefix + apiserver.API_exec_function_prefix + func_name
+		_, err := network.PostRequest(uri, []byte(coeff))
 		if err != nil {
 			fmt.Printf("[ERR/ExecHandler] Failed to send GET request, %v", err)
 			return
