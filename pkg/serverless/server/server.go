@@ -7,6 +7,7 @@ import (
 	"minik8s/pkg/message"
 	"minik8s/pkg/serverless/function"
 	"minik8s/pkg/serverless/workflow"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -163,7 +164,23 @@ func (s *SL_server) OnWorkflowExec(content string) {
 
 func (s *SL_server) OnFunctionExecOnServerless(c *gin.Context) {
 	name := c.Param("name")
-	cof := c.Param("coeff")
+	var req map[string]interface{}
+	err := c.ShouldBind(&req)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/serverless/OnFunctionExecOnServerless] Invalid request." + err.Error(),
+		})
+		return
+	}
+
+	reqStr, err := json.Marshal(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/serverless/OnFunctionExecOnServerless] Failed to marshal data.",
+		})
+		return
+	}
 
 	function.RecordMutex.RLock()
 	fr := function.RecordMap[name]
@@ -189,13 +206,18 @@ func (s *SL_server) OnFunctionExecOnServerless(c *gin.Context) {
 	m_msg := &message.Message{
 		Type:    message.FUNC_EXEC_LOCAL,
 		Content: string(f_str),
-		Backup:  cof,
+		Backup:  string(reqStr),
 	}
 	s.Producer.Produce(message.TOPIC_Serverless, m_msg)
 	s.FunctionController.UpdateFunction(name)
 }
 
+func (s *SL_server) bindHandler() {
+	s.Router.POST("/functions/exec/:name", s.OnFunctionExecOnServerless)
+}
+
 func (s *SL_server) Run() {
+	s.bindHandler()
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT)
 	go func() {
@@ -205,7 +227,7 @@ func (s *SL_server) Run() {
 
 	go function.Watcher.FileWatch()
 	go s.Consumer.Consume([]string{message.TOPIC_Serverless}, s.MsgHandler)
-	go s.Router.Run(":50001")
+	s.Router.Run(":50001")
 }
 
 func (s *SL_server) Clean() {

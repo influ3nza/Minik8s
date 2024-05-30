@@ -51,15 +51,15 @@ func (fc *FunctionController) UpdateFunction(funcName string) {
 	}
 	RecordMap[funcName].Mutex.Lock()
 	defer RecordMap[funcName].Mutex.Unlock()
-	RecordMap[funcName].CallCount += 120 / (RecordMap[funcName].Replicas + 1)
-	if RecordMap[funcName].CallCount > 150 {
+	RecordMap[funcName].CallCount += 30 / (RecordMap[funcName].Replicas + 2)
+	if RecordMap[funcName].CallCount > 200 {
 		replica, err := fc.scaleup(RecordMap[funcName])
 		if err != nil {
 			fmt.Println("Send Get RequestErr in UpdateFunction ", err.Error())
 			return
 		}
 		RecordMap[funcName].Replicas = int32(replica)
-		RecordMap[funcName].CallCount = 100
+		RecordMap[funcName].CallCount = 60
 	}
 
 }
@@ -73,9 +73,12 @@ func (fc *FunctionController) watch() {
 
 	for _, record := range RecordMap {
 		record.Mutex.Lock()
-		record.CallCount -= 2
-		if record.CallCount == 0 {
+		if record.CallCount > 0 {
+			record.CallCount -= 2
+		}
+		if record.CallCount <= 0 {
 			replica, err := fc.scaledown(record)
+			record.CallCount = 60
 			if err != nil {
 				fmt.Println("Send Get RequestErr in watch ", err.Error())
 				record.Mutex.Unlock()
@@ -89,7 +92,7 @@ func (fc *FunctionController) watch() {
 
 func (fc *FunctionController) scaleup(record *Record) (int, error) {
 	name := record.Name
-	uri := apiserver.API_scale_replicaset_prefix + name + "add"
+	uri := apiserver.API_server_prefix + apiserver.API_scale_replicaset_prefix + name + "/add"
 	replicaStr, err := network.GetRequest(uri)
 	if err != nil {
 		fmt.Println("Send Get RequestErr in scaleup", err.Error())
@@ -101,7 +104,7 @@ func (fc *FunctionController) scaleup(record *Record) (int, error) {
 
 func (fc *FunctionController) scaledown(record *Record) (int, error) {
 	name := record.Name
-	uri := apiserver.API_scale_replicaset_prefix + name + "minus"
+	uri := apiserver.API_server_prefix + apiserver.API_scale_replicaset_prefix + name + "/minus"
 	replicaStr, err := network.GetRequest(uri)
 	if err != nil {
 		fmt.Println("Send Get RequestErr in scaleup", err.Error())

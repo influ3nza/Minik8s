@@ -10,6 +10,7 @@ import (
 	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/network"
 	"net/http"
+	"sort"
 	"sync"
 	"time"
 )
@@ -146,8 +147,36 @@ func (fc *FunctionController) MakePods(f *api_obj.Function) ([]string, error) {
 
 func (fc *FunctionController) Schedule(funcName string, ips []string) string {
 	if len(ips) > 0 {
-		return ips[0]
+		fmt.Println("ips are: ", ips)
+		fmt.Println("Before Fr IpMap: ", RecordMap[funcName].IpMap)
+		RecordMutex.RLock()
+		fr := RecordMap[funcName]
+		RecordMutex.RUnlock()
+		if fr == nil {
+			fmt.Printf("[Schedule] Function not found.\n")
+			return ""
+		}
+
+		newIpMap := map[string]int{}
+		for _, ip := range ips {
+			if _, ok := fr.IpMap[ip]; !ok {
+				newIpMap[ip] = 0
+			} else {
+				newIpMap[ip] = fr.IpMap[ip]
+			}
+		}
+		fr.IpMap = newIpMap
+
+		sort.Slice(ips, func(i, j int) bool {
+			return fr.IpMap[ips[i]] < fr.IpMap[ips[j]]
+		})
+
+		ret := ips[0]
+		fr.IpMap[ret] += 1
+		fmt.Println("Now Fr IpMap: ", RecordMap[funcName].IpMap)
+		return ret
 	}
+
 	return ""
 }
 
