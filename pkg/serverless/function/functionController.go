@@ -10,6 +10,7 @@ import (
 	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/network"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -27,6 +28,17 @@ func (fc *FunctionController) GenerateFunction(f *api_obj.Function) error {
 	if err != nil {
 		return fmt.Errorf("gen replica Failed At GF, %s", err.Error())
 	}
+
+	RecordMutex.Lock()
+	RecordMap[f.Metadata.Name] = &Record{
+		Name:      f.Metadata.Name,
+		FuncTion:  f,
+		CallCount: 100,
+		Replicas:  0,
+		IpMap:     map[string]int{},
+		Mutex:     sync.RWMutex{},
+	}
+	RecordMutex.Unlock()
 
 	//是否通过监视文件触发（文件夹）
 	if f.NeedWatch {
@@ -151,8 +163,56 @@ func (fc *FunctionController) TriggerFunction(f *api_obj.Function) (string, erro
 	}
 
 	param := []byte(f.Coeff)
-	fmt.Println(param, f.Coeff)
+	// fmt.Println(param, f.Coeff)
 
+	body := bytes.NewReader(param)
+	uri := "http://" + ip + ":8080"
+	failCnt := 0
+	var resp *http.Response = nil
+	for {
+		resp, err = http.Post(uri, "application/json", body)
+		if err != nil {
+			failCnt += 1
+			if failCnt >= 3 {
+				return "", fmt.Errorf("post Req To Func Failed, %s", err.Error())
+			}
+			time.Sleep(2 * time.Second)
+			continue
+		}
+
+		defer resp.Body.Close()
+		break
+	}
+
+	var result map[string]interface{}
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&result)
+	if err != nil {
+		fmt.Printf("[FunctionExec] Error in returning http, %v", err)
+	}
+	fmt.Println(result)
+	res, err := json.Marshal(result)
+	if err != nil {
+		return "", fmt.Errorf("marshal Result Failed %s", err.Error())
+	}
+
+	fmt.Println(string(res))
+
+	return string(res), nil
+}
+
+func (fc *FunctionController) TriggerFunctionLocal(f *api_obj.Function, cof string) (string, error) {
+	ips, err := fc.MakePods(f)
+	if err != nil {
+		return "", fmt.Errorf("get Ip Failed At TriggerLocal, %s", err.Error())
+	}
+
+	ip := fc.Schedule(f.Metadata.Name, ips)
+	if ip == "" {
+		return "", fmt.Errorf("schedule Failed")
+	}
+
+	param := []byte(cof)
 	body := bytes.NewReader(param)
 	uri := "http://" + ip + ":8080"
 	failCnt := 0
@@ -211,6 +271,9 @@ func (fc *FunctionController) DeleteFunction(f *api_obj.Function) error {
 		return fmt.Errorf("send Delete Rep Failed, %s", err.Error())
 	}
 
+	RecordMutex.Lock()
+	delete(RecordMap, f.Metadata.Name)
+	RecordMutex.Unlock()
 	//TODO:需要取消注释。
 	err = DeleteImage(f.Metadata.Name)
 	if err != nil {

@@ -10,11 +10,14 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/gin-gonic/gin"
 )
 
 type SL_server struct {
 	Consumer           *message.MsgConsumer
 	Producer           *message.MsgProducer
+	Router             *gin.Engine
 	FunctionController *function.FunctionController
 	WorkflowController workflow.WorkflowController
 }
@@ -26,8 +29,22 @@ func CreateNewSLServerInstance() (*SL_server, error) {
 		return nil, err
 	}
 
+	producer := message.NewProducer()
+	if producer == nil {
+		fmt.Printf("[ERR/Serverless/Server] Error creating producer.\n")
+		return nil, err
+	}
+
+	router := gin.Default()
+	if router == nil {
+		fmt.Printf("[ERR/Serverless/Server] Error creating router.\n")
+		return nil, err
+	}
+
 	return &SL_server{
 		Consumer:           consumer,
+		Producer:           producer,
+		Router:             router,
 		FunctionController: function.CreateNewFunctionControllerInstance(),
 		WorkflowController: workflow.CreateNewWorkflowControllerInstance(),
 	}, nil
@@ -56,6 +73,8 @@ func (s *SL_server) MsgHandler(msg *message.Message) {
 		s.OnFunctionDel(content)
 	case message.FUNC_UPDATE:
 		s.OnFunctionUpdate(content)
+	case message.FUNC_EXEC_LOCAL:
+		s.OnFunctionExecLocal(content, msg.Backup)
 	}
 }
 
@@ -86,7 +105,22 @@ func (s *SL_server) OnFunctionExec(content string) {
 		fmt.Println("[ERR/serverless/OnFunctionExec] ", err.Error())
 	}
 
-	s.FunctionController.UpdateFunction(f)
+	s.FunctionController.UpdateFunction(f.Metadata.Name)
+
+}
+
+func (s *SL_server) OnFunctionExecLocal(content string, cof string) {
+	f := &api_obj.Function{}
+	err := json.Unmarshal([]byte(content), f)
+	if err != nil {
+		fmt.Printf("[ERR/serverless/OnFunctionExecLocal] Failed to unmarshal data.\n")
+		return
+	}
+
+	_, err = s.FunctionController.TriggerFunctionLocal(f, cof)
+	if err != nil {
+		fmt.Println("[ERR/serverless/OnFunctionExecLocal] ", err.Error())
+	}
 
 }
 
@@ -104,7 +138,16 @@ func (s *SL_server) OnFunctionDel(content string) {
 }
 
 func (s *SL_server) OnFunctionUpdate(content string) {
-
+	f := &api_obj.Function{}
+	err := json.Unmarshal([]byte(content), f)
+	if err != nil {
+		fmt.Printf("[ERR/serverless/OnFunctionUpdate] Failed to unmarshal data.\n")
+		return
+	}
+	err = s.FunctionController.UpdateFunctionBody(f)
+	if err != nil {
+		fmt.Println("[ERR/serverless/OnFunctionUpdate] ", err.Error())
+	}
 }
 
 func (s *SL_server) OnWorkflowExec(content string) {
@@ -118,6 +161,40 @@ func (s *SL_server) OnWorkflowExec(content string) {
 	s.WorkflowController.ExecuteWorkflow(wf, s.FunctionController)
 }
 
+func (s *SL_server) OnFunctionExecOnServerless(c *gin.Context) {
+	name := c.Param("name")
+	cof := c.Param("coeff")
+
+	function.RecordMutex.RLock()
+	fr := function.RecordMap[name]
+	if fr == nil {
+		fmt.Printf("[ERR/serverless/OnFunctionExecOnServerless] Function not found.\n")
+		c.JSON(404, gin.H{
+			"error": "Function not found.",
+		})
+		function.RecordMutex.RUnlock()
+		return
+	}
+	f_str, err := json.Marshal(*fr.FuncTion)
+	function.RecordMutex.RUnlock()
+
+	if err != nil {
+		fmt.Printf("[ERR/serverless/OnFunctionExecOnServerless] Failed to marshal data.\n")
+		c.JSON(500, gin.H{
+			"error": "Failed to marshal data.",
+		})
+		return
+	}
+
+	m_msg := &message.Message{
+		Type:    message.FUNC_EXEC_LOCAL,
+		Content: string(f_str),
+		Backup:  cof,
+	}
+	s.Producer.Produce(message.TOPIC_Serverless, m_msg)
+	s.FunctionController.UpdateFunction(name)
+}
+
 func (s *SL_server) Run() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT)
@@ -128,6 +205,7 @@ func (s *SL_server) Run() {
 
 	go function.Watcher.FileWatch()
 	go s.Consumer.Consume([]string{message.TOPIC_Serverless}, s.MsgHandler)
+	go s.Router.Run(":50001")
 }
 
 func (s *SL_server) Clean() {
