@@ -19,8 +19,8 @@ type ReplicasetController struct {
 }
 
 var (
-	timedelay    = 10 * time.Second
-	timeinterval = []time.Duration{10 * time.Second}
+	timedelay    = 4 * time.Second
+	timeinterval = []time.Duration{4 * time.Second}
 )
 
 func (rc *ReplicasetController) PrintHandlerWarning() {

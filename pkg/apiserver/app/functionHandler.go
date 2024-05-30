@@ -133,13 +133,6 @@ func (s *ApiServer) AddFunction(c *gin.Context) {
 }
 
 func (s *ApiServer) ExecFunction(c *gin.Context) {
-	for {
-		if !tools.Scale_RS_Lock {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-
 	name := c.Param("name")
 	if name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{

@@ -15,13 +15,11 @@ import (
 	"minik8s/pkg/dns/dns_op"
 	"minik8s/pkg/etcd"
 	"minik8s/pkg/message"
-	"minik8s/pkg/serverless/server"
 	"minik8s/tools"
 )
 
 type ApiServer struct {
 	router            *gin.Engine
-	Func_router       *gin.Engine
 	EtcdWrap          *etcd.EtcdWrap
 	port              int32
 	Producer          *message.MsgProducer
@@ -29,7 +27,6 @@ type ApiServer struct {
 	DnsService        *dns_op.DnsService
 	ControllerManager manager.ControllerManager
 	NodeIPMap         map[string]string
-	S_server          *server.SL_server
 }
 
 // 在进行测试/实际运行时，第1步调用此函数。
@@ -54,7 +51,6 @@ func CreateApiServerInstance(c *apiserver.ServerConfig) (*ApiServer, error) {
 	}
 
 	dns_srv := dns.InitDnsService()
-	ss, err := server.CreateNewSLServerInstance()
 	if err != nil {
 		fmt.Printf("[ERR/Apiserver] Failed to create serverless server.\n")
 		return nil, err
@@ -68,14 +64,12 @@ func CreateApiServerInstance(c *apiserver.ServerConfig) (*ApiServer, error) {
 
 	return &ApiServer{
 		router:            router,
-		Func_router:       f_router,
 		EtcdWrap:          wrap,
 		port:              c.Port,
 		Producer:          producer,
 		Consumer:          consumer,
 		DnsService:        dns_srv,
 		ControllerManager: cm,
-		S_server:          ss,
 	}, nil
 }
 
@@ -142,8 +136,6 @@ func (s *ApiServer) Bind() {
 	s.router.GET(apiserver.API_get_function_res, s.GetFunctionRes)
 
 	s.router.DELETE(apiserver.API_delete_registry, s.DeleteRegistry)
-
-	s.Func_router.POST(apiserver.API_exec_function, s.ExecFunction)
 }
 
 // 在进行测试/实际运行时，第2步调用此函数。默认端口为8080
@@ -170,11 +162,7 @@ func (s *ApiServer) Run() error {
 
 	go s.ControllerManager.Run()
 	go s.Consumer.Consume([]string{message.TOPIC_ApiServer_FromNode}, s.MsgHandler)
-	go s.S_server.Run()
 
-	go func() {
-		_ = s.Func_router.Run(fmt.Sprintf(":%d", 50001))
-	}()
 	err = s.router.Run(fmt.Sprintf(":%d", s.port))
 	return err
 }

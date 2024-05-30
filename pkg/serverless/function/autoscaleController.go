@@ -16,6 +16,8 @@ type Record struct {
 	Name      string `json:"name" yaml:"name"`
 	CallCount int32  `json:"callCount" yaml:"callcount"`
 	Replicas  int32  `json:"replicas"  yaml:"replicas"`
+	IpMap     map[string]int
+	Mutex     sync.RWMutex
 }
 
 var (
@@ -27,9 +29,8 @@ var (
 
 func (fc *FunctionController) UpdateFunction(f *api_obj.Function) {
 	// 获取写锁以防止并发写入
-	RecordMutex.Lock()
-	defer RecordMutex.Unlock()
 
+	RecordMutex.Lock()
 	// 检查是否已经存在该记录
 	if _, exists := RecordMap[f.Metadata.Name]; !exists {
 		// 如果不存在，创建新的记录并添加到 RecordMap
@@ -37,45 +38,55 @@ func (fc *FunctionController) UpdateFunction(f *api_obj.Function) {
 			Name:      f.Metadata.Name,
 			CallCount: 100,
 			Replicas:  3,
+			IpMap:     map[string]int{},
+			Mutex:     sync.RWMutex{},
 		}
 		RecordMap[f.Metadata.Name] = newRecord
-	} else {
-		RecordMap[f.Metadata.Name].CallCount += int32(50 / (RecordMap[f.Metadata.Name].Replicas + 1))
 	}
+	RecordMutex.Unlock()
 
-	if RecordMap[f.Metadata.Name].CallCount > 150 {
-		tools.Scale_RS_Lock = true
-	}
-	_ = appendIntToFile("/mydata/record/f.txt", int(RecordMap[f.Metadata.Name].CallCount))
+	RecordMap[f.Metadata.Name].Mutex.Lock()
+	RecordMap[f.Metadata.Name].CallCount += 120 / (RecordMap[f.Metadata.Name].Replicas + 1)
+	RecordMap[f.Metadata.Name].Mutex.Unlock()
 }
 
 //-------------------------------以下是协程的内容----------------------------------//
 
 func (fc *FunctionController) watch() {
 	// 获取写锁以防止并发写入
-	RecordMutex.Lock()
-	defer RecordMutex.Unlock()
+	RecordMutex.RLock()
+	defer RecordMutex.RUnlock()
 
 	for _, record := range RecordMap {
-		if record.CallCount > 150*(record.Replicas) {
-			replica, err := fc.scaleup(record)
-			record.CallCount = 100
+		record.Mutex.RLock()
+
+		fmt.Println(record.CallCount)
+		if record.CallCount > 150*(record.Replicas+1) {
+			go func() {
+				_, _ = fc.scaleup(record)
+			}()
+			record.CallCount = 100 * int32(record.Replicas+1)
 			tools.Scale_RS_Lock = false
-			if err != nil {
-				fmt.Println("Send Get RequestErr in watch ", err.Error())
-				return
-			}
-			record.Replicas = int32(replica)
-		} else if record.CallCount == 0 {
+			// if err != nil {
+			// 	fmt.Println("Send Get RequestErr in watch ", err.Error())
+			// 	record.Mutex.RUnlock()
+			// 	continue
+			// }
+			record.Replicas += 1
+			record.Mutex.RUnlock()
+		} else if record.CallCount <= 0 {
 			replica, err := fc.scaledown(record)
-			record.CallCount = 100
+			record.CallCount = 100 * int32(replica+1)
 			if err != nil {
 				fmt.Println("Send Get RequestErr in watch ", err.Error())
-				return
+				record.Mutex.RUnlock()
+				continue
 			}
 			record.Replicas = int32(replica)
+			record.Mutex.RUnlock()
 		} else {
-			record.CallCount -= 1
+			record.CallCount -= 5
+			record.Mutex.RUnlock()
 		}
 
 		_ = appendIntToFile("/mydata/record/f.txt", int(record.CallCount))
@@ -110,9 +121,9 @@ func (fc *FunctionController) scaledown(record *Record) (int, error) {
 func (fc *FunctionController) RunWatch() {
 	go func() {
 		for {
-			go fc.watch()           // 执行 watch() 函数
+			fc.watch()              // 执行 watch() 函数
 			time.Sleep(time.Second) // 等待一秒钟
-		}	
+		}
 	}()
 }
 
