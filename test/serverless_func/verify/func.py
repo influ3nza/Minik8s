@@ -48,9 +48,13 @@ def run(username, image, x, y, r, g, b, mark, mysqlIp, rate, threshold1, thresho
             }
         else:
             return {
-                "status": "error"
+                "status": "error",
+                "error": "Invalid",
+                "username": username
             }
     else:
         return {
-            "status": "error"
+            "status": "error",
+            "error": "Format Not Allowed",
+            "username": username
         }
