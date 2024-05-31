@@ -76,11 +76,13 @@ var pod = api_obj.Pod{
 			},*/{
 				Name: "testName1",
 				Image: obj_inner.Image{
-					Img:           "docker.io/library/nginx:latest",
+					Img:           "docker.io/library/ubuntu:latest",
 					ImgPullPolicy: "Always",
 				},
 				EntryPoint: obj_inner.EntryPoint{
-					// WorkingDir: "/",
+					WorkingDir: "/",
+					Command:    []string{"tail"},
+					Args:       []string{"-f", "/dev/null"},
 				},
 				Ports: []obj_inner.ContainerPort{
 					{
@@ -310,7 +312,7 @@ func testCreateMonitor() {
 		// time.Sleep(120 * time.Second)
 		for {
 			pod_manager.GetPodMetrics(pod.MetaData.Name, pod.MetaData.NameSpace)
-			time.Sleep(4 * time.Second)
+			time.Sleep(5 * time.Second)
 		}
 
 		//if res != nil {

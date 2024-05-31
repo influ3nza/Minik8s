@@ -486,7 +486,7 @@ func GetContainersMetrics(ctx context.Context, c containerd.Container, window ti
 		task:       task,
 		lastTime:   time.Now(),
 		lastCPU:    uint64(0),
-		CPUPercent: uint64(0),
+		CPUPercent: float64(0),
 		memory:     uint64(0),
 	}
 
@@ -532,7 +532,7 @@ func CollectContainerMetrics(ctx context.Context, collection *MetricsCollection,
 	default:
 		return nil
 	}
-	fmt.Println("[Before] ", currentMetrics)
+	// fmt.Println("[Before] ", currentMetrics.CPU)
 	collection.lastTime = curTime
 	collection.lastCPU = currentMetrics.CPU.UsageUsec * 1000
 	collection.memory = currentMetrics.Memory.Usage
@@ -556,16 +556,16 @@ func CollectContainerMetrics(ctx context.Context, collection *MetricsCollection,
 	default:
 		return nil
 	}
-	fmt.Println("[After] ", currentMetrics)
+	// fmt.Println("[After] ", currentMetrics.CPU)
 	collection.memory += currentMetrics.Memory.Usage
 	collection.memory /= 2
 
 	allCPUUsage = currentMetrics.CPU.UsageUsec * 1000
 	cpuNow := allCPUUsage - collection.lastCPU
-	fmt.Printf("[GetContainerMetrics/CPU] is %d", cpuNow)
+	// fmt.Printf("[GetContainerMetrics/CPU] is %d\n", cpuNow)
 
 	timeDelta := curTime.Sub(collection.lastTime)
-	collection.CPUPercent = uint64(float64(cpuNow) / float64(timeDelta.Nanoseconds()))
+	collection.CPUPercent = 100 * float64(cpuNow) / float64(timeDelta.Nanoseconds())
 	task1 := collection.task
 	memPercent := 100 * float64(collection.memory) / float64(currentMetrics.Memory.UsageLimit)
 	var cm api_obj.ContainerMetrics

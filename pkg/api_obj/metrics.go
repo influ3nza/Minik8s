@@ -12,7 +12,7 @@ type PodMetrics struct {
 }
 
 type ResourceList struct {
-	CPUPercent    uint64
+	CPUPercent    float64
 	MemoryUsage   uint64
 	MemoryPercent float64
 }
