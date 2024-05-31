@@ -130,15 +130,17 @@ func (s *ApiServer) GetReplicaSets(c *gin.Context) {
 		return
 	}
 
-	var rss []string
-	for id, ep := range replicasets {
-		rss = append(rss, ep.Value)
+	var rss = "["
+	for id, rs := range replicasets {
+		rss += rs.Value
 
 		//返回值以逗号隔开
 		if id < len(replicasets)-1 {
-			rss = append(rss, ",")
+			rss += ","
 		}
 	}
+
+	rss += "]"
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": rss,

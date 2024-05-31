@@ -140,6 +140,46 @@ func ParseSrv(filePath string) error {
 	return nil
 }
 
+// WARN:此函数仅供测试使用。
+func ParseFunc(filePath string) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parseFunc] Failed to open file, err:%v\n", err)
+		return err
+	}
+
+	content, err := io.ReadAll(file)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parseFunc] Failed to read file, err:%v\n", err)
+		return err
+	}
+	f := &api_obj.Function{}
+
+	err = yaml.Unmarshal(content, f)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parseFunc] Failed to unmarshal yaml, err:%v\n", err)
+		return err
+	}
+
+	f_str, err := json.Marshal(f)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parseFunc] Failed to marshal pod, err:%v\n", err)
+		return err
+	}
+
+	//将请求发送给apiserver
+	uri := apiserver.API_server_prefix + apiserver.API_update_function
+	_, err = network.PostRequest(uri, f_str)
+	if err != nil {
+		fmt.Printf("[ERR/kubectl/parseFunc] Failed to post request, err:%v\n", err)
+		return err
+	}
+
+	fmt.Printf("[kubectl/parseFunc] Send update func request success!\n")
+
+	return nil
+}
+
 func SendObjectTo(jsonStr []byte, kind string) error {
 	var suffix string
 	switch kind {

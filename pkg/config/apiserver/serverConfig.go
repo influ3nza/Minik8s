@@ -84,6 +84,7 @@ const (
 
 	API_get_function_prefix     string = "/functions/"
 	API_get_function            string = "/functions/:name"
+	API_get_all_functions       string = "/functions/getAll"
 	API_add_function            string = "/functions/add"
 	API_delete_function_prefix  string = "/functions/delete/"
 	API_delete_function         string = "/functions/delete/:name"
@@ -93,6 +94,7 @@ const (
 	API_find_function_ip        string = "/function/findByIp/:name"
 	API_get_function_res_prefix string = "/function/getRes/"
 	API_get_function_res        string = "/function/getRes/:name"
+	API_update_function         string = "/function/update"
 
 	API_add_pv           string = "/pv/add"
 	API_delete_pv_prefix string = "/pv/delete/"

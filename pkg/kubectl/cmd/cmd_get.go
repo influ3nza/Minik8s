@@ -5,7 +5,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/config/apiserver"
@@ -65,11 +64,13 @@ func GetHandler(cmd *cobra.Command, args []string) {
 	case "service":
 		GetServiceHandler(namespace, name)
 	case "replicaset":
-		GetReplicasetHandler(namespace, name)
+		GetReplicasetHandler()
 	case "hpa":
-		GetHpaHandler(namespace, name)
+		GetHpaHandler()
+	case "function":
+		GetFunctionHandler()
 	default:
-		fmt.Println("[ERR] Wrong api kind. Available: pod, node, service, replicaset, hpa.")
+		fmt.Println("[ERR] Wrong api kind. Available: pod, node, service, replicaset, hpa, dns, function, workflow.")
 	}
 }
 
@@ -134,13 +135,9 @@ func GetServiceHandler(namespace string, name string) {
 	PrintServiceHandler(srvs)
 }
 
-func GetReplicasetHandler(namespace string, name string) {
+func GetReplicasetHandler() {
 	uri := apiserver.API_server_prefix
 	rps := []api_obj.ReplicaSet{}
-	if namespace != "" || name != "" {
-		fmt.Printf("[ERR/GetReplicasetHandler] Get specific replicaset is not supported.\n")
-		return
-	}
 
 	uri += apiserver.API_get_replicasets
 	err := network.GetRequestAndParse(uri, &rps)
@@ -152,25 +149,60 @@ func GetReplicasetHandler(namespace string, name string) {
 	PrintReplicasetHandler(rps)
 }
 
-func GetHpaHandler(namespace string, name string) {
+func GetDnsHandler() {
+	uri := apiserver.API_server_prefix + apiserver.API_get_all_dns
+	dss := []api_obj.Dns{}
+	err := network.GetRequestAndParse(uri, &dss)
+	if err != nil {
+		fmt.Printf("[ERR/GetDnsHandler] %v\n", err)
+		return
+	}
 
+	PrintDnsHandler(dss)
+}
+
+func GetHpaHandler() {
+	uri := apiserver.API_server_prefix + apiserver.API_get_hpas
+	hpas := []api_obj.HPA{}
+	err := network.GetRequestAndParse(uri, hpas)
+	if err != nil {
+		fmt.Printf("[ERR/GetHpaHandler] %v\n", err)
+		return
+	}
+
+	PrintHpaHandler(hpas)
+}
+
+func GetFunctionHandler() {
+	uri := apiserver.API_server_prefix + apiserver.API_get_all_functions
+	fs := []api_obj.Function{}
+	err := network.GetRequestAndParse(uri, &fs)
+	if err != nil {
+		fmt.Printf("[ERR/GetFunctionHandler] %v\n", err)
+		return
+	}
+
+	PrintFunctionHandler(fs)
 }
 
 func PrintPodHandler(pods []api_obj.Pod) {
 	//打印相关信息
-	layout := "2006-01-02 15:04:05"
+	// layout := "2006-01-02 15:04:05"
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"NAMESPACE", "NAME", "STATUS", "RESTARTS", "AGE"})
+	table.SetHeader([]string{"NAMESPACE", "NAME", "STATUS", "RESTARTS", "NODE", "IP"})
 	for _, pod := range pods {
-		up_time, _ := time.Parse(layout, pod.PodStatus.CreateTime)
-		now_time := time.Now()
-		delta := now_time.Sub(up_time)
+		// up_time, _ := time.Parse(layout, pod.PodStatus.CreateTime)
+		// now_time := time.Now()
+		// delta := now_time.Sub(up_time)
 		table.Append([]string{
 			pod.MetaData.NameSpace,
 			pod.MetaData.Name,
 			pod.PodStatus.Phase,
 			strconv.Itoa(int(pod.PodStatus.Restarts)),
-			delta.String()})
+			// delta.String(),
+			pod.Spec.NodeName,
+			pod.PodStatus.PodIP,
+		})
 	}
 	table.Render()
 }
@@ -186,13 +218,36 @@ func PrintNodeHandler(nodes []api_obj.Node) {
 
 func PrintServiceHandler(srvs []api_obj.Service) {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"NAMESPACE", "NAME", "TYPE", "CLUSTERIP"})
+	table.SetHeader([]string{"NAMESPACE", "NAME", "SELECTOR", "CLUSTERIP", "PORT/TARGETPORT/NODEPORT", "ENDPOINTS"})
 	for _, srv := range srvs {
+		selector := ""
+		for k, v := range srv.Spec.Selector {
+			selector += k + ": " + v + "\n"
+		}
+		selector = selector[:len(selector)-1]
+
+		uri := apiserver.API_server_prefix + apiserver.API_get_endpoint_by_service_prefix + srv.MetaData.Name
+		eps := []api_obj.Endpoint{}
+		err := network.GetRequestAndParse(uri, &eps)
+		if err != nil {
+			fmt.Printf("[ERR/kubectl/GetSrvs] Failed to send GET request, %s.\n", err.Error())
+			return
+		}
+
+		epip := ""
+		for _, ep := range eps {
+			epip += ep.PodIP + "\n"
+		}
+		epip = epip[:len(epip)-1]
+
 		table.Append([]string{
 			srv.MetaData.NameSpace,
 			srv.MetaData.Name,
-			string(srv.Spec.Type),
-			srv.Spec.ClusterIP})
+			selector,
+			srv.Spec.ClusterIP,
+			strconv.Itoa(int(srv.Spec.Ports[0].Port)) + "/" + strconv.Itoa(int(srv.Spec.Ports[0].TargetPort)) + "/" + strconv.Itoa(int(srv.Spec.Ports[0].NodePort)),
+			epip,
+		})
 	}
 	table.Render()
 }
@@ -209,6 +264,51 @@ func PrintReplicasetHandler(rps []api_obj.ReplicaSet) {
 	table.Render()
 }
 
-func PrintHpaHandler() {
+func PrintHpaHandler(hpas []api_obj.HPA) {
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"NAMESPACE", "NAME", "MIN/NOW/MAX REPLICAS"})
+	for _, hpa := range hpas {
+		table.Append([]string{
+			hpa.MetaData.NameSpace,
+			hpa.MetaData.Name,
+			strconv.Itoa(hpa.Spec.MinReplicas) + "/" + strconv.Itoa(hpa.Status.CurReplicas) + "/" + strconv.Itoa(hpa.Spec.MaxReplicas),
+		})
+	}
+	table.Render()
+}
 
+func PrintDnsHandler(dss []api_obj.Dns) {
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"NAME", "HOST", "PATH", "SRVNAME"})
+	for _, dns := range dss {
+		path := ""
+		srvname := ""
+		for _, p := range dns.Paths {
+			path += "/" + p.SubPath + "\n"
+			srvname += p.ServiceName + "\n"
+		}
+		path = path[:len(path)-1]
+		srvname = srvname[:len(srvname)-1]
+
+		table.Append([]string{
+			dns.MetaData.Name,
+			dns.Host,
+			path,
+			srvname,
+		})
+	}
+	table.Render()
+}
+
+func PrintFunctionHandler(fs []api_obj.Function) {
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"NAME", "FILEPATH", "NEEDWATCH"})
+	for _, f := range fs {
+		table.Append([]string{
+			f.Metadata.Name,
+			f.FilePath,
+			fmt.Sprintf("%t", f.NeedWatch),
+		})
+	}
+	table.Render()
 }

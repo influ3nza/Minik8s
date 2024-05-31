@@ -10,7 +10,6 @@ import (
 	"minik8s/tools"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -320,5 +319,36 @@ func (s *ApiServer) DeleteFunction(c *gin.Context) {
 	//返回200
 	c.JSON(http.StatusOK, gin.H{
 		"data": "Delete function success",
+	})
+}
+
+func (s *ApiServer) UpdateFunction(c *gin.Context) {
+	f := &api_obj.Function{}
+
+	err := c.ShouldBind(f)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/UpdateFunction] Failed to parse function, %s" + err.Error(),
+		})
+		return
+	}
+
+	f_str, err := json.Marshal(f)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/UpdateFunction] Failed to marshal data, " + err.Error(),
+		})
+		return
+	}
+
+	s_msg := &message.Message{
+		Type:    message.FUNC_UPDATE,
+		Content: string(f_str),
+	}
+	s.Producer.Produce(message.TOPIC_Serverless, s_msg)
+
+	//返回200
+	c.JSON(http.StatusOK, gin.H{
+		"data": "Update function success",
 	})
 }
