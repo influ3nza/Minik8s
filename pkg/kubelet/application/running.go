@@ -156,7 +156,7 @@ func (server *Kubelet) DelPod(c *gin.Context) {
 	return
 }
 
-func (server *Kubelet) GetPodMatrix(c *gin.Context) {
+func (server *Kubelet) GetPodMetrics(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 

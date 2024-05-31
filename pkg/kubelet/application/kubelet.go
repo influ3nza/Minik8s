@@ -104,7 +104,7 @@ func (server *Kubelet) registerNodeToApiServerGetPods(node *api_obj.Node) {
 }
 
 func (server *Kubelet) registerHandler() {
-	server.Router.GET(kubelet.GetMetrics, server.GetPodMatrix)
+	server.Router.GET(kubelet.GetMetrics, server.GetPodMetrics)
 	server.Router.DELETE(kubelet.DelPod, server.DelPod)
 	server.Router.POST(kubelet.AddPod, server.AddPod)
 	server.Router.GET(kubelet.GetCpuAndMem, server.GetNodeCPUAndMem)

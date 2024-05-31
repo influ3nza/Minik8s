@@ -430,8 +430,10 @@ func GetPodMetrics(podName string, namespace string) *api_obj.PodMetrics {
  */
 func delCNIRules(pauseId string) error {
 	shPath := "./tools/setup_scripts/del_flannel_net.sh"
-	_, err := exec.Command(shPath, pauseId).CombinedOutput()
+	output, err := exec.Command(shPath, pauseId).CombinedOutput()
+	// fmt.Printf("pause Id is %s\n", pauseId)
 	if err != nil {
+		fmt.Println("DEL Flannel Rules", string(output))
 		return fmt.Errorf("delete Flannel Rules Failed At 344, %s", err.Error())
 	}
 	return nil
