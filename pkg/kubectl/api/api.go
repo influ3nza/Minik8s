@@ -162,8 +162,9 @@ func ParseFunc(filePath string) error {
 	}
 
 	f_str, err := json.Marshal(f)
+	fmt.Println(string(f_str))
 	if err != nil {
-		fmt.Printf("[ERR/kubectl/parseFunc] Failed to marshal pod, err:%v\n", err)
+		fmt.Printf("[ERR/kubectl/parseFunc] Failed to marshal function, err:%v\n", err)
 		return err
 	}
 

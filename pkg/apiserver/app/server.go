@@ -118,8 +118,8 @@ func (s *ApiServer) Bind() {
 
 	s.router.POST(apiserver.API_add_dns, s.AddDns)
 	s.router.DELETE(apiserver.API_delete_dns, s.DeleteDns)
-	s.router.GET(apiserver.API_get_dns)     //TODO
-	s.router.GET(apiserver.API_get_all_dns) //TODO
+	s.router.GET(apiserver.API_get_dns)                  //TODO
+	s.router.GET(apiserver.API_get_all_dns, s.GetAllDns) //TODO
 
 	s.router.POST(apiserver.API_update_workflow) //TODO
 	s.router.DELETE(apiserver.API_delete_workflow, s.DeleteWorkflow)
@@ -128,8 +128,10 @@ func (s *ApiServer) Bind() {
 	s.router.GET(apiserver.API_get_workflow, s.GetWorkflow)
 	s.router.POST(apiserver.API_check_workflow, s.CheckWorkflow)
 
-	s.router.GET(apiserver.API_get_function) //TODO
+	s.router.GET(apiserver.API_get_function)                         //TODO
+	s.router.GET(apiserver.API_get_all_functions, s.GetAllFunctions) //TODO
 	s.router.POST(apiserver.API_add_function, s.AddFunction)
+	s.router.POST(apiserver.API_update_function, s.UpdateFunction)
 	s.router.DELETE(apiserver.API_delete_function, s.DeleteFunction)
 	s.router.POST(apiserver.API_exec_function, s.ExecFunction)
 	s.router.GET(apiserver.API_find_function_ip, s.FindFunctionIp)

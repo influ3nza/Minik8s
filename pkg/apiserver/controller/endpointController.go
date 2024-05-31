@@ -128,7 +128,7 @@ func (ec *EndpointController) OnCreatePod(pack string) {
 	//遍历service，寻找所在的所有service并且添加
 	ep_srv_list := []api_obj.Service{}
 	for _, srv := range allSrvs {
-		if utils.CompareLabels(srv.MetaData.Labels, pod.MetaData.Labels) &&
+		if utils.CompareLabels(srv.Spec.Selector, pod.MetaData.Labels) &&
 			pod.MetaData.NameSpace == srv.MetaData.NameSpace {
 			ep_srv_list = append(ep_srv_list, srv)
 		}
@@ -188,7 +188,7 @@ func (ec *EndpointController) OnDeletePod(pack string) {
 
 	//遍历service，寻找所在的所有service并且删除
 	for _, srv := range allSrvs {
-		if utils.CompareLabels(srv.MetaData.Labels, pod.MetaData.Labels) {
+		if utils.CompareLabels(srv.Spec.Selector, pod.MetaData.Labels) {
 			//删除对应的endpoint
 			suffix := srv.MetaData.NameSpace + "/" +
 				srv.MetaData.Name + "-" + pod.MetaData.Name

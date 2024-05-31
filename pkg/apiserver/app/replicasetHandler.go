@@ -12,6 +12,7 @@ import (
 	"minik8s/pkg/apiserver/controller/utils"
 	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/config/kubelet"
+	"minik8s/pkg/message"
 	"minik8s/pkg/network"
 	"minik8s/tools"
 )
@@ -111,6 +112,13 @@ func (s *ApiServer) DeleteReplicaSet(c *gin.Context) {
 			})
 			return
 		}
+
+		e_msg := &message.Message{
+			Type:    message.POD_DELETE,
+			Content: kv.Value,
+		}
+
+		s.Producer.Produce(message.TOPIC_EndpointController, e_msg)
 	}
 
 	//返回200

@@ -148,6 +148,7 @@ func (s *ApiServer) GetEndpoint(c *gin.Context) {
 func (s *ApiServer) GetEndpointsByService(c *gin.Context) {
 	fmt.Printf("[apiserver/GetEndpointByService] Try to get endpoints by service.\n")
 
+	namespace := c.Param("namespace")
 	srvname := c.Param("srvname")
 
 	if srvname == "" {
@@ -157,7 +158,7 @@ func (s *ApiServer) GetEndpointsByService(c *gin.Context) {
 		return
 	}
 
-	e_key := apiserver.ETCD_endpoint_prefix + srvname
+	e_key := apiserver.ETCD_endpoint_prefix + namespace + "/" + srvname
 	res, err := s.EtcdWrap.GetByPrefix(e_key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

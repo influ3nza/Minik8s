@@ -69,6 +69,8 @@ func GetHandler(cmd *cobra.Command, args []string) {
 		GetHpaHandler()
 	case "function":
 		GetFunctionHandler()
+	case "dns":
+		GetDnsHandler()
 	default:
 		fmt.Println("[ERR] Wrong api kind. Available: pod, node, service, replicaset, hpa, dns, function, workflow.")
 	}
@@ -224,9 +226,11 @@ func PrintServiceHandler(srvs []api_obj.Service) {
 		for k, v := range srv.Spec.Selector {
 			selector += k + ": " + v + "\n"
 		}
-		selector = selector[:len(selector)-1]
+		if selector != "" {
+			selector = selector[:len(selector)-1]
+		}
 
-		uri := apiserver.API_server_prefix + apiserver.API_get_endpoint_by_service_prefix + srv.MetaData.Name
+		uri := apiserver.API_server_prefix + apiserver.API_get_endpoint_by_service_prefix + srv.MetaData.NameSpace + "/" + srv.MetaData.Name
 		eps := []api_obj.Endpoint{}
 		err := network.GetRequestAndParse(uri, &eps)
 		if err != nil {
@@ -238,7 +242,9 @@ func PrintServiceHandler(srvs []api_obj.Service) {
 		for _, ep := range eps {
 			epip += ep.PodIP + "\n"
 		}
-		epip = epip[:len(epip)-1]
+		if epip != "" {
+			epip = epip[:len(epip)-1]
+		}
 
 		table.Append([]string{
 			srv.MetaData.NameSpace,
@@ -287,8 +293,12 @@ func PrintDnsHandler(dss []api_obj.Dns) {
 			path += "/" + p.SubPath + "\n"
 			srvname += p.ServiceName + "\n"
 		}
-		path = path[:len(path)-1]
-		srvname = srvname[:len(srvname)-1]
+		if path != "" {
+			path = path[:len(path)-1]
+		}
+		if srvname != "" {
+			srvname = srvname[:len(srvname)-1]
+		}
 
 		table.Append([]string{
 			dns.MetaData.Name,

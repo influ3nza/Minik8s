@@ -8,12 +8,13 @@ metaData:
 spec:
   replicas: 3
   selector:
-    app: rs-test
+    good: rs-test
   template:
     metaData:
       name: rs-pod
       labels:
-        app: rs-test
+        good: rs-test
+        app: test
     spec:
       containers:
         - image: 
