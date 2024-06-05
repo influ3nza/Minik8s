@@ -194,6 +194,10 @@ func SendObjectTo(jsonStr []byte, kind string) error {
 		suffix = apiserver.API_add_dns
 	case "replicaset":
 		suffix = apiserver.API_add_replicaset
+	case "pv":
+		suffix = apiserver.API_add_pv
+	case "pvc":
+		suffix = apiserver.API_add_pvc
 	case "workflow":
 		suffix = apiserver.API_add_workflow
 	case "hpa":

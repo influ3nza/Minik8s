@@ -13,6 +13,7 @@ import (
 	"minik8s/pkg/apiserver/controller/utils"
 	"minik8s/pkg/config/apiserver"
 	"minik8s/pkg/etcd"
+	"minik8s/pkg/kubelet/util"
 	"minik8s/pkg/message"
 	"minik8s/pkg/network"
 	"minik8s/tools"
@@ -89,7 +90,7 @@ func (s *ApiServer) UpdatePodPhase(pod api_obj.Pod, needCheckRestart bool) (stri
 	if needCheckRestart && old_pod.PodStatus.Phase != pod.PodStatus.Phase {
 		old_pod.PodStatus.Restarts += 1
 	}
-	fmt.Printf("[Apiserver/UpdatePodPhase] Update pod phase: %s -> %s", old_pod.PodStatus.Phase, pod.PodStatus.Phase)
+	fmt.Printf("[Apiserver/UpdatePodPhase] Update pod phase: %s -> %s\n", old_pod.PodStatus.Phase, pod.PodStatus.Phase)
 	old_pod.PodStatus.Phase = pod.PodStatus.Phase
 
 	//存入etcd中。
@@ -272,8 +273,106 @@ func (s *ApiServer) ReadServiceMark() int {
 	return ret
 }
 
+func (s *ApiServer) DynamicCreatePV(pvc *api_obj.PVC) error {
+	pv := &api_obj.PV{
+		Metadata: obj_inner.ObjectMeta{
+			Name:      "pv-" + pvc.Metadata.Name,
+			NameSpace: pvc.Metadata.NameSpace,
+			Labels:    pvc.Spec.Selector,
+		},
+		Spec: api_obj.PV_spec{
+			Nfs: api_obj.Nfs_bind{
+				Path:     "/" + pvc.Metadata.Name,
+				ServerIp: util.IpAddressMas,
+			},
+			AccessMode: api_obj.ReadWriteMany,
+		},
+	}
+
+	pv_str, err := json.Marshal(pv)
+	if err != nil {
+		fmt.Printf("[ERR/DynamicCreatePV] Failed to marshal data, %s.\n", err)
+		return err
+	}
+
+	uri := apiserver.API_server_prefix + apiserver.API_add_pv
+	_, err = network.PostRequest(uri, pv_str)
+	if err != nil {
+		fmt.Printf("[ERR/DynamicCreatePV] Failed to send POST request, %s.\n", err)
+		return err
+	}
+
+	pvc.Spec.BindPV = pv.Metadata.Name
+
+	return nil
+}
+
+// PV:只用于通过PVC改写mount路径。
+func (s *ApiServer) RewriteMountPath(pod *api_obj.Pod) error {
+	//通过pvc的名字，找到bind的pv的名字，进而确定mount路径。
+	//WARN:注意根据nfs，理应在node节点保存一张表格，记录每一个mount dir对应的nfs ip地址，
+	//但由于在这里只有一个nfs server，所以不保存表格，采用更简单的设计。
+
+	if len(pod.Spec.Volumes) == 0 {
+		return nil
+	}
+
+	//这里默认需要绑定pvc的pod只有一个volume
+	pvc_name := pod.Spec.Volumes[0].PVCName
+	if pvc_name == "" {
+		return nil
+	}
+
+	e_key := apiserver.ETCD_pvc_prefix + pvc_name
+	res, err := s.EtcdWrap.Get(e_key)
+	if err != nil {
+		fmt.Printf("[ERR/RewriteMountPath] Failed to get from etcd, %s\n", err.Error())
+		return err
+	}
+	if len(res) != 1 {
+		fmt.Printf("[ERR/RewriteMountPath] Found zero or more than one pvc.\n")
+		return errors.New("zero or more than one pvc")
+	}
+
+	pvc := &api_obj.PVC{}
+	err = json.Unmarshal([]byte(res[0].Value), pvc)
+	if err != nil {
+		fmt.Printf("[ERR/RewriteMountPath] Failed to unmarshal data, %s\n", err.Error())
+		return err
+	}
+
+	pv_name := pvc.Spec.BindPV
+	if pv_name == "" {
+		fmt.Printf("[ERR/RewriteMountPath] PVC must bind to a PV.\n")
+		return errors.New("no binding pvc")
+	}
+
+	p_key := apiserver.ETCD_pv_prefix + pv_name
+	res, err = s.EtcdWrap.Get(p_key)
+	if err != nil {
+		fmt.Printf("[ERR/RewriteMountPath] Failed to get from etcd, %s\n", err.Error())
+		return err
+	}
+	if len(res) != 1 {
+		fmt.Printf("[ERR/RewriteMountPath] Found zero or more than one pv.\n")
+		return errors.New("zero or more than one pv")
+	}
+
+	pv := &api_obj.PV{}
+	err = json.Unmarshal([]byte(res[0].Value), pv)
+	if err != nil {
+		fmt.Printf("[ERR/RewriteMountPath] Failed to unmarshal data, %s\n", err.Error())
+		return err
+	}
+
+	pod.Spec.Volumes[0].Path = tools.PV_mount_node_path + pv.Spec.Nfs.Path
+
+	return nil
+}
+
 func (s *ApiServer) DeleteRegistry(c *gin.Context) {
 	s.EtcdWrap.DeleteByPrefix("/registry")
+	s.EtcdWrap.DeleteByPrefix("/pv")
 	c.JSON(http.StatusOK, gin.H{
 		"data": "Delete all success",
 	})

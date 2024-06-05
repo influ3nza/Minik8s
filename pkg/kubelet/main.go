@@ -10,8 +10,11 @@ import (
 	"minik8s/pkg/kubelet/container_manager"
 	"minik8s/pkg/kubelet/pod_manager"
 	"minik8s/pkg/kubelet/util"
+	"os"
+	"os/signal"
 	"strconv"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -31,7 +34,7 @@ var pod = api_obj.Pod{
 	},
 	Spec: api_obj.PodSpec{
 		Containers: []api_obj.Container{
-			/*{
+			{
 				Name: "testubuntu",
 				Image: obj_inner.Image{
 					Img:           "docker.io/library/ubuntu:latest",
@@ -65,7 +68,7 @@ var pod = api_obj.Pod{
 				},
 				Resources: obj_inner.ResourceRequirements{
 					Limits: map[string]obj_inner.Quantity{
-						obj_inner.CPU_LIMIT:    obj_inner.Quantity("0.5"),
+						obj_inner.CPU_LIMIT:    obj_inner.Quantity("1"),
 						obj_inner.MEMORY_LIMIT: obj_inner.Quantity("500MiB"),
 					},
 					Requests: map[string]obj_inner.Quantity{
@@ -73,14 +76,16 @@ var pod = api_obj.Pod{
 						obj_inner.MEMORY_REQUEST: obj_inner.Quantity("100MiB"),
 					},
 				},
-			},*/{
+			}, {
 				Name: "testName1",
 				Image: obj_inner.Image{
-					Img:           "docker.io/library/nginx:latest",
+					Img:           "docker.io/library/ubuntu:latest",
 					ImgPullPolicy: "Always",
 				},
 				EntryPoint: obj_inner.EntryPoint{
-					// WorkingDir: "/",
+					WorkingDir: "/",
+					Command:    []string{"tail"},
+					Args:       []string{"-f", "/dev/null"},
 				},
 				Ports: []obj_inner.ContainerPort{
 					{
@@ -107,8 +112,8 @@ var pod = api_obj.Pod{
 				},
 				Resources: obj_inner.ResourceRequirements{
 					Limits: map[string]obj_inner.Quantity{
-						obj_inner.CPU_REQUEST:    obj_inner.Quantity("2"),
-						obj_inner.MEMORY_REQUEST: obj_inner.Quantity("1GiB"),
+						obj_inner.CPU_REQUEST:    obj_inner.Quantity("1"),
+						obj_inner.MEMORY_REQUEST: obj_inner.Quantity("500MiB"),
 					},
 					Requests: map[string]obj_inner.Quantity{
 						obj_inner.CPU_REQUEST:    obj_inner.Quantity("0.25"),
@@ -287,7 +292,8 @@ func testCreateMonitor() {
 
 	util.RegisterPod(pod.MetaData.Name, pod.MetaData.NameSpace)
 	fmt.Println("Register success, ", pod.MetaData.Labels["pause"])
-	str := make(chan string)
+	str := make(chan os.Signal)
+	signal.Notify(str, syscall.SIGINT)
 	//wg.Add(2)
 	//go func() {
 	//	for {
@@ -305,37 +311,32 @@ func testCreateMonitor() {
 	//	}
 	//	// wg.Done()
 	//}()
+	go func() {
+		<-str
+		fmt.Println("Stopping")
+		for {
+			if ok := util.UnRegisterPod(pod.MetaData.Name, pod.MetaData.NameSpace); ok == 0 || ok == 2 {
+				break
+			}
+		}
+		pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace, pod.MetaData.Annotations["pause"])
+		os.Exit(0)
+	}()
 
 	go func() {
-		// time.Sleep(120 * time.Second)
 		for {
-			pod_manager.GetPodMetrics(pod.MetaData.Name, pod.MetaData.NameSpace)
-			time.Sleep(4 * time.Second)
+			ok := util.RLock(pod.MetaData.Name, pod.MetaData.NameSpace)
+			if ok {
+				pod_manager.GetPodMetrics(pod.MetaData.Name, pod.MetaData.NameSpace)
+				time.Sleep(5 * time.Second)
+				util.RUnLock(pod.MetaData.Name, pod.MetaData.NameSpace)
+			} else {
+				break
+			}
 		}
-
-		//if res != nil {
-		//	id1 := res.ContainerMetrics[0].Name
-		//	force, err_ := util.RmForce(pod.MetaData.NameSpace, id1)
-		//	if err_ != nil {
-		//		fmt.Println("Force Err ", force)
-		//		return
-		//	}
-		//}
-		//for {
-		//	if ok := util.UnRegisterPod(pod.MetaData.Name, pod.MetaData.NameSpace); ok == 0 {
-		//		fmt.Println("UnRegister Success")
-		//		break
-		//	} else if ok == 2 {
-		//		fmt.Println("UnRegister NonExist")
-		//	}
-		//}
-		//err = pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace, pod.MetaData.Labels["pause"])
-		//if err != nil {
-		//	fmt.Println("Main Failed At line 268 ", err.Error())
-		//}
-		//str <- "finish"
-		// wg.Done()
 	}()
+
+	time.Sleep(120 * time.Second)
+	str <- syscall.SIGINT
 	// wg.Wait()
-	<-str
 }

@@ -3,6 +3,7 @@ package application
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/tidwall/gjson"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/config/apiserver"
@@ -61,6 +62,7 @@ func (server *Kubelet) register() {
 
 	server.registerNodeToApiServer(node)
 	server.registerNodeToMonitor(node)
+	server.registerNodeToApiServerGetPods(node)
 }
 
 func (server *Kubelet) registerNodeToApiServer(node *api_obj.Node) {
@@ -82,8 +84,27 @@ func (server *Kubelet) registerNodeToMonitor(node *api_obj.Node) {
 	fmt.Println("Response data on register to monitor is ", request)
 }
 
+func (server *Kubelet) registerNodeToApiServerGetPods(node *api_obj.Node) {
+	request, err := network.GetRequest(server.ApiServerAddress + apiserver.API_get_pods_by_node_force_prefix + node.NodeMetadata.Name)
+	if err != nil {
+		fmt.Println("Get All Pods to Initialize Node Failed, ", err.Error())
+	}
+	fmt.Println("Resp is ", request)
+	list := gjson.Parse(request).Array()
+	for _, p := range list {
+		pod := &api_obj.Pod{}
+		err = json.Unmarshal([]byte(p.String()), pod)
+		if err != nil {
+			fmt.Println("Unmarshal Error At GetPod To Initialize line 98 ", err.Error())
+			continue
+		}
+		fmt.Println("Pod Name is ", pod.MetaData.Name, " Pod Ns is ", pod.MetaData.NameSpace)
+		util.RegisterPod(pod.MetaData.Name, pod.MetaData.NameSpace)
+	}
+}
+
 func (server *Kubelet) registerHandler() {
-	server.Router.GET(kubelet.GetMetrics, server.GetPodMatrix)
+	server.Router.GET(kubelet.GetMetrics, server.GetPodMetrics)
 	server.Router.DELETE(kubelet.DelPod, server.DelPod)
 	server.Router.POST(kubelet.AddPod, server.AddPod)
 	server.Router.GET(kubelet.GetCpuAndMem, server.GetNodeCPUAndMem)

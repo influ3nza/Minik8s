@@ -20,6 +20,8 @@ type PV_spec struct {
 }
 
 type PV struct {
-	Metadata obj_inner.ObjectMeta `json:"metadata" yaml:"metadata"`
-	Spec     PV_spec              `json:"spec" yaml:"spec"`
+	ApiVersion string               `json:"apiVersion" yaml:"apiVersion"`
+	Kind       string               `json:"kind" yaml:"kind"`
+	Metadata   obj_inner.ObjectMeta `json:"metadata" yaml:"metadata"`
+	Spec       PV_spec              `json:"spec" yaml:"spec"`
 }

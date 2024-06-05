@@ -9,6 +9,8 @@ type PVC_spec struct {
 }
 
 type PVC struct {
-	Metadata obj_inner.ObjectMeta `json:"metadata" yaml:"metadata"`
-	Spec     PVC_spec             `json:"spec" yaml:"spec"`
+	ApiVersion string               `json:"apiVersion" yaml:"apiVersion"`
+	Kind       string               `json:"kind" yaml:"kind"`
+	Metadata   obj_inner.ObjectMeta `json:"metadata" yaml:"metadata"`
+	Spec       PVC_spec             `json:"spec" yaml:"spec"`
 }

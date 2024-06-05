@@ -143,7 +143,7 @@ func ApplyHandler(cmd *cobra.Command, args []string) {
 				var dns = &api_obj.Dns{}
 				err = json.Unmarshal(fileToJson, dns)
 				if err != nil {
-					fmt.Printf("[ERR] Cannot parse file to service, err: %s\n", err.Error())
+					fmt.Printf("[ERR] Cannot parse file to dns, err: %s\n", err.Error())
 					return
 				}
 				fmt.Print(*dns)
@@ -159,13 +159,13 @@ func ApplyHandler(cmd *cobra.Command, args []string) {
 				var rs = &api_obj.ReplicaSet{}
 				err = json.Unmarshal(fileToJson, rs)
 				if err != nil {
-					fmt.Printf("[ERR] Cannot parse file to service, err: %s\n", err.Error())
+					fmt.Printf("[ERR] Cannot parse file to rs, err: %s\n", err.Error())
 					return
 				}
 
 				err = api.SendObjectTo(fileToJson, "replicaset")
 				if err != nil {
-					fmt.Printf("[ERR] Cannot send dns to server, err: %s\n", err.Error())
+					fmt.Printf("[ERR] Cannot send rs to server, err: %s\n", err.Error())
 					return
 				}
 			}
@@ -204,6 +204,36 @@ func ApplyHandler(cmd *cobra.Command, args []string) {
 				err = api.SendObjectTo(fileToJson, "hpa")
 				if err != nil {
 					fmt.Printf("[ERR] Cannot send hpa to server, err: %s\n", err.Error())
+					return
+				}
+			}
+		case "pv":
+			{
+				var pv = &api_obj.PV{}
+				err = json.Unmarshal(fileToJson, pv)
+				if err != nil {
+					fmt.Printf("[ERR] Cannot parse file to pv, err: %s\n", err.Error())
+					return
+				}
+
+				err = api.SendObjectTo(fileToJson, "pv")
+				if err != nil {
+					fmt.Printf("[ERR] Cannot send pv to server, err: %s\n", err.Error())
+					return
+				}
+			}
+		case "pvc":
+			{
+				var pvc = &api_obj.PVC{}
+				err = json.Unmarshal(fileToJson, pvc)
+				if err != nil {
+					fmt.Printf("[ERR] Cannot parse file to pvc, err: %s\n", err.Error())
+					return
+				}
+
+				err = api.SendObjectTo(fileToJson, "pvc")
+				if err != nil {
+					fmt.Printf("[ERR] Cannot send pvc to server, err: %s\n", err.Error())
 					return
 				}
 			}

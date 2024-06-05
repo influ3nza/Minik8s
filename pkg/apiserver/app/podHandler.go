@@ -101,6 +101,16 @@ func (s *ApiServer) AddPod(c *gin.Context) {
 	if !tools.Test_enabled {
 		new_pod.PodStatus.Phase = obj_inner.Pending
 	}
+
+	//PV:通过PVC的声明，重写mount路径。
+	err = s.RewriteMountPath(new_pod)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/msgHandler/AddPod] Failed to prepare for PVC, " + err.Error(),
+		})
+		return
+	}
+
 	new_pod_str, err := json.Marshal(new_pod)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

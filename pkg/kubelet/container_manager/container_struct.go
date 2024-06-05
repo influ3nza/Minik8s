@@ -17,7 +17,7 @@ type MetricsCollection struct {
 	task       containerd.Task
 	lastTime   time.Time
 	lastCPU    uint64
-	CPUPercent uint64
+	CPUPercent float64
 	memory     uint64
 }
 

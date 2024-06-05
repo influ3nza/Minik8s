@@ -385,12 +385,16 @@ func GetPodMetrics(podName string, namespace string) *api_obj.PodMetrics {
 
 	podMetric := api_obj.PodMetrics{
 		Timestamp:        time.Time{},
-		Window:           1 * time.Second,
+		Window:           500 * time.Millisecond,
 		ContainerMetrics: []api_obj.ContainerMetrics{},
 	}
 	walker := container_manager.ContainerWalker{
 		Client: client,
 		OnFound: func(ctx context.Context, found container_manager.Found) error {
+			mapLabel, _ := found.Container.Labels(ctx)
+			if mapLabel["nerdctl/name"] != "" {
+				return nil
+			}
 			res, erro := container_manager.GetContainersMetrics(ctx, found.Container, podMetric.Window)
 			if erro != nil {
 				fmt.Println("Get Metrics Failed At line 323 ", err.Error())
@@ -426,8 +430,10 @@ func GetPodMetrics(podName string, namespace string) *api_obj.PodMetrics {
  */
 func delCNIRules(pauseId string) error {
 	shPath := "./tools/setup_scripts/del_flannel_net.sh"
-	_, err := exec.Command(shPath, pauseId).CombinedOutput()
+	output, err := exec.Command(shPath, pauseId).CombinedOutput()
+	// fmt.Printf("pause Id is %s\n", pauseId)
 	if err != nil {
+		fmt.Println("DEL Flannel Rules", string(output))
 		return fmt.Errorf("delete Flannel Rules Failed At 344, %s", err.Error())
 	}
 	return nil

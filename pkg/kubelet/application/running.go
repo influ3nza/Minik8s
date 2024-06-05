@@ -109,6 +109,14 @@ func (server *Kubelet) DelPod(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 	pauseId := c.Param("pause")
+
+	if pauseId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "no pauseId",
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"data": "[kubectl/DelPod] deleting pod",
 	})
@@ -156,7 +164,7 @@ func (server *Kubelet) DelPod(c *gin.Context) {
 	return
 }
 
-func (server *Kubelet) GetPodMatrix(c *gin.Context) {
+func (server *Kubelet) GetPodMetrics(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 

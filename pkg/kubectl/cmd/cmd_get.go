@@ -73,6 +73,18 @@ func GetHandler(cmd *cobra.Command, args []string) {
 		GetDnsHandler()
 	case "workflow":
 		GetWorkFlowHandler()
+	case "pv":
+		if name != "" && namespace != "" {
+			fmt.Println("[ERR] Too many arguments to get pv. Try -h for help.")
+			return
+		}
+		GetPVHandler()
+	case "pvc":
+		if name != "" && namespace != "" {
+			fmt.Println("[ERR] Too many arguments to get pvc. Try -h for help.")
+			return
+		}
+		GetPVCHandler()
 	default:
 		fmt.Println("[ERR] Wrong api kind. Available: pod, node, service, replicaset, hpa, dns, function, workflow.")
 	}
@@ -201,22 +213,52 @@ func GetWorkFlowHandler() {
 	PrintWorkflowHandler(wfs)
 }
 
+func GetPVHandler() {
+	uri := apiserver.API_server_prefix
+	pvs := []api_obj.PV{}
+
+	uri += apiserver.API_get_pvs
+	err := network.GetRequestAndParse(uri, &pvs)
+	if err != nil {
+		fmt.Printf("[ERR/GetPVHandler] %v\n", err)
+		return
+	}
+
+	PrintPVHandler(pvs)
+}
+
+func GetPVCHandler() {
+	uri := apiserver.API_server_prefix
+	pvcs := []api_obj.PVC{}
+
+	uri += apiserver.API_get_pvcs
+	err := network.GetRequestAndParse(uri, &pvcs)
+	if err != nil {
+		fmt.Printf("[ERR/GetPVCHandler] %v\n", err)
+		return
+	}
+
+	PrintPVCHandler(pvcs)
+}
+
 func PrintPodHandler(pods []api_obj.Pod) {
 	//打印相关信息
-	// layout := "2006-01-02 15:04:05"
+	// // layout := "2006-01-02 15:04:05"
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"NAMESPACE", "NAME", "STATUS", "RESTARTS", "NODE", "IP"})
 	for _, pod := range pods {
-		// up_time, _ := time.Parse(layout, pod.PodStatus.CreateTime)
-		// now_time := time.Now()
-		// delta := now_time.Sub(up_time)
+		// // up_time, _ := time.Parse(layout, pod.PodStatus.CreateTime)
+		// // now_time := time.Now()
+		// // delta := now_time.Sub(up_time)
 		table.Append([]string{
 			pod.MetaData.NameSpace,
 			pod.MetaData.Name,
 			pod.PodStatus.Phase,
 			strconv.Itoa(int(pod.PodStatus.Restarts)),
-			// delta.String(),
+			// // delta.String(),
 			pod.Spec.NodeName,
+			pod.PodStatus.PodIP,
+		,
 			pod.PodStatus.PodIP,
 		})
 	}
@@ -284,66 +326,6 @@ func PrintReplicasetHandler(rps []api_obj.ReplicaSet) {
 	table.Render()
 }
 
-func PrintHpaHandler(hpas []api_obj.HPA) {
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"NAMESPACE", "NAME", "MIN/NOW/MAX REPLICAS"})
-	for _, hpa := range hpas {
-		table.Append([]string{
-			hpa.MetaData.NameSpace,
-			hpa.MetaData.Name,
-			strconv.Itoa(hpa.Spec.MinReplicas) + "/" + strconv.Itoa(hpa.Status.CurReplicas) + "/" + strconv.Itoa(hpa.Spec.MaxReplicas),
-		})
-	}
-	table.Render()
-}
+func PrintHpaHandler() {
 
-func PrintDnsHandler(dss []api_obj.Dns) {
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"NAME", "HOST", "PATH", "SRVNAME"})
-	for _, dns := range dss {
-		path := ""
-		srvname := ""
-		for _, p := range dns.Paths {
-			path += "/" + p.SubPath + "\n"
-			srvname += p.ServiceName + "\n"
-		}
-		if path != "" {
-			path = path[:len(path)-1]
-		}
-		if srvname != "" {
-			srvname = srvname[:len(srvname)-1]
-		}
-
-		table.Append([]string{
-			dns.MetaData.Name,
-			dns.Host,
-			path,
-			srvname,
-		})
-	}
-	table.Render()
-}
-
-func PrintFunctionHandler(fs []api_obj.Function) {
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"NAME", "FILEPATH", "NEEDWATCH"})
-	for _, f := range fs {
-		table.Append([]string{
-			f.Metadata.Name,
-			f.FilePath,
-			fmt.Sprintf("%t", f.NeedWatch),
-		})
-	}
-	table.Render()
-}
-
-func PrintWorkflowHandler(wfs []api_obj.Workflow) {
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"NAME"})
-	for _, wf := range wfs {
-		table.Append([]string{
-			wf.MetaData.Name,
-		})
-	}
-	table.Render()
 }
