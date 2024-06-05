@@ -92,7 +92,7 @@ const (
 	API_exec_function_prefix    string = "/functions/exec/"
 	API_exec_function           string = "/functions/exec/:name"
 	API_find_function_ip_prefix string = "/function/findByIp/"
-	API_find_function_ip        string = "/function/findByIp/:name"
+	API_find_function_ip        string = "/function/findByIp/:name/:ifScale"
 	API_get_function_res_prefix string = "/function/getRes/"
 	API_get_function_res        string = "/function/getRes/:name"
 	API_update_function         string = "/function/update"

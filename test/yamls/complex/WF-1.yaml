@@ -27,7 +27,7 @@ spec:
       type: func
       funcSpec: 
         namespace: default
-        name: func-1
+        name: verify
         next: fork1
     - name: fork1
       type: fork
@@ -44,7 +44,7 @@ spec:
       type: func
       funcSpec: 
         namespace: default
-        name: func-2
+        name: compress
         next: fork2
     - name: fork2
       type: fork
@@ -61,7 +61,7 @@ spec:
       type: func
       funcSpec: 
         namespace: default
-        name: func-3
+        name: edge
         next: fork3
     - name: fork3
       type: fork
@@ -78,7 +78,7 @@ spec:
       type: func
       funcSpec: 
         namespace: default
-        name: func-4
+        name: watermark
         next: fork4
     - name: fork4
       type: fork
@@ -95,7 +95,7 @@ spec:
       type: func
       funcSpec: 
         namespace: default
-        name: func-5
+        name: save
         next: fork5
     - name: fork5
       type: fork
