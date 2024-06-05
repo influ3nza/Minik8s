@@ -20,6 +20,7 @@ func init() {
 	root_kubectl.AddCommand(GetCmd)
 	root_kubectl.AddCommand(DelCmd)
 	root_kubectl.AddCommand(ExecCmd)
+	root_kubectl.AddCommand(UpdateCmd)
 }
 
 var ApplyFiles []string

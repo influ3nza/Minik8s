@@ -6,6 +6,6 @@ def run(x, y):
     result = {
         "x": x,
         "y": y,
-        "z": z
+        "z": z + 10
     }
     return result

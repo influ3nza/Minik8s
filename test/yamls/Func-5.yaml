@@ -1,6 +1,6 @@
 apiVersion: v1
 kind: function
-metaData:
+metadata:
   labels:
     app: test
   name: func-5

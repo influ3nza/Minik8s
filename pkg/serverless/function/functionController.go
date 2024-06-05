@@ -19,7 +19,6 @@ type FunctionController struct {
 }
 
 func (fc *FunctionController) GenerateFunction(f *api_obj.Function) error {
-	//TODO:需要取消注释
 	err := CreateImage(f)
 	if err != nil {
 		return fmt.Errorf("create Img Failed At GF, %s", err.Error())

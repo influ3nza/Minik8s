@@ -143,3 +143,30 @@ func (s *ApiServer) DeleteDns(c *gin.Context) {
 		"data": "[msgHandler/DeleteDns] Delete dns success",
 	})
 }
+
+func (s *ApiServer) GetAllDns(c *gin.Context) {
+	e_key := apiserver.ETCD_dns_prefix
+	res, err := s.EtcdWrap.GetByPrefix(e_key)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[apiserver/GetAllDns] Failed to get dns, " + err.Error(),
+		})
+		return
+	} else {
+		var dss = "["
+		for id, dns := range res {
+			dss += dns.Value
+
+			//返回值以逗号隔开
+			if id < len(res)-1 {
+				dss += ","
+			}
+		}
+
+		dss += "]"
+
+		c.JSON(http.StatusOK, gin.H{
+			"data": dss,
+		})
+	}
+}

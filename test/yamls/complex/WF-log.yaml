@@ -3,7 +3,7 @@ kind: workflow
 metaData:
   labels:
     app: test
-  name: wf-3
+  name: wf-log
 spec:
   startNode: firstNode
   nodes: 

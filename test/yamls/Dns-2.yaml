@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: dns
+metaData:
+  labels:
+    app: test
+  name: dns-2
+  nameSpace: q
+host: www.etcd.com
+paths:
+  - serviceName: srv-1
+    port: 10000
+    subPath: path1
+  - serviceName: srv-2
+    port: 10000
+    subPath: path2

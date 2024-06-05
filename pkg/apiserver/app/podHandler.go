@@ -540,6 +540,6 @@ func (s *ApiServer) GetPodMetrics(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"data": pod_metrics_str,
+		"data": string(pod_metrics_str),
 	})
 }

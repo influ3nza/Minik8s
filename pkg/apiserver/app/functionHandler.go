@@ -10,7 +10,6 @@ import (
 	"minik8s/tools"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -321,4 +320,132 @@ func (s *ApiServer) DeleteFunction(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": "Delete function success",
 	})
+}
+
+func (s *ApiServer) UpdateFunction(c *gin.Context) {
+	fw := &api_obj.FunctionWrap{}
+	err := c.ShouldBind(fw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/UpdateFunction] Failed to parse function, " + err.Error(),
+		})
+		return
+	}
+
+	f := fw.Func
+
+	e_key := apiserver.ETCD_function_prefix + f.Metadata.Name
+	res, err := s.EtcdWrap.Get(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/UpdateFunction] Failed to get from etcd, " + err.Error(),
+		})
+		return
+	}
+	if len(res) != 1 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/UpdateFunction] Function name already exists.",
+		})
+		return
+	}
+
+	orig_f := &api_obj.Function{}
+	err = json.Unmarshal([]byte(res[0].Value), orig_f)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/UpdateFunction] Failed to unmarshal data, " + err.Error(),
+		})
+		return
+	}
+
+	f = *orig_f
+
+	//将文件存在本地，并通知functionController。
+	path := "/mydata/" + f.Metadata.UUID + ".zip"
+	file, err := os.Create(path)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/UpdateFunction] Failed to create file, " + err.Error(),
+		})
+		return
+	}
+	defer file.Close()
+
+	_, err = file.Write(fw.Content)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/UpdateFunction] Failed to write into file, " + err.Error(),
+		})
+		return
+	}
+
+	dirPath := "/mydata/" + f.Metadata.UUID
+	err = api.DoUnzip(path, dirPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/UpdateFunction] Failed to unzip file, " + err.Error(),
+		})
+		return
+	}
+
+	//复制dockerfile等
+	var p_path string
+	dirPath += "/" + f.Metadata.Name + "/"
+	if f.UseTemplate {
+		p_path = tools.Func_template_path
+	} else {
+		p_path = f.FilePath
+	}
+
+	fmt.Printf("[UpdateFunction] P_path: %s, dirPath: %s\n", p_path, dirPath)
+
+	api.DoCopy(p_path+"Dockerfile", dirPath+"Dockerfile")
+	api.DoCopy(p_path+"requirements.txt", dirPath+"requirements.txt")
+	api.DoCopy(p_path+"server.py", dirPath+"server.py")
+
+	//删除zip
+	err = os.Remove(path)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/AddFunction] Failed to delete file, " + err.Error(),
+		})
+		return
+	}
+
+	s_msg := &message.Message{
+		Type:    message.FUNC_UPDATE,
+		Content: string(res[0].Value),
+	}
+	s.Producer.Produce(message.TOPIC_Serverless, s_msg)
+
+	//返回200
+	c.JSON(http.StatusOK, gin.H{
+		"data": "Update function success",
+	})
+}
+
+func (s *ApiServer) GetAllFunctions(c *gin.Context) {
+	res, err := s.EtcdWrap.GetByPrefix(apiserver.ETCD_function_prefix)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[apiserver/GetAllFunctions] Failed to get functions, " + err.Error(),
+		})
+		return
+	} else {
+		var fs = "["
+		for id, f := range res {
+			fs += f.Value
+
+			//返回值以逗号隔开
+			if id < len(res)-1 {
+				fs += ","
+			}
+		}
+
+		fs += "]"
+
+		c.JSON(http.StatusOK, gin.H{
+			"data": fs,
+		})
+	}
 }

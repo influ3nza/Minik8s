@@ -117,8 +117,8 @@ func (s *ApiServer) AddNode(c *gin.Context) {
 	}
 
 	if len(res) != 0 {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[msgHandler/addNode] Node name already exists.",
+		c.JSON(http.StatusCreated, gin.H{
+			"data": "[msgHandler/addNode] Add node success",
 		})
 		return
 	}

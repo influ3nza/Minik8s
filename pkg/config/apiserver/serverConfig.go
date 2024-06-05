@@ -48,7 +48,7 @@ const (
 	API_get_endpoint_prefix            string = "/endpoints/"
 	API_get_endpoint                   string = "/endpoints/:namespace/:name"
 	API_get_endpoint_by_service_prefix string = "/endpoints/getBySrv/"
-	API_get_endpoint_by_service        string = "/endpoints/getBySrv/:srvname"
+	API_get_endpoint_by_service        string = "/endpoints/getBySrv/:namespace/:srvname"
 
 	API_get_replicasets          string = "/replicasets/getAll"
 	API_delete_replicaset_prefix string = "/replicasets/delete/"
@@ -81,9 +81,11 @@ const (
 	API_exec_workflow_prefix   string = "/workflows/exec/"
 	API_exec_workflow          string = "/workflows/exec/:name"
 	API_check_workflow         string = "/workflow/check"
+	API_get_all_workflows      string = "/workflow/getAll"
 
 	API_get_function_prefix     string = "/functions/"
 	API_get_function            string = "/functions/:name"
+	API_get_all_functions       string = "/functions/getAll"
 	API_add_function            string = "/functions/add"
 	API_delete_function_prefix  string = "/functions/delete/"
 	API_delete_function         string = "/functions/delete/:name"
@@ -93,6 +95,7 @@ const (
 	API_find_function_ip        string = "/function/findByIp/:name"
 	API_get_function_res_prefix string = "/function/getRes/"
 	API_get_function_res        string = "/function/getRes/:name"
+	API_update_function         string = "/function/update"
 
 	API_add_pv           string = "/pv/add"
 	API_delete_pv_prefix string = "/pv/delete/"
