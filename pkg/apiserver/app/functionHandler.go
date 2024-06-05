@@ -206,6 +206,7 @@ func (s *ApiServer) ExecFunction(c *gin.Context) {
 
 func (s *ApiServer) FindFunctionIp(c *gin.Context) {
 	name := c.Param("name")
+	ifScale := c.Param("ifScale")
 	if name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "[ERR/handler/FindFunctionIp] Empty function name.",
@@ -224,8 +225,8 @@ func (s *ApiServer) FindFunctionIp(c *gin.Context) {
 	}
 
 	//检查是否有可用ip，如果没有，在这里进行扩容。
-	if len(pack) == 0 {
-		_, err = s.U_ScaleReplicaSet(name, 3)
+	if len(pack) == 0 && ifScale == "true" {
+		_, err = s.U_ScaleReplicaSet(name, 2)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "[ERR/handler/FindFunctionIp] Failed to send scale rs request, " + err.Error(),

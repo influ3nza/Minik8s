@@ -258,7 +258,6 @@ func PrintPodHandler(pods []api_obj.Pod) {
 			// // delta.String(),
 			pod.Spec.NodeName,
 			pod.PodStatus.PodIP,
-		,
 			pod.PodStatus.PodIP,
 		})
 	}
@@ -326,6 +325,91 @@ func PrintReplicasetHandler(rps []api_obj.ReplicaSet) {
 	table.Render()
 }
 
-func PrintHpaHandler() {
+func PrintPVHandler(pvs []api_obj.PV) {
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"NAME", "SERVERIP", "PATH"})
+	for _, pv := range pvs {
+		table.Append([]string{
+			pv.Metadata.Name,
+			pv.Spec.Nfs.ServerIp,
+			pv.Spec.Nfs.Path,
+		})
+	}
+	table.Render()
+}
 
+func PrintPVCHandler(pvcs []api_obj.PVC) {
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"NAME", "BINDPV"})
+	for _, pvc := range pvcs {
+		table.Append([]string{
+			pvc.Metadata.Name,
+			pvc.Spec.BindPV,
+		})
+	}
+	table.Render()
+}
+
+func PrintHpaHandler(hpas []api_obj.HPA) {
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"NAMESPACE", "NAME", "MIN/NOW/MAX REPLICAS"})
+	for _, hpa := range hpas {
+		table.Append([]string{
+			hpa.MetaData.NameSpace,
+			hpa.MetaData.Name,
+			strconv.Itoa(hpa.Spec.MinReplicas) + "/" + strconv.Itoa(hpa.Status.CurReplicas) + "/" + strconv.Itoa(hpa.Spec.MaxReplicas),
+		})
+	}
+	table.Render()
+}
+
+func PrintDnsHandler(dss []api_obj.Dns) {
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"NAME", "HOST", "PATH", "SRVNAME"})
+	for _, dns := range dss {
+		path := ""
+		srvname := ""
+		for _, p := range dns.Paths {
+			path += "/" + p.SubPath + "\n"
+			srvname += p.ServiceName + "\n"
+		}
+		if path != "" {
+			path = path[:len(path)-1]
+		}
+		if srvname != "" {
+			srvname = srvname[:len(srvname)-1]
+		}
+
+		table.Append([]string{
+			dns.MetaData.Name,
+			dns.Host,
+			path,
+			srvname,
+		})
+	}
+	table.Render()
+}
+
+func PrintFunctionHandler(fs []api_obj.Function) {
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"NAME", "FILEPATH", "NEEDWATCH"})
+	for _, f := range fs {
+		table.Append([]string{
+			f.Metadata.Name,
+			f.FilePath,
+			fmt.Sprintf("%t", f.NeedWatch),
+		})
+	}
+	table.Render()
+}
+
+func PrintWorkflowHandler(wfs []api_obj.Workflow) {
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"NAME"})
+	for _, wf := range wfs {
+		table.Append([]string{
+			wf.MetaData.Name,
+		})
+	}
+	table.Render()
 }
