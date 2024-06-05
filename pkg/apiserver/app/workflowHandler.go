@@ -286,3 +286,29 @@ func (s *ApiServer) CheckWorkflow(c *gin.Context) {
 		"data": string(map_str),
 	})
 }
+
+func (s *ApiServer) GetAllWorkflows(c *gin.Context) {
+	res, err := s.EtcdWrap.GetByPrefix(apiserver.ETCD_workflow_prefix)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[apiserver/GetWorkflows] Failed to get wfs, " + err.Error(),
+		})
+		return
+	} else {
+		var wfs = "["
+		for id, wf := range res {
+			wfs += wf.Value
+
+			//返回值以逗号隔开
+			if id < len(res)-1 {
+				wfs += ","
+			}
+		}
+
+		wfs += "]"
+
+		c.JSON(http.StatusOK, gin.H{
+			"data": wfs,
+		})
+	}
+}

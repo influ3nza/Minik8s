@@ -81,6 +81,7 @@ const (
 	API_exec_workflow_prefix   string = "/workflows/exec/"
 	API_exec_workflow          string = "/workflows/exec/:name"
 	API_check_workflow         string = "/workflow/check"
+	API_get_all_workflows      string = "/workflow/getAll"
 
 	API_get_function_prefix     string = "/functions/"
 	API_get_function            string = "/functions/:name"

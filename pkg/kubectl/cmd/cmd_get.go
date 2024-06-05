@@ -71,6 +71,8 @@ func GetHandler(cmd *cobra.Command, args []string) {
 		GetFunctionHandler()
 	case "dns":
 		GetDnsHandler()
+	case "workflow":
+		GetWorkFlowHandler()
 	default:
 		fmt.Println("[ERR] Wrong api kind. Available: pod, node, service, replicaset, hpa, dns, function, workflow.")
 	}
@@ -185,6 +187,18 @@ func GetFunctionHandler() {
 	}
 
 	PrintFunctionHandler(fs)
+}
+
+func GetWorkFlowHandler() {
+	uri := apiserver.API_server_prefix + apiserver.API_get_all_workflows
+	wfs := []api_obj.Workflow{}
+	err := network.GetRequestAndParse(uri, &wfs)
+	if err != nil {
+		fmt.Printf("[ERR/GetWorkflowHandler] %v\n", err)
+		return
+	}
+
+	PrintWorkflowHandler(wfs)
 }
 
 func PrintPodHandler(pods []api_obj.Pod) {
@@ -318,6 +332,17 @@ func PrintFunctionHandler(fs []api_obj.Function) {
 			f.Metadata.Name,
 			f.FilePath,
 			fmt.Sprintf("%t", f.NeedWatch),
+		})
+	}
+	table.Render()
+}
+
+func PrintWorkflowHandler(wfs []api_obj.Workflow) {
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"NAME"})
+	for _, wf := range wfs {
+		table.Append([]string{
+			wf.MetaData.Name,
 		})
 	}
 	table.Render()
