@@ -53,6 +53,7 @@ func GetRequestAndParse(uri string, pack interface{}) error {
 	data := result["data"]
 	if data != nil {
 		dataStr := fmt.Sprint(data)
+		
 		return json.Unmarshal([]byte(dataStr), pack)
 	}
 

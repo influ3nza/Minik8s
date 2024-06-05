@@ -8,8 +8,15 @@ type WorkflowNodeType string
 type CompareType string
 
 const (
-	WF_Func WorkflowNodeType = "func"
-	WF_Fork WorkflowNodeType = "fork"
+	WF_Func  WorkflowNodeType = "func"
+	WF_Fork  WorkflowNodeType = "fork"
+	WF_Call  WorkflowNodeType = "call"
+	WF_Merge WorkflowNodeType = "merge"
+)
+
+const (
+	WF_ByNum string = "Num"
+	WF_ByStr string = "Str"
 )
 
 const (
@@ -19,6 +26,7 @@ const (
 	WF_ByNumNotEqual CompareType = "NumNE"
 	WF_ByStrEqual    CompareType = "StrE"
 	WF_ByStrNotEqual CompareType = "StrNE"
+	WF_AllPass       CompareType = "default"
 )
 
 type WF_FuncSpec struct {
@@ -29,16 +37,24 @@ type WF_FuncSpec struct {
 
 type WF_ForkSpec struct {
 	Variable  string      `json:"variable" yaml:"variable"`
-	CompareBy CompareType `json:"compareType" yaml:"compareType"`
+	CompareBy CompareType `json:"compareBy" yaml:"compareBy"`
 	CompareTo string      `json:"compareTo" yaml:"compareTo"`
 	Next      string      `json:"next" yaml:"next"`
+}
+
+type WF_CallSpec struct {
+	WfName       string   `json:"wfName" yaml:"wfName"`
+	InheritCoeff []string `json:"inheritCoeff" yaml:"inheritCoeff"`
+	NewCoeff     string   `json:"coeff" yaml:"coeff"`
+	Next         string   `json:"next" yaml:"next"`
 }
 
 type WorkflowNode struct {
 	Name      string           `json:"name" yaml:"name"`
 	Type      WorkflowNodeType `json:"type" yaml:"type"`
-	FuncSpec  WF_FuncSpec      `json:"funcSpec" yaml:"funcSpec"`
-	ForkSpecs []WF_ForkSpec    `json:"forkSpecs" yaml:"forkSpecs"`
+	FuncSpec  WF_FuncSpec      `json:"funcSpec,omitempty" yaml:"funcSpec,omitempty"`
+	ForkSpecs []WF_ForkSpec    `json:"forkSpecs,omitempty" yaml:"forkSpecs,omitempty"`
+	CallSpec  WF_CallSpec      `json:"callSpec,omitempty" yaml:"callSpec,omitempty"`
 }
 
 type WorkflowSpec struct {

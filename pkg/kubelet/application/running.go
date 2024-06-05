@@ -3,6 +3,8 @@ package application
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/mem"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/config/apiserver"
@@ -15,6 +17,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -106,6 +109,14 @@ func (server *Kubelet) DelPod(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 	pauseId := c.Param("pause")
+
+	if pauseId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "no pauseId",
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"data": "[kubectl/DelPod] deleting pod",
 	})
@@ -153,7 +164,7 @@ func (server *Kubelet) DelPod(c *gin.Context) {
 	return
 }
 
-func (server *Kubelet) GetPodMatrix(c *gin.Context) {
+func (server *Kubelet) GetPodMetrics(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 
@@ -381,4 +392,20 @@ func (server *Kubelet) UnmountNfs(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": "[kubelet/UnmountNfs] Unmount success.",
 	})
+}
+
+func (server *Kubelet) GetNodeCPUAndMem(c *gin.Context) {
+	cpuInfo, _ := cpu.Counts(true)
+	memory, _ := mem.VirtualMemory()
+
+	memStr := strconv.FormatUint(memory.Available, 10)
+	retMap := map[string]string{
+		"CPU":    strconv.Itoa(cpuInfo),
+		"Memory": memStr,
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": retMap,
+	})
+	return
 }

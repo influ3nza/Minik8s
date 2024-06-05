@@ -10,8 +10,11 @@ import (
 	"minik8s/pkg/kubelet/container_manager"
 	"minik8s/pkg/kubelet/pod_manager"
 	"minik8s/pkg/kubelet/util"
+	"os"
+	"os/signal"
 	"strconv"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -22,59 +25,17 @@ var pod = api_obj.Pod{
 	Kind:       "pod",
 	MetaData: obj_inner.ObjectMeta{
 		Name:      "testpod",
-		NameSpace: "qwerty",
+		NameSpace: "test2",
 		Labels: map[string]string{
 			"testlabel": "podlabel",
 		},
-		Annotations: nil,
+		Annotations: map[string]string{},
 		UUID:        "",
 	},
 	Spec: api_obj.PodSpec{
 		Containers: []api_obj.Container{
 			{
 				Name: "testubuntu",
-				Image: obj_inner.Image{
-					Img:           "docker.io/library/nginx:latest",
-					ImgPullPolicy: "Always",
-				},
-				EntryPoint: obj_inner.EntryPoint{
-					WorkingDir: "/",
-				},
-				Ports: []obj_inner.ContainerPort{
-					{
-						ContainerPort: 0,
-						HostIP:        "0.0.0.0",
-						HostPort:      0,
-						Name:          "no name",
-						Protocol:      "TCP",
-					},
-				},
-				Env: []obj_inner.EnvVar{
-					{
-						Name:  "env1",
-						Value: "env1Value",
-					},
-				},
-				VolumeMounts: []obj_inner.VolumeMount{
-					{
-						MountPath: "/home",
-						SubPath:   "config",
-						Name:      "testMount",
-						ReadOnly:  false,
-					},
-				},
-				Resources: obj_inner.ResourceRequirements{
-					Limits: map[string]obj_inner.Quantity{
-						obj_inner.CPU_LIMIT:    obj_inner.Quantity("0.5"),
-						obj_inner.MEMORY_LIMIT: obj_inner.Quantity("200MiB"),
-					},
-					Requests: map[string]obj_inner.Quantity{
-						obj_inner.CPU_REQUEST:    obj_inner.Quantity("0.25"),
-						obj_inner.MEMORY_REQUEST: obj_inner.Quantity("100MiB"),
-					},
-				},
-			}, {
-				Name: "testName1",
 				Image: obj_inner.Image{
 					Img:           "docker.io/library/ubuntu:latest",
 					ImgPullPolicy: "Always",
@@ -93,8 +54,52 @@ var pod = api_obj.Pod{
 				},
 				Env: []obj_inner.EnvVar{
 					{
-						Name:  "env2",
-						Value: "env2Value",
+						Name:  "MYSQL_ROOT_PASSWORD",
+						Value: "123456",
+					},
+				},
+				VolumeMounts: []obj_inner.VolumeMount{
+					{
+						MountPath: "/home",
+						SubPath:   "config",
+						Name:      "testMount",
+						ReadOnly:  false,
+					},
+				},
+				Resources: obj_inner.ResourceRequirements{
+					Limits: map[string]obj_inner.Quantity{
+						obj_inner.CPU_LIMIT:    obj_inner.Quantity("1"),
+						obj_inner.MEMORY_LIMIT: obj_inner.Quantity("500MiB"),
+					},
+					Requests: map[string]obj_inner.Quantity{
+						obj_inner.CPU_REQUEST:    obj_inner.Quantity("0.25"),
+						obj_inner.MEMORY_REQUEST: obj_inner.Quantity("100MiB"),
+					},
+				},
+			}, {
+				Name: "testName1",
+				Image: obj_inner.Image{
+					Img:           "docker.io/library/ubuntu:latest",
+					ImgPullPolicy: "Always",
+				},
+				EntryPoint: obj_inner.EntryPoint{
+					WorkingDir: "/",
+					Command:    []string{"tail"},
+					Args:       []string{"-f", "/dev/null"},
+				},
+				Ports: []obj_inner.ContainerPort{
+					{
+						ContainerPort: 0,
+						HostIP:        "0.0.0.0",
+						HostPort:      0,
+						Name:          "no name",
+						Protocol:      "TCP",
+					},
+				},
+				Env: []obj_inner.EnvVar{
+					{
+						Name:  "MYSQL_ROOT_PASSWORD",
+						Value: "123456",
 					},
 				},
 				VolumeMounts: []obj_inner.VolumeMount{
@@ -107,8 +112,8 @@ var pod = api_obj.Pod{
 				},
 				Resources: obj_inner.ResourceRequirements{
 					Limits: map[string]obj_inner.Quantity{
-						obj_inner.CPU_LIMIT:    obj_inner.Quantity("0.5"),
-						obj_inner.MEMORY_LIMIT: obj_inner.Quantity("200MiB"),
+						obj_inner.CPU_REQUEST:    obj_inner.Quantity("1"),
+						obj_inner.MEMORY_REQUEST: obj_inner.Quantity("500MiB"),
 					},
 					Requests: map[string]obj_inner.Quantity{
 						obj_inner.CPU_REQUEST:    obj_inner.Quantity("0.25"),
@@ -131,8 +136,8 @@ var pod = api_obj.Pod{
 }
 
 func main() {
-	// testCreateMonitor()
-	testFunc()
+	testCreateMonitor()
+	// testFunc()
 }
 
 func testFunc() {
@@ -287,47 +292,51 @@ func testCreateMonitor() {
 
 	util.RegisterPod(pod.MetaData.Name, pod.MetaData.NameSpace)
 	fmt.Println("Register success, ", pod.MetaData.Labels["pause"])
+	str := make(chan os.Signal)
+	signal.Notify(str, syscall.SIGINT)
+	//wg.Add(2)
+	//go func() {
+	//	for {
+	//		if util.Lock(pod.MetaData.Name, pod.MetaData.NameSpace) {
+	//			res := pod_manager.MonitorPodContainers(pod.MetaData.Name, pod.MetaData.NameSpace)
+	//			// fmt.Println("Monitor Pod is ", res)
+	//			if strings.Contains(res, "stopped") {
+	//				pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace, pod.MetaData.Annotations["pause"])
+	//			}
+	//			util.UnLock(pod.MetaData.Name, pod.MetaData.NameSpace)
+	//		} else {
+	//			break
+	//		}
+	//		time.Sleep(2 * time.Second)
+	//	}
+	//	// wg.Done()
+	//}()
+	go func() {
+		<-str
+		fmt.Println("Stopping")
+		for {
+			if ok := util.UnRegisterPod(pod.MetaData.Name, pod.MetaData.NameSpace); ok == 0 || ok == 2 {
+				break
+			}
+		}
+		pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace, pod.MetaData.Annotations["pause"])
+		os.Exit(0)
+	}()
 
-	wg.Add(2)
 	go func() {
 		for {
-			if util.Lock(pod.MetaData.Name, pod.MetaData.NameSpace) {
-				res := pod_manager.MonitorPodContainers(pod.MetaData.Name, pod.MetaData.NameSpace)
-				fmt.Println("Monitor Pod is ", res)
-				util.UnLock(pod.MetaData.Name, pod.MetaData.NameSpace)
+			ok := util.RLock(pod.MetaData.Name, pod.MetaData.NameSpace)
+			if ok {
+				pod_manager.GetPodMetrics(pod.MetaData.Name, pod.MetaData.NameSpace)
+				time.Sleep(5 * time.Second)
+				util.RUnLock(pod.MetaData.Name, pod.MetaData.NameSpace)
 			} else {
 				break
 			}
-			time.Sleep(2 * time.Second)
 		}
-		wg.Done()
 	}()
 
-	go func() {
-		//time.Sleep(4 * time.Second)
-		//res := pod_manager.GetPodMetrics(pod.MetaData.Name, pod.MetaData.NameSpace)
-		//if res != nil {
-		//	id1 := res.ContainerMetrics[0].Name
-		//	force, err_ := util.RmForce(pod.MetaData.NameSpace, id1)
-		//	if err_ != nil {
-		//		fmt.Println("Force Err ", force)
-		//		return
-		//	}
-		//}
-		time.Sleep(4 * time.Second)
-		for {
-			if ok := util.UnRegisterPod(pod.MetaData.Name, pod.MetaData.NameSpace); ok == 0 {
-				fmt.Println("UnRegister Success")
-				break
-			} else if ok == 2 {
-				fmt.Println("UnRegister NonExist")
-			}
-		}
-		//err = pod_manager.DeletePod(pod.MetaData.Name, pod.MetaData.NameSpace, pod.MetaData.Labels["pause"])
-		//if err != nil {
-		//	fmt.Println("Main Failed At line 268 ", err.Error())
-		//}
-		wg.Done()
-	}()
-	wg.Wait()
+	time.Sleep(120 * time.Second)
+	str <- syscall.SIGINT
+	// wg.Wait()
 }

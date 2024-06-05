@@ -1,0 +1,9 @@
+SELECT CONVERT(image USING utf8mb4) FROM response WHERE username = 'testuser';
+
+create database saveimg;
+
+use saveimg;
+
+create table response ( image blob, id INT NOT NULL AUTO_INCREMENT, username char(20), PRIMARY KEY (id) )ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO response(image, username) VALUES ('testimg', 'testuser');

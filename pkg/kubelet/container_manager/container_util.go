@@ -5,13 +5,23 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/containerd/containerd/oci"
-	"github.com/docker/go-units"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"strconv"
+
+	"github.com/containerd/containerd/oci"
+	"github.com/docker/go-units"
 )
 
+// ParseResources parses the resource requirements of a container
+/*
+ * 参数
+ *  requirements: obj_inner.ResourceRequirements
+ *
+ * 返回
+ *  []oci.SpecOpts: 一个oci.SpecOpts类型的切片
+ *  error: 错误信息
+ */
 func ParseResources(requirements obj_inner.ResourceRequirements) ([]oci.SpecOpts, error) {
 	var opts []oci.SpecOpts
 	var period = uint64(100000)
@@ -87,6 +97,14 @@ func ParseResources(requirements obj_inner.ResourceRequirements) ([]oci.SpecOpts
 	return opts, nil
 }
 
+// convertEnv converts the environment variables of a container
+/*
+ * 参数
+ *  container: *api_obj.Container
+ *
+ * 返回
+ *  []string: 一个字符串切片
+ */
 func convertEnv(container *api_obj.Container) []string {
 	var envs = []string{}
 	if container.Env != nil && len(container.Env) > 0 {
@@ -98,6 +116,16 @@ func convertEnv(container *api_obj.Container) []string {
 	return envs
 }
 
+// convertMounts converts the volume mounts of a container
+/*
+ * 参数
+ *  volumes: []obj_inner.Volume
+ *  container: *api_obj.Container
+ *
+ * 返回
+ *  []VolumeMap: 一个VolumeMap切片
+ *  error: 错误信息
+ */
 func convertMounts(volumes []obj_inner.Volume, container *api_obj.Container) ([]VolumeMap, error) {
 	var mounts []VolumeMap
 	if container.VolumeMounts != nil {
@@ -115,9 +143,15 @@ func convertMounts(volumes []obj_inner.Volume, container *api_obj.Container) ([]
 		}
 		return mounts, nil
 	}
-	return nil, errors.New("Convert Mounts Error")
+	return nil, errors.New("convert Mounts Error")
 }
 
+// GenerateUUIDForContainer generates a UUID for a container
+/*
+ * 返回
+ *  string: 一个字符串
+ *  error: 错误信息
+ */
 func GenerateUUIDForContainer() (string, error) {
 	bytesLength := IDLength / 2
 	b := make([]byte, bytesLength)

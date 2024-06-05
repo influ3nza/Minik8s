@@ -9,6 +9,16 @@ import (
 	"strings"
 )
 
+// GetPodIp 获取pod的ip
+/*
+ * 参数
+ *  namespace: string 命名空间
+ *  containerName: string 容器名称
+ *
+ * 返回
+ *  string: ip地址
+ *  error: 错误信息
+ */
 func GetPodIp(namespace string, containerName string) (string, error) {
 	res, err := util.GetContainerInfo(namespace, ".NetworkSettings.IPAddress", containerName)
 	if err != nil {
@@ -20,6 +30,16 @@ func GetPodIp(namespace string, containerName string) (string, error) {
 	return res, nil
 }
 
+// GetPodPid 获取pod的pid
+/*
+ * 参数
+ *  namespace: string 命名空间
+ *  containerName: string 容器名称
+ *
+ * 返回
+ *  int: pid
+ *  error: 错误信息
+ */
 func GetPodPid(namespace string, containerName string) (int, error) {
 	res, err := util.GetContainerInfo(namespace, ".State.Pid", containerName)
 	if err != nil {
@@ -39,6 +59,16 @@ func GetPodPid(namespace string, containerName string) (int, error) {
 	return pid, nil
 }
 
+// GetPodNetConfFile 获取pod的网络配置文件
+/*
+ * 参数
+ *  namespace: string 命名空间
+ *  container: string 容器名称
+ *
+ * 返回
+ *  []string: 文件路径
+ *  error: 错误信息
+ */
 func GetPodNetConfFile(namespace string, container string) ([]string, error) {
 	dirPath := filepath.Join("./", namespace, container)
 	err := os.MkdirAll(dirPath, os.ModePerm)
@@ -77,6 +107,16 @@ func GetPodNetConfFile(namespace string, container string) ([]string, error) {
 
 }
 
+// GenPodNetConfFile 生成pod的网络配置文件
+/*
+ * 参数
+ *  namespace: string 命名空间
+ *  container: string 容器名称
+ *  pauseId: string pause容器id
+ *
+ * 返回
+ *  error: 错误信息
+ */
 func GenPodNetConfFile(namespace string, container string, pauseId string) error {
 	dirPath := filepath.Join("./", namespace, pauseId)
 	_, err := util.CpContainer(namespace, container, "/etc/resolv.conf", fmt.Sprintf("%s/reslov.conf", dirPath), false)
@@ -92,6 +132,14 @@ func GenPodNetConfFile(namespace string, container string, pauseId string) error
 	return nil
 }
 
+// RmLocalFile 删除本地文件
+/*
+ * 参数
+ *  files: []string 文件路径
+ *
+ * 返回
+ *  error: 错误信息
+ */
 func RmLocalFile(files []string) error {
 	for _, file := range files {
 		err := os.Remove(file)
