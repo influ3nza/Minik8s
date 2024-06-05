@@ -60,7 +60,7 @@ func (fc *FunctionController) UpdateFunction(funcName string) {
 			return
 		}
 		RecordMap[funcName].Replicas = int32(replica)
-		RecordMap[funcName].CallCount = 60
+		RecordMap[funcName].CallCount = 90
 	}
 
 }
@@ -75,17 +75,19 @@ func (fc *FunctionController) watch() {
 	for _, record := range RecordMap {
 		record.Mutex.Lock()
 		if record.CallCount > 0 {
-			record.CallCount -= 2
+			record.CallCount -= 1
 		}
 		if record.CallCount <= 0 {
-			replica, err := fc.scaledown(record)
-			record.CallCount = 60
-			if err != nil {
-				fmt.Println("Send Get RequestErr in watch ", err.Error())
-				record.Mutex.Unlock()
-				continue
+			if record.Replicas != 0 {
+				replica, err := fc.scaledown(record)
+				record.CallCount = 90
+				if err != nil {
+					fmt.Println("Send Get RequestErr in watch ", err.Error())
+					record.Mutex.Unlock()
+					continue
+				}
+				record.Replicas = int32(replica)
 			}
-			record.Replicas = int32(replica)
 		}
 		record.Mutex.Unlock()
 	}

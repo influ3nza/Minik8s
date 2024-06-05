@@ -225,7 +225,7 @@ func (s *SL_server) Run() {
 		s.Clean()
 	}()
 
-	go s.FunctionController.RunWatch()
+	// go s.FunctionController.RunWatch()
 	go function.Watcher.FileWatch()
 	go s.Consumer.Consume([]string{message.TOPIC_Serverless}, s.MsgHandler)
 	s.Router.Run(":50001")
