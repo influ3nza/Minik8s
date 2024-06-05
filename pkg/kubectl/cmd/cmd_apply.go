@@ -192,6 +192,21 @@ func ApplyHandler(cmd *cobra.Command, args []string) {
 					return
 				}
 			}
+		case "hpa":
+			{
+				var h = &api_obj.HPA{}
+				err = json.Unmarshal(fileToJson, h)
+				if err != nil {
+					fmt.Printf("[ERR] Cannot parse file to hpa, err: %s\n", err.Error())
+					return
+				}
+
+				err = api.SendObjectTo(fileToJson, "hpa")
+				if err != nil {
+					fmt.Printf("[ERR] Cannot send hpa to server, err: %s\n", err.Error())
+					return
+				}
+			}
 		}
 	}
 }

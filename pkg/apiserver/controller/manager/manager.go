@@ -27,9 +27,16 @@ func CreateNewControllerManagerInstance() (ControllerManager, error) {
 		return ControllerManager{}, err
 	}
 
+	hc, err := controller.CreateHPAControllerInstance()
+	if err != nil {
+		fmt.Printf("[Controller/MAIN] Failed to create hc controller.")
+		return ControllerManager{}, err
+	}
+
 	return ControllerManager{
-		EpController: ep,
-		RsController: rs,
+		EpController:  ep,
+		RsController:  rs,
+		HpaController: hc,
 	}, nil
 }
 
@@ -43,6 +50,7 @@ func (cm *ControllerManager) Run() {
 
 	go cm.EpController.Run()
 	go cm.RsController.Run()
+	go cm.HpaController.Run()
 }
 
 func (cm *ControllerManager) Clean() {

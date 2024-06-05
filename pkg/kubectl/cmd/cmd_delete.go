@@ -93,7 +93,12 @@ func DeleteReplicasetHandler(namespace string, name string) {
 }
 
 func DeleteHpaHandler(namespace string, name string) {
-
+	fmt.Println("[Delete HPA]")
+	uri := apiserver.API_server_prefix + apiserver.API_delete_hpa_prefix + namespace + "/" + name
+	_, err := network.DelRequest(uri)
+	if err != nil {
+		fmt.Printf("[ERR/DeletePod] Failed to send DEL request.\n")
+	}
 }
 
 func DeleteDnsHandler(namespace string, name string) {

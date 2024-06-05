@@ -204,6 +204,7 @@ func (hc *HPAController) AddHpaPod(hpa api_obj.HPA, pods []api_obj.Pod, num int)
 	podNew.ApiVersion = "v1"
 	podNew.Kind = "Pod"
 	podNew.Spec = pods[0].Spec
+	podNew.Spec.NodeName = ""
 	podNew.MetaData.Name = hpa.Spec.Workload.Name
 	podNew.MetaData.NameSpace = hpa.Spec.Workload.NameSpace
 	podNew.MetaData.Labels["hpa_name"] = hpa.MetaData.Name
@@ -302,15 +303,18 @@ func (hc *HPAController) AverageCPUUsage(pods []api_obj.Pod) float64 {
 			hc.PrintHandlerWarning()
 		}
 		podMetrics := &api_obj.PodMetrics{}
-		err = json.Unmarshal([]byte(dataStr), &podMetrics)
+		err = json.Unmarshal([]byte(dataStr), podMetrics)
 		if err != nil {
 			fmt.Printf("[ERR/HPAController/AverageCPUUsage] Failed to unmarshal pod, " + err.Error())
 			hc.PrintHandlerWarning()
 		}
 
+		fmt.Printf("[PodMetrics] %v\n", podMetrics)
+
 		containerMetricss := podMetrics.ContainerMetrics
 		var metrics float64 = 0.00
 		for _, containerMetrics := range containerMetricss {
+			fmt.Printf("[Calculate CPU usage] %2f\n", containerMetrics.Usage.CPUPercent)
 			metrics += float64(containerMetrics.Usage.CPUPercent)
 		}
 		sum += metrics
@@ -332,7 +336,7 @@ func (hc *HPAController) AverageMemoryUsage(pods []api_obj.Pod) float64 {
 			hc.PrintHandlerWarning()
 		}
 		podMetrics := &api_obj.PodMetrics{}
-		err = json.Unmarshal([]byte(dataStr), &podMetrics)
+		err = json.Unmarshal([]byte(dataStr), podMetrics)
 		if err != nil {
 			fmt.Printf("[ERR/HPAController/AverageCPUUsage] Failed to unmarshal pod, " + err.Error())
 			hc.PrintHandlerWarning()
@@ -354,9 +358,10 @@ func (hc *HPAController) ExpectedReplicas(hpa api_obj.HPA, averageCPUUsage float
 	memoryUsedPropotion := averageMemoryUsage / hpa.Spec.Metrics.MemPercent
 	expectedReplicas := int(math.Max(cpuUsedPropotion, memoryUsedPropotion) * float64(hpa.Status.CurReplicas))
 
+	fmt.Printf("[INFO/HPAController/ExpectedReplicas] CPU&MEM threshold: %2f, %2f\n", hpa.Spec.Metrics.CPUPercent, hpa.Spec.Metrics.MemPercent)
 	fmt.Printf("[INFO/HPAController/ExpectedReplicas] cpuUsedPropotion: %.2f\n", cpuUsedPropotion)
 	fmt.Printf("[INFO/HPAController/ExpectedReplicas] memoryUsedPropotion: %.2f\n", memoryUsedPropotion)
 	fmt.Printf("[INFO/HPAController/ExpectedReplicas] expectedReplicas: %d\n", expectedReplicas)
 
-	return expectedReplicas
+	return int(math.Max(float64(expectedReplicas), float64(hpa.Spec.MinReplicas)))
 }

@@ -55,7 +55,7 @@ func (s *ApiServer) DeleteHPA(c *gin.Context) {
 	name := c.Param("name")
 	if name == "" || namespace == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[ERR/HPAhandler/DeleteHPA] Service name and namespace shall not be null.",
+			"error": "[ERR/HPAhandler/DeleteHPA] Hpa name and namespace shall not be null.",
 		})
 		return
 	}
@@ -79,7 +79,7 @@ func (s *ApiServer) GetHPAs(c *gin.Context) {
 	fmt.Printf("[apiserver/GetHPA] Try to get HPAs.\n")
 
 	key := apiserver.ETCD_hpa_prefix
-	hpas, err := s.EtcdWrap.GetByPrefix(key)
+	res, err := s.EtcdWrap.GetByPrefix(key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "[ERR/hpahandler/GetHPAs] Failed to get from etcd, " + err.Error(),
@@ -87,18 +87,20 @@ func (s *ApiServer) GetHPAs(c *gin.Context) {
 		return
 	}
 
-	var allhpa []string
-	for id, hpaItr := range hpas {
-		allhpa = append(allhpa, hpaItr.Value)
+	var hs = "["
+		for id, hpa := range res {
+			hs += hpa.Value
 
-		//返回值以逗号隔开
-		if id < len(hpas)-1 {
-			allhpa = append(allhpa, ",")
+			//返回值以逗号隔开
+			if id < len(res)-1 {
+				hs += ","
+			}
 		}
-	}
+
+		hs += "]"
 
 	c.JSON(http.StatusOK, gin.H{
-		"data": allhpa,
+		"data": hs,
 	})
 }
 
@@ -110,7 +112,7 @@ func (s *ApiServer) GetHPA(c *gin.Context) {
 
 	if hpaname == "" || namespace == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[ERR/handler/GetEndpoint] Endpoint name shall not be null.",
+			"error": "[ERR/handler/GetHPA] HPA name shall not be null.",
 		})
 		return
 	}
@@ -126,7 +128,7 @@ func (s *ApiServer) GetHPA(c *gin.Context) {
 
 	if len(res) != 1 {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[ERR/handler/GetHPA] Found zero or more than one endpoint.\n",
+			"error": "[ERR/handler/GetHPA] Found zero or more than one hpa.\n",
 		})
 		return
 	}
@@ -137,5 +139,52 @@ func (s *ApiServer) GetHPA(c *gin.Context) {
 	//返回200
 	c.JSON(http.StatusOK, gin.H{
 		"data": arr,
+	})
+}
+
+func (s *ApiServer) UpdateHPA(c *gin.Context) {
+	h := &api_obj.HPA{}
+	err := c.ShouldBind(h)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[ERR/handler/UpdateHPA] Failed to parse hpa.",
+		})
+		return
+	}
+
+	e_key := apiserver.ETCD_hpa_prefix + h.MetaData.NameSpace + "/" + h.MetaData.Name
+	res, err := s.EtcdWrap.Get(e_key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/UpdateHPA] Failed to get from etcd, " + err.Error(),
+		})
+		return
+	}
+	if len(res) != 1 {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/UpdateHPA] Found zero or more than one hpa.\n",
+		})
+		return
+	}
+
+	h_str, err := json.Marshal(h)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/hpahandler/UpdateHPA] Failed to marshal hpa, " + err.Error(),
+		})
+		return
+	}
+
+	err = s.EtcdWrap.Put(e_key, h_str)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/handler/UpdateHPA] Failed to write into etcd, " + err.Error(),
+		})
+		return
+	}
+
+	//返回200
+	c.JSON(http.StatusOK, gin.H{
+		"data": "Update hpa success.",
 	})
 }
