@@ -53,9 +53,14 @@ func CreateNewFunctionControllerInstance() *FunctionController {
 	return &FunctionController{}
 }
 
-func (fc *FunctionController) GetFunctionPodIps(f *api_obj.Function) ([]string, error) {
+func GetFunctionPodIps(f *api_obj.Function, isUp bool) ([]string, error) {
 	var array []string
-	url := apiserver.API_server_prefix + apiserver.API_find_function_ip_prefix + f.Metadata.Name
+	url := ""
+	if isUp == true {
+		url = apiserver.API_server_prefix + apiserver.API_find_function_ip_prefix + f.Metadata.Name + "/true"
+	} else {
+		url = apiserver.API_server_prefix + apiserver.API_find_function_ip_prefix + f.Metadata.Name + "/false"
+	}
 	err := network.GetRequestAndParse(url, &array)
 	if err != nil {
 		fmt.Printf("get Func Pod Ips Failed, %s", err.Error())
@@ -131,7 +136,7 @@ func (fc *FunctionController) GenerateReplicaset(f *api_obj.Function) error {
 
 func (fc *FunctionController) MakePods(f *api_obj.Function) ([]string, error) {
 	for {
-		res, err := fc.GetFunctionPodIps(f)
+		res, err := GetFunctionPodIps(f, true)
 		if err != nil {
 			return []string{}, fmt.Errorf("get Pod Ips Failed, %s", err.Error())
 		}
@@ -139,6 +144,9 @@ func (fc *FunctionController) MakePods(f *api_obj.Function) ([]string, error) {
 		if len(res) < 1 {
 			time.Sleep(2 * time.Second)
 		} else {
+			RecordMap[f.Metadata.Name].Mutex.Lock()
+			RecordMap[f.Metadata.Name].Replicas = int32(len(res))
+			RecordMap[f.Metadata.Name].Mutex.Unlock()
 			return res, nil
 		}
 	}

@@ -52,6 +52,9 @@ func (fc *FunctionController) UpdateFunction(funcName string) {
 	}
 	RecordMap[funcName].Mutex.Lock()
 	defer RecordMap[funcName].Mutex.Unlock()
+	if RecordMap[funcName].Replicas == 0 {
+		RecordMap[funcName].Replicas = 2
+	}
 	RecordMap[funcName].CallCount += 30 / (RecordMap[funcName].Replicas + 2)
 	if RecordMap[funcName].CallCount > 200 {
 		replica, err := fc.scaleup(RecordMap[funcName])
@@ -74,10 +77,19 @@ func (fc *FunctionController) watch() {
 
 	for _, record := range RecordMap {
 		record.Mutex.Lock()
+		fmt.Println("watch", record.Name, record.CallCount, record.Replicas)
 		if record.CallCount > 0 {
 			record.CallCount -= 1
 		}
 		if record.CallCount <= 0 {
+			res, err := GetFunctionPodIps(record.FuncTion, false)
+			if err != nil {
+				fmt.Println("GetFunctionPodIps err", err.Error())
+				record.Mutex.Unlock()
+				continue
+			}
+
+			record.Replicas = int32(len(res))
 			if record.Replicas != 0 {
 				replica, err := fc.scaledown(record)
 				record.CallCount = 90

@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/containerd/containerd"
-	"github.com/containerd/containerd/namespaces"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/kubelet/container_manager"
@@ -16,6 +14,9 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/containerd/containerd"
+	"github.com/containerd/containerd/namespaces"
 )
 
 var wg sync.WaitGroup
