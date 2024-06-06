@@ -17,12 +17,41 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
 )
+
+func (server *Kubelet) AddThisNode(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"data": "success",
+	})
+	server.register()
+	go server.GetPodStatus()
+	signal.Notify(ChannelEnd, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		sig := <-ChannelEnd
+		if sig == syscall.SIGINT {
+			server.unregisterNodeToMonitor()
+			os.Exit(0)
+		} else {
+			server.unregisterNodeToMonitor()
+		}
+		//server.unregisterNodeToMonitor()
+		//os.Exit(0)
+	}()
+	// <-ChannelStart
+}
+
+func (server *Kubelet) DelThisNode(c *gin.Context) {
+	ChannelEnd <- syscall.SIGTERM
+	time.Sleep(2 * time.Second)
+	ChannelStart <- "byebye"
+}
 
 func (server *Kubelet) AddPod(c *gin.Context) {
 	pod := &api_obj.Pod{}
