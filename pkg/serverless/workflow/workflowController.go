@@ -164,7 +164,7 @@ func (wfc *WorkflowController) DoCall(coeff string, node api_obj.WorkflowNode, f
 	coeffMap := make(map[string]interface{})
 	err := json.Unmarshal([]byte(coeff), &coeffMap)
 	if err != nil {
-		fmt.Printf("[ERR/DoCall] Failed to unmarshal coeff.\n")
+		fmt.Printf("[ERR/DoCall] Failed to unmarshal coeff, err: \n", )
 		return
 	}
 
