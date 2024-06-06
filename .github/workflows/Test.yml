@@ -3,7 +3,11 @@
 
 name: Test in pkg
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ "main", "feature/*", "serverlessFork"]
+  pull_request:
+    branches: [ "main", "feature/*", "serverlessFork"]
 
 jobs:
 
@@ -15,7 +19,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Go
+    - name: Set Up Go
       uses: actions/setup-go@v4
       with:
         go-version: ${{ matrix.go-version }}
@@ -29,12 +33,37 @@ jobs:
 
     - name: Install dependencies
       run: |
-        go mod init minik8s
-        go mod tidy
+        sudo go mod init minik8s
+        sudo go mod tidy
+        sudo chmod 777 ./tools/setup_scripts/setup.sh 
+        sudo ./tools/setup_scripts/setup.sh
 
-    - name: Test
+    - name: TestDNS
       run: |
-        go build ./pkg/dns/dns_test/dns-test.go
-        sudo mkdir -p /GJX/minik8s/pkg/dns/dns_op/
-        sudo cp ./pkg/dns/dns_op/nginx.tmpl /GJX/minik8s/pkg/dns/dns_op/
+        sudo go build ./pkg/dns/dns_test/dns-test.go
+        sudo mkdir -p /ZTH/minik8s/pkg/dns/dns_op/
+        sudo cp ./pkg/dns/dns_op/nginx.tmpl /ZTH/minik8s/pkg/dns/dns_op/
         sudo ./dns-test
+        sudo rm ./dns-test
+
+    - name: TestEtcd
+      run: |
+        sudo go test ./pkg/etcd/etcd_test.go
+
+    - name: TestKubeProxy
+      run: |
+        sudo go build ./pkg/kube_proxy/Main/test_proxy.go
+        sudo ./test_proxy 10.1.0.23 127.0.0.1
+        sudo rm ./test_proxy
+
+    - name: TestKubelet
+      run: |
+        sudo go build ./pkg/kubelet/main.go
+        sudo ./main
+        sudo rm main
+        sudo go test ./pkg/kubelet/container_manager/container_test.go
+        sudo go test ./pkg/image_manager/image_manage_test.go
+
+    - name: TestMonitor
+      run: |
+        sudo go test ./pkg/monitor/test_monitor.go

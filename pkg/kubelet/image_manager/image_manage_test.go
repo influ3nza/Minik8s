@@ -40,7 +40,7 @@ func TestFetchImage(t *testing.T) {
 	img := &obj_inner.Image{
 		Img: "my-registry.io:5000/foo",
 	}
-	_, err = GetImage(client, img, ctx)
+	_, err = GetImage(client, img, ctx, "default")
 	if err != nil {
 		t.Fatal("Get Image Failed")
 	}
