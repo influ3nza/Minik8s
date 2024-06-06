@@ -10,7 +10,7 @@ spec:
     - name: port1
       protocol: TCP
       port: 10000
-      targetPort: 80
+      targetPort: 8080
       nodePort: 30000
   selector: 
     app: test-hpa
