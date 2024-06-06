@@ -22,7 +22,7 @@ spec:
         inheritCoeff:
           - "username"
           - "status"
-          - "data"
+          - "error"
     - name: node1
       type: func
       funcSpec: 

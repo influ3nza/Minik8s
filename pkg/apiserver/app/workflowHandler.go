@@ -234,7 +234,7 @@ func (s *ApiServer) CheckWorkflow(c *gin.Context) {
 			continue
 		}
 
-		uri := apiserver.API_server_prefix + apiserver.API_find_function_ip_prefix + node.FuncSpec.Name
+		uri := apiserver.API_server_prefix + apiserver.API_find_function_ip_prefix + node.FuncSpec.Name + "/false"
 		_, err := network.GetRequest(uri)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{

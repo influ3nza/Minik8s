@@ -2,7 +2,6 @@ package utils
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
@@ -31,7 +30,7 @@ func CreateEndpoints(srvs []api_obj.Service, pods []api_obj.Pod) error {
 			for _, pair := range srv.Spec.Ports {
 				port := GetMatchPort(pair.TargetPort, pod.Spec.Containers)
 				if port < 0 {
-					return errors.New("no matching port")
+					continue
 				}
 
 				ep := &api_obj.Endpoint{
