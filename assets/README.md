@@ -141,10 +141,7 @@ Endpoint是将Service和Pod建立起沟通的桥梁，具体的实现架构在Se
 
 **Replicaset Controller**
 
-replicaset通过定期监控每个replicaset对应的pod的状态来调整pod的数量，通过selector来找到每个replicaset对应的pod，如果当前数量与replicaset期望的数量不同，则创建一个
-=======
 replicaset通过定期监控每个replicaset对应的pod的状态来调整pod的数量，通过selector来找到每个replicaset对应的pod，如果当前数量与replicaset期望的数量不同，则增减pod到与replicaset的期望数量相同。
->>>>>>> refs/remotes/origin/serverlessFork
 
 **HPA Controller**
 
