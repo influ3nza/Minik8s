@@ -48,7 +48,9 @@ jobs:
 
     - name: TestEtcd
       run: |
-        sudo go test ./pkg/etcd/etcd_test.go
+        cd ./pkg/etcd/
+        sudo go test
+        cd ../..
 
     - name: TestKubeProxy
       run: |
@@ -61,9 +63,14 @@ jobs:
         sudo go build ./pkg/kubelet/main.go
         sudo ./main
         sudo rm main
-        sudo go test ./pkg/kubelet/container_manager/container_test.go
-        sudo go test ./pkg/image_manager/image_manage_test.go
+        cd ./pkg/kubelet/container_manager
+        sudo go test
+        cd ../image_manager
+        sudo go test
+        cd ../../..
 
     - name: TestMonitor
       run: |
-        sudo go test ./pkg/monitor/test_monitor.go
+        cd ./pkg/monitor
+        sudo go test
+        cd ../..
