@@ -1,0 +1,36 @@
+name: Build
+
+on:
+  push:
+    branches: [ "main", "feature/*", "serverlessFork"]
+  pull_request:
+    branches: [ "main", "feature/*", "serverlessFork"]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.22.x']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set Up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Build Go Env
+        run: |
+          sudo go mod init minik8s
+          sudo go mod tidy
+          sudo chmod 777 ./tools/setup_scripts/setup.sh
+          sudo chmod 777 ./tools/setup_scripts/build_tools.sh
+
+      - name: Build Targets
+        run: |
+          sudo ./tools/setup_scripts/build_tools.sh
+          ls
+

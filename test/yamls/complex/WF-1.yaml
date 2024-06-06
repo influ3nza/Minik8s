@@ -1,0 +1,110 @@
+apiVersion: v1
+kind: workflow
+metaData:
+  labels:
+    app: test
+  name: wf-1
+spec:
+  startNode: node1
+  nodes: 
+    - name: log
+      type: call
+      callSpec:
+        wfName: wf-log
+        inheritCoeff:
+          - "username"
+          - "status"
+          - "error"
+    - name: successNode
+      type: call
+      callSpec:
+        wfName: wf-log
+        inheritCoeff:
+          - "username"
+          - "status"
+          - "error"
+    - name: node1
+      type: func
+      funcSpec: 
+        namespace: default
+        name: verify
+        next: fork1
+    - name: fork1
+      type: fork
+      forkSpecs:
+        - variable: status
+          compareBy: StrE
+          compareTo: "error"
+          next: logNode
+        - variable:
+          compareBy: default
+          compareTo:
+          next: node2
+    - name: node2
+      type: func
+      funcSpec: 
+        namespace: default
+        name: compress
+        next: fork2
+    - name: fork2
+      type: fork
+      forkSpecs:
+        - variable: status
+          compareBy: StrE
+          compareTo: "error"
+          next: logNode
+        - variable:
+          compareBy: default
+          compareTo:
+          next: node3
+    - name: node3
+      type: func
+      funcSpec: 
+        namespace: default
+        name: edge
+        next: fork3
+    - name: fork3
+      type: fork
+      forkSpecs:
+        - variable: status
+          compareBy: StrE
+          compareTo: "error"
+          next: logNode
+        - variable:
+          compareBy: default
+          compareTo:
+          next: node4
+    - name: node4
+      type: func
+      funcSpec: 
+        namespace: default
+        name: watermark
+        next: fork4
+    - name: fork4
+      type: fork
+      forkSpecs:
+        - variable: status
+          compareBy: StrE
+          compareTo: "error"
+          next: logNode
+        - variable:
+          compareBy: default
+          compareTo:
+          next: node5
+    - name: node5
+      type: func
+      funcSpec: 
+        namespace: default
+        name: save
+        next: fork5
+    - name: fork5
+      type: fork
+      forkSpecs:
+        - variable: status
+          compareBy: StrE
+          compareTo: "error"
+          next: logNode
+        - variable:
+          compareBy: default
+          compareTo:
+          next: successNode

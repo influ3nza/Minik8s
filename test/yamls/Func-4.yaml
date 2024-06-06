@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: function
+metadata:
+  labels:
+    app: test
+  name: func-4
+filePath: /ZTH/Minik8s/test/yamls/func-4

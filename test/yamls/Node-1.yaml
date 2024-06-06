@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Node
+metadata:
+  labels:
+    app: test
+  name: minik100s
+  nameSpace: q
+status:
+  addresses:
+    internalIp: "10.119.13.178"

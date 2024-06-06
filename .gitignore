@@ -18,4 +18,8 @@
 # vendor/
 
 # Go workspace file
+.idea/
+.vscode/
 go.work
+go.sum
+go.mod

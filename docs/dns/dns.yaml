@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: dns
+metaData:
+  name: dns-test
+  nameSpace: dns-test-ns
+  labels:
+    name: dns-tst
+host: node1.node
+paths:
+  - serviceName: nosrv
+    port: 80
+    subPath: pod.path
+  - serviceName: srv1
+    port: 800
+    sunPath: np

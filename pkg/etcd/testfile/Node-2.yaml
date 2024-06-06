@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Node
+metadata:
+  labels:
+    app: test
+  name: node-example2
+  nameSpace: default

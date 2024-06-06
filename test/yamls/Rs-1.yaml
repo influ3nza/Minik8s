@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: replicaset
+metaData:
+  labels:
+    app: test
+  name: rs-1
+  nameSpace: q
+spec:
+  replicas: 3
+  selector:
+    app: test2
+  template:
+    metaData:
+      name: rs-pod
+      labels:
+        app: test2
+    spec:
+      containers:
+        - image:
+            imgName: my-registry.io:5000/server:latest
+            imgPullPolicy: Always
+          name: testContaetrye
+          entryPoint:
+            workingDir: /app
+          ports:
+            - containerPort: 8080
+              hostIP: 0.0.0.0
+              hostPort: 0
+              name: no name
+              protocol: TCP
+          env:
+            - name: www
+              value: sdg
+          volumeMounts:
+            - mountPath: /home
+              subPath: config
+              name: testMount
+              readOnly: false
+          resources:
+            limits:
+              memory: 100MiB

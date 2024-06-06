@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: hpa
+metadata:
+  labels:
+    app: test
+  name: hpa-1
+  nameSpace: q
+spec:
+  minReplicas: 1
+  maxReplicas: 5
+  selector:
+    app: test-hpa
+  metrics:
+    cpuPercent: 60
+    memPercent: 60
+  policy: Pods
+  workload:
+    labels:
+      app: test-hpa
+    name: hpa-1-pod
+    nameSpace: q

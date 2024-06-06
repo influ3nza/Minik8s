@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: pvc
+metaData:
+  labels:
+    app: test
+  name: pvc-2
+spec:
+  selector:
+    app: test-dynamic

@@ -1,0 +1,272 @@
+package cmd
+
+import (
+	"encoding/json"
+	"fmt"
+	"minik8s/pkg/api_obj"
+	"minik8s/pkg/config/apiserver"
+	"minik8s/pkg/kubectl/api"
+	"minik8s/pkg/network"
+	"os"
+	"strings"
+
+	"github.com/ghodss/yaml"
+	"github.com/spf13/cobra"
+)
+
+var ApplyCmd = &cobra.Command{
+	Use:     "apply",
+	Short:   "kubectl apply your filename",
+	Long:    "This is a command for user to apply any fixed style yaml/json file. Simply use \"kubectl apply -f <your config file>\".",
+	Example: "kubectl apply -f file_name.yaml ",
+	Run:     ApplyHandler,
+}
+
+func init() {
+	ApplyCmd.PersistentFlags().StringSliceVarP(&ApplyFiles, "file", "f", []string{}, "put your config files")
+	err := ApplyCmd.MarkPersistentFlagRequired("file")
+	if err != nil {
+		fmt.Println("[ERR] Init Apply Failed.", err.Error())
+		return
+	}
+}
+
+func ApplyHandler(cmd *cobra.Command, args []string) {
+	if ApplyFiles == nil || len(ApplyFiles) == 0 {
+		fmt.Println("[ERR] Input file is empty.")
+		return
+	}
+
+	for _, file := range ApplyFiles {
+		var readData map[string]interface{}
+		var format string
+		if strings.HasSuffix(file, ".json") {
+			format = "json"
+		} else if strings.HasSuffix(file, ".yaml") {
+			format = "yaml"
+		} else {
+			fmt.Println("[ERR] File must be json or yaml.")
+			return
+		}
+
+		var fileToJson []byte
+		var err error = nil
+		if format == "json" {
+			fileToJson, err = os.ReadFile(file)
+			if err != nil {
+				fmt.Printf("[ERR] Cannot read file %s.", file)
+				return
+			}
+		} else {
+			fileToJson, err = os.ReadFile(file)
+			if err != nil {
+				fmt.Printf("[ERR] Cannot read file %s.", file)
+				return
+			}
+
+			fileToJson, err = yaml.YAMLToJSON(fileToJson)
+			if err != nil {
+				fmt.Printf("[ERR] Cannot convert yaml to json %s.", file)
+				return
+			}
+		}
+		err = json.Unmarshal(fileToJson, &readData)
+		if err != nil {
+			fmt.Println("[ERR] Fail to unmarshal json bytes.")
+			return
+		}
+
+		kindValue, found := readData["kind"]
+		if !found {
+			fmt.Println("[ERR] Fail to find \"kind\" Keyword.")
+			return
+		}
+
+		kind, ok := kindValue.(string)
+		if !ok {
+			fmt.Println("[ERR] Failed to get \"kind\" str.")
+			return
+		}
+
+		switch strings.ToLower(kind) {
+		case "pod":
+			{
+				// var pod = &api_obj.Pod{}
+				// err = json.Unmarshal(fileToJson, pod)
+				// if err != nil {
+				// 	fmt.Printf("[ERR] Cannot parse file to pod, err: %s\n", err.Error())
+				// 	return
+				// }
+				// fmt.Print(*pod)
+
+				// err = api.SendObjectTo(fileToJson, "pod")
+				err = api.ParsePod(file)
+				if err != nil {
+					fmt.Printf("[ERR] Cannot send pod to server, err: %s\n", err.Error())
+					return
+				}
+			}
+		case "node":
+			{
+				var node = &api_obj.Node{}
+				err = json.Unmarshal(fileToJson, node)
+				if err != nil {
+					fmt.Printf("[ERR] Cannot parse file to node, err: %s\n", err.Error())
+					return
+				}
+				fmt.Print(*node)
+
+				err = api.SendObjectTo(fileToJson, "node")
+				if err != nil {
+					fmt.Printf("[ERR] Cannot send node to server, err: %s\n", err.Error())
+					return
+				}
+			}
+		case "service":
+			{
+				var service = &api_obj.Service{}
+				err = json.Unmarshal(fileToJson, service)
+				if err != nil {
+					fmt.Printf("[ERR] Cannot parse file to service, err: %s\n", err.Error())
+					return
+				}
+				fmt.Print(*service)
+
+				err = api.SendObjectTo(fileToJson, "service")
+				if err != nil {
+					fmt.Printf("[ERR] Cannot send service to server, err: %s\n", err.Error())
+					return
+				}
+			}
+		case "dns":
+			{
+				var dns = &api_obj.Dns{}
+				err = json.Unmarshal(fileToJson, dns)
+				if err != nil {
+					fmt.Printf("[ERR] Cannot parse file to dns, err: %s\n", err.Error())
+					return
+				}
+				fmt.Print(*dns)
+
+				err = api.SendObjectTo(fileToJson, "dns")
+				if err != nil {
+					fmt.Printf("[ERR] Cannot send dns to server, err: %s\n", err.Error())
+					return
+				}
+			}
+		case "replicaset":
+			{
+				var rs = &api_obj.ReplicaSet{}
+				err = json.Unmarshal(fileToJson, rs)
+				if err != nil {
+					fmt.Printf("[ERR] Cannot parse file to rs, err: %s\n", err.Error())
+					return
+				}
+
+				err = api.SendObjectTo(fileToJson, "replicaset")
+				if err != nil {
+					fmt.Printf("[ERR] Cannot send rs to server, err: %s\n", err.Error())
+					return
+				}
+			}
+		case "function":
+			{
+				err = ApplyFunctionHandler(fileToJson)
+				if err != nil {
+					fmt.Printf("[ERR] Cannot send function to server, err: %s\n", err.Error())
+					return
+				}
+			}
+		case "workflow":
+			{
+				var wf = &api_obj.Workflow{}
+				err = json.Unmarshal(fileToJson, wf)
+				if err != nil {
+					fmt.Printf("[ERR] Cannot parse file to wf, err: %s\n", err.Error())
+					return
+				}
+
+				err = api.SendObjectTo(fileToJson, "workflow")
+				if err != nil {
+					fmt.Printf("[ERR] Cannot send wf to server, err: %s\n", err.Error())
+					return
+				}
+			}
+		case "hpa":
+			{
+				var h = &api_obj.HPA{}
+				err = json.Unmarshal(fileToJson, h)
+				if err != nil {
+					fmt.Printf("[ERR] Cannot parse file to hpa, err: %s\n", err.Error())
+					return
+				}
+
+				err = api.SendObjectTo(fileToJson, "hpa")
+				if err != nil {
+					fmt.Printf("[ERR] Cannot send hpa to server, err: %s\n", err.Error())
+					return
+				}
+			}
+		case "pv":
+			{
+				var pv = &api_obj.PV{}
+				err = json.Unmarshal(fileToJson, pv)
+				if err != nil {
+					fmt.Printf("[ERR] Cannot parse file to pv, err: %s\n", err.Error())
+					return
+				}
+
+				err = api.SendObjectTo(fileToJson, "pv")
+				if err != nil {
+					fmt.Printf("[ERR] Cannot send pv to server, err: %s\n", err.Error())
+					return
+				}
+			}
+		case "pvc":
+			{
+				var pvc = &api_obj.PVC{}
+				err = json.Unmarshal(fileToJson, pvc)
+				if err != nil {
+					fmt.Printf("[ERR] Cannot parse file to pvc, err: %s\n", err.Error())
+					return
+				}
+
+				err = api.SendObjectTo(fileToJson, "pvc")
+				if err != nil {
+					fmt.Printf("[ERR] Cannot send pvc to server, err: %s\n", err.Error())
+					return
+				}
+			}
+		}
+	}
+}
+
+func ApplyFunctionHandler(fileToJson []byte) error {
+	f := &api_obj.Function{}
+	err := json.Unmarshal(fileToJson, f)
+	if err != nil {
+		return err
+	}
+
+	path := f.FilePath
+	api.DoZip(path, path+".zip")
+	content, err := os.ReadFile(path + ".zip")
+	_ = os.Remove(path + ".zip")
+	if err != nil {
+		return err
+	}
+
+	fw := api_obj.FunctionWrap{
+		Func:    *f,
+		Content: content,
+	}
+	fw_str, err := json.Marshal(fw)
+	if err != nil {
+		return err
+	}
+
+	//发送请求。
+	uri := apiserver.API_server_prefix + apiserver.API_add_function
+	_, err = network.PostRequest(uri, fw_str)
+	return err
+}

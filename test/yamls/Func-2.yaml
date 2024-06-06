@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: function
+metadata:
+  labels:
+    app: test
+  name: func-2
+filePath: /GJX/minik8s/test/yamls/func-2
+useTemplate: true

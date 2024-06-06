@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: workflow
+metaData:
+  labels:
+    app: test
+  name: wf-log
+spec:
+  startNode: firstNode
+  nodes: 
+    - name: firstNode
+      type: func
+      funcSpec: 
+        namespace: default
+        name: log
