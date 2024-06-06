@@ -8,28 +8,27 @@ metaData:
 spec:
   replicas: 3
   selector:
-    good: rs-test
+    app: test2
   template:
     metaData:
       name: rs-pod
       labels:
-        good: rs-test
-        app: test
+        app: test2
     spec:
       containers:
-        - image: 
-            imgName: docker.io/library/ubuntu:latest
+        - image:
+            imgName: my-registry.io:5000/server:latest
             imgPullPolicy: Always
-          name: testContainer-1
+          name: testContaetrye
           entryPoint:
-            workingDir: /
+            workingDir: /app
           ports:
-            - containerPort: 80
+            - containerPort: 8080
               hostIP: 0.0.0.0
               hostPort: 0
               name: no name
               protocol: TCP
-          env: 
+          env:
             - name: www
               value: sdg
           volumeMounts:
@@ -37,6 +36,6 @@ spec:
               subPath: config
               name: testMount
               readOnly: false
-          resources: 
+          resources:
             limits:
               memory: 100MiB

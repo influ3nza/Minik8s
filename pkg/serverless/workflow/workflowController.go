@@ -182,15 +182,17 @@ func (wfc *WorkflowController) DoCall(coeff string, node api_obj.WorkflowNode, f
 		newCoeff[c] = coeffMap[c]
 	}
 
-	addCoeff := make(map[string]interface{})
-	err = json.Unmarshal([]byte(node.CallSpec.NewCoeff), &addCoeff)
-	if err != nil {
-		fmt.Printf("[ERR/DoCall] Failed to unmarshal coeff.\n")
-		return
-	}
+	if node.CallSpec.NewCoeff != "" {
+		addCoeff := make(map[string]interface{})
+		err = json.Unmarshal([]byte(node.CallSpec.NewCoeff), &addCoeff)
+		if err != nil {
+			fmt.Printf("[ERR/DoCall] Failed to unmarshal coeff.\n")
+			return
+		}
 
-	for k, v := range addCoeff {
-		newCoeff[k] = v
+		for k, v := range addCoeff {
+			newCoeff[k] = v
+		}
 	}
 
 	newCoeff_str, err := json.Marshal(newCoeff)
@@ -198,6 +200,8 @@ func (wfc *WorkflowController) DoCall(coeff string, node api_obj.WorkflowNode, f
 		fmt.Printf("[ERR/DoCall] Failed to marshal coeff.\n")
 		return
 	}
+
+	fmt.Printf("[new coeff]: %s\n", newCoeff_str)
 
 	wf.Spec.StartCoeff = string(newCoeff_str)
 

@@ -58,7 +58,7 @@ func (fw *FileWatcher) FileWatch() {
 						if len(pathParts) >= 2 {
 							fName := pathParts[len(pathParts)-2]
 							uri := apiserver.API_server_prefix + apiserver.API_exec_function_prefix + fName
-							_, err := network.PostRequest(uri, []byte{})
+							_, err := network.PostRequest(uri, []byte("{\"data\":\"defaultcoeff\"}"))
 							if err != nil {
 								fmt.Printf("[ERR/FileWatch] Failed to trigger function, %s\n", err.Error())
 								return

@@ -33,7 +33,7 @@ func (fc *FunctionController) GenerateFunction(f *api_obj.Function) error {
 	RecordMap[f.Metadata.Name] = &Record{
 		Name:      f.Metadata.Name,
 		FuncTion:  f,
-		CallCount: 100,
+		CallCount: 400,
 		Replicas:  0,
 		IpMap:     map[string]int{},
 		Mutex:     sync.RWMutex{},

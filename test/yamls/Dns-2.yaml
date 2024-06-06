@@ -7,7 +7,7 @@ metaData:
   nameSpace: q
 host: www.etcd.com
 paths:
-  - serviceName: srv-1
+  - serviceName: srv-3
     port: 10000
     subPath: path1
   - serviceName: srv-2

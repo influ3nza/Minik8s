@@ -143,7 +143,7 @@ func (s *ApiServer) ExecFunction(c *gin.Context) {
 	var requestBody map[string]interface{}
 	if err := c.ShouldBindJSON(&requestBody); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[ERR/apiserver/ExecWorkflow]" + err.Error(),
+			"error": "[ERR/apiserver/ExecFunction]" + err.Error(),
 		})
 		return
 	}
@@ -180,7 +180,7 @@ func (s *ApiServer) ExecFunction(c *gin.Context) {
 		return
 	}
 
-	if len(req_str) != 0 {
+	if requestBody["data"] != "defaultcoeff" {
 		f.Coeff = string(req_str)
 	}
 	f_str, err := json.Marshal(f)

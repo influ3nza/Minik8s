@@ -4,5 +4,5 @@ metadata:
   labels:
     app: test
   name: func-1
-filePath: /ZTH/Minik8s/test/yamls/func-1
+filePath: /GJX/minik8s/test/yamls/func-1
 useTemplate: true

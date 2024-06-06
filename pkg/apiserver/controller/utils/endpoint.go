@@ -2,7 +2,6 @@ package utils
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
@@ -31,7 +30,7 @@ func CreateEndpoints(srvs []api_obj.Service, pods []api_obj.Pod) error {
 			for _, pair := range srv.Spec.Ports {
 				port := GetMatchPort(pair.TargetPort, pod.Spec.Containers)
 				if port < 0 {
-					return errors.New("no matching port")
+					continue
 				}
 
 				ep := &api_obj.Endpoint{
@@ -103,6 +102,8 @@ func GetMatchPort(srvPort int32, cons []api_obj.Container) int32 {
 	//查找符合的port
 	for _, con := range cons {
 		for _, p := range con.Ports {
+
+			fmt.Printf("[Endpoint]: %d, %d\n", p.ContainerPort, srvPort)
 			if p.ContainerPort == srvPort {
 				return srvPort
 			}
@@ -112,7 +113,7 @@ func GetMatchPort(srvPort int32, cons []api_obj.Container) int32 {
 	return -10000
 }
 
-//这里bug有点多。需要完全重新写。
+// 这里bug有点多。需要完全重新写。
 func DeleteEndpoints(batch bool, suffix string) error {
 	uri := ""
 	getListUri := apiserver.API_server_prefix

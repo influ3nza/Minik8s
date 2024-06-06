@@ -6,4 +6,5 @@ metadata:
   name: func-5
 filePath: /ZTH/Minik8s/test/yamls/func-5
 needWatch: true
+useTemplate: true
 coeff: "{\"x\":1,\"y\":2,\"a\":3,\"b\":4}"

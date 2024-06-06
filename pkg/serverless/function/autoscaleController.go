@@ -55,15 +55,15 @@ func (fc *FunctionController) UpdateFunction(funcName string) {
 	if RecordMap[funcName].Replicas == 0 {
 		RecordMap[funcName].Replicas = 2
 	}
-	RecordMap[funcName].CallCount += 30 / (RecordMap[funcName].Replicas + 2)
-	if RecordMap[funcName].CallCount > 200 {
+	RecordMap[funcName].CallCount += 120 / (RecordMap[funcName].Replicas + 2)
+	if RecordMap[funcName].CallCount > 600 {
 		replica, err := fc.scaleup(RecordMap[funcName])
 		if err != nil {
 			fmt.Println("Send Get RequestErr in UpdateFunction ", err.Error())
 			return
 		}
 		RecordMap[funcName].Replicas = int32(replica)
-		RecordMap[funcName].CallCount = 90
+		RecordMap[funcName].CallCount = 300
 	}
 
 }
@@ -77,22 +77,23 @@ func (fc *FunctionController) watch() {
 
 	for _, record := range RecordMap {
 		record.Mutex.Lock()
-		fmt.Println("watch", record.Name, record.CallCount, record.Replicas)
+		// fmt.Println("watch", record.Name, record.CallCount, record.Replicas)
 		if record.CallCount > 0 {
 			record.CallCount -= 1
 		}
 		if record.CallCount <= 0 {
-			res, err := GetFunctionPodIps(record.FuncTion, false)
-			if err != nil {
-				fmt.Println("GetFunctionPodIps err", err.Error())
-				record.Mutex.Unlock()
-				continue
-			}
-
-			record.Replicas = int32(len(res))
 			if record.Replicas != 0 {
+				res, err := GetFunctionPodIps(record.FuncTion, false)
+				if err != nil {
+					fmt.Println("GetFunctionPodIps err", err.Error())
+					record.Mutex.Unlock()
+					continue
+				}
+
+				record.Replicas = int32(len(res))
+
 				replica, err := fc.scaledown(record)
-				record.CallCount = 90
+				record.CallCount = 300
 				if err != nil {
 					fmt.Println("Send Get RequestErr in watch ", err.Error())
 					record.Mutex.Unlock()

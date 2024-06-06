@@ -7,19 +7,24 @@ metaData:
   nameSpace: q
 spec:
   containers:
-    - image: 
+    - image:
         imgName: docker.io/library/ubuntu:latest
         imgPullPolicy: Always
       name: testContainer-1
       entryPoint:
         workingDir: /
+        command:
+          - "tail"
+        args:
+          - "-f"
+          - "/dev/null"
       ports:
-        - containerPort: 80
+        - containerPort: 8080
           hostIP: 0.0.0.0
           hostPort: 0
           name: no name
           protocol: TCP
-      env: 
+      env:
         - name: www
           value: sdg
       volumeMounts:
@@ -27,32 +32,32 @@ spec:
           subPath: config
           name: testMount
           readOnly: false
-      resources: 
+      resources:
         limits:
           cpu: 0.5
           memory: 100MiB
 
-    - image: 
-        imgName: docker.io/library/nginx:latest
+    - image:
+        imgName: my-registry.io:5000/server:latest
         imgPullPolicy: Always
       name: testContaetrye
       entryPoint:
-        workingDir: /
+        workingDir: /app
       ports:
-        - containerPort: 80
+        - containerPort: 8080
           hostIP: 0.0.0.0
           hostPort: 0
           name: no name
           protocol: TCP
-      env: 
+      env:
         - name: www
           value: sdg
-      volumeMounts: 
+      volumeMounts:
         - mountPath: /home
           subPath: config
           name: testMount
           readOnly: false
-      resources: 
+      resources:
         limits:
           cpu: 0.5
           memory: 100MiB

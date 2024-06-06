@@ -13,8 +13,13 @@ spec:
       name: testContainer-1
       entryPoint:
         workingDir: /
+        command:
+          - "tail"
+        args:
+          - "-f"
+          - "/dev/null"
       ports:
-        - containerPort: 80
+        - containerPort: 8080
           hostIP: 0.0.0.0
           hostPort: 0
           name: no name
@@ -39,7 +44,7 @@ spec:
       entryPoint:
         workingDir: /app
       ports:
-        - containerPort: 80
+        - containerPort: 8080
           hostIP: 0.0.0.0
           hostPort: 0
           name: no name
