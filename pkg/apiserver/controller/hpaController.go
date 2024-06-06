@@ -127,6 +127,7 @@ func (hc *HPAController) watch() {
 				hc.PrintHandlerWarning()
 				return
 			}
+			hpa.Status.CurReplicas += 1
 		}
 
 		// 根据策略缩容
@@ -138,22 +139,23 @@ func (hc *HPAController) watch() {
 				hc.PrintHandlerWarning()
 				return
 			}
+			hpa.Status.CurReplicas -= 1
 		}
 		// d.更新replica的个数
-		hpa.Status.CurReplicas = expectedReplicas
+		//hpa.Status.CurReplicas += 1
 
 		// 3. 判断hpa的pod是否在规定区间之内, 如果不在，需要扩容或者缩容
 		// a.根据策略扩容
 		// 如果是policy是Pods就扩容到最小，如果policy是Percent就扩容到(min+max)/2
 		if hpa.Status.CurReplicas < hpa.Spec.MinReplicas {
 			if *hpa.Spec.Policy == api_obj.PodsPolicy || hpa.Spec.Policy == nil {
-				err := hc.AddHpaPod(hpa, correspondPods, 1)
+				err := hc.AddHpaPod(hpa, correspondPods, hpa.Spec.MinReplicas-hpa.Status.CurReplicas)
 				if err != nil {
 					fmt.Printf("[ERR/HPAController/watch] Failed to addhpapod in pods, %s.\n", err)
 					hc.PrintHandlerWarning()
 					return
 				}
-
+				hpa.Status.CurReplicas = hpa.Spec.MinReplicas
 			} else if *hpa.Spec.Policy == api_obj.PercentPolicy {
 				err := hc.AddHpaPod(hpa, correspondPods, (hpa.Spec.MinReplicas+hpa.Spec.MaxReplicas)/2-hpa.Status.CurReplicas)
 				if err != nil {
@@ -161,6 +163,7 @@ func (hc *HPAController) watch() {
 					hc.PrintHandlerWarning()
 					return
 				}
+				hpa.Status.CurReplicas += ((hpa.Spec.MinReplicas+hpa.Spec.MaxReplicas)/2 - hpa.Status.CurReplicas)
 			}
 		}
 
@@ -174,6 +177,7 @@ func (hc *HPAController) watch() {
 					hc.PrintHandlerWarning()
 					return
 				}
+				hpa.Status.CurReplicas = hpa.Spec.MaxReplicas
 			} else if *hpa.Spec.Policy == api_obj.PercentPolicy {
 				err := hc.ReduceHpaPod(hpa, correspondPods, hpa.Status.CurReplicas-(hpa.Spec.MinReplicas+hpa.Spec.MaxReplicas)/2)
 				if err != nil {
@@ -181,6 +185,7 @@ func (hc *HPAController) watch() {
 					hc.PrintHandlerWarning()
 					return
 				}
+				hpa.Status.CurReplicas -= (hpa.Status.CurReplicas - (hpa.Spec.MinReplicas+hpa.Spec.MaxReplicas)/2)
 			}
 		}
 
