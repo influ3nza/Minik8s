@@ -11,10 +11,12 @@ const (
 const (
 	API_server_prefix string = "http://192.168.1.13:50000"
 
-	API_get_nodes       string = "/nodes/getAll"
-	API_get_node_prefix string = "/nodes/"
-	API_get_node        string = "/nodes/:name"
-	API_add_node        string = "/nodes/add"
+	API_get_nodes           string = "/nodes/getAll"
+	API_get_node_prefix     string = "/nodes/"
+	API_get_node            string = "/nodes/:name"
+	API_add_node            string = "/nodes/add"
+	API_add_node_by_command string = "/nodes/addByCommand"
+	API_delete_node_and_ip  string = "/nodes/deleteAndIp"
 
 	API_update_pod                    string = "/pods/update"
 	API_add_pod                       string = "/pods/add"

@@ -187,7 +187,7 @@ func SendObjectTo(jsonStr []byte, kind string) error {
 	case "pod":
 		suffix = apiserver.API_add_pod
 	case "node":
-		suffix = apiserver.API_add_node
+		suffix = apiserver.API_add_node_by_command
 	case "service":
 		suffix = apiserver.API_add_service
 	case "dns":

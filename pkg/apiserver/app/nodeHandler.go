@@ -4,11 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/config/apiserver"
+	"minik8s/pkg/config/kubelet"
+	"minik8s/pkg/network"
 	"minik8s/tools"
 )
 
@@ -77,6 +80,35 @@ func (s *ApiServer) GetNode(c *gin.Context) {
 		})
 		return
 	}
+}
+
+func (s *ApiServer) AddNodeFromCommand(c *gin.Context) {
+	fmt.Printf("[apiserver/addNode] Try to add a node.\n")
+
+	var node api_obj.Node
+
+	err := c.ShouldBind(&node)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/apiserver/addNode] Failed to parse node, " + err.Error(),
+		})
+		return
+	}
+
+	addr := node.NodeStatus.Addresses.InternalIp
+	uri := "http://" + addr + ":" + strconv.Itoa(int(kubelet.Port)) + kubelet.ApplyNode
+	_, err = network.GetRequest(uri)
+	fmt.Printf("[AddByCommand] Reached here\n")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[ERR/apiserver/addNode] Failed to send GET request, " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": "Add node success",
+	})
 }
 
 // WARN:这个函数仅供测试使用，在对接时需要进行修改。
@@ -162,5 +194,14 @@ func (s *ApiServer) AddNode(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{
 		"data": "[msgHandler/addNode] Add node success",
+	})
+}
+
+func (s *ApiServer) DeleteNodeAndIp(c *gin.Context) {
+	s.EtcdWrap.DeleteByPrefix(apiserver.ETCD_node_ip_prefix)
+	s.EtcdWrap.DeleteByPrefix(apiserver.ETCD_node_prefix)
+
+	c.JSON(http.StatusCreated, gin.H{
+		"data": "[msgHandler/DeleteNodeAndIp] Delete success",
 	})
 }
