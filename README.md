@@ -12,6 +12,7 @@
   - **main**：主分支。通过测试的分支，最终会合并在这里。
   - **develop**：开发分支。所有增加的功能在合并至main分支前，都会先合并至这个分支上。
   - **feature/apiserver**：在项目初期建立的有关apiserver的HTTP处理函数的分支。
+  - **feature/dns**：相对独立的功能，抽取出来单独实现，然后并入apiserver供其调用，负责dns+转发的实现
   - **feature/scheduler**：在项目初期建立的有关scheduler的分支，负责调度pod。
   - **GJX/feature-kubelet**：有关kubelet的分支，负责pod的生命周期管理以及pod通信。
   - **feature/kubeproxy**：有关kubeproxy的分支，负责网络通信等功能。
@@ -24,12 +25,131 @@
   - **ApiObject**：负责记录所有ApiObject以及const数据的分支，在有任何更新的时候会及时推送到所有其他分支。
   - 注：其余分支均已被弃用。
 
-**CI/CD**：本项目使用CI/CD测试框架，将代码push至github上面之后可以根据test文件自动进行计划好的测试。CI/CD分为构建与测试两个部分，在模块分支开发时，以测试为主，当不同分支进行集成时，需要通过构建和代码测试。
+**CI/CD**：本项目使用CI/CD测试框架，将代码push至github上面之后可以根据test文件自动进行计划好的测试。CI/CD分为构建与测试两个部分，在模块分支开发时，以Test为主，当不同分支进行集成时，需要通过Build和Test测试。
+```yml
+name: Build
+
+on:
+  push:
+    branches: [ "main", "feature/*", "serverlessFork"]
+  pull_request:
+    branches: [ "main", "feature/*", "serverlessFork"]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.22.x']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set Up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Build Go Env
+        run: |
+          sudo go mod init minik8s
+          sudo go mod tidy
+          sudo chmod 777 ./tools/setup_scripts/setup.sh
+          sudo chmod 777 ./tools/setup_scripts/build_tools.sh
+
+      - name: Build Targets
+        run: |
+          sudo ./tools/setup_scripts/build_tools.sh
+          ls
 ```
 
+```yml
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Test in pkg
+
+on:
+  push:
+    branches: [ "main", "feature/*", "serverlessFork"]
+  pull_request:
+    branches: [ "main", "feature/*", "serverlessFork"]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.22.x']
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set Up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ matrix.go-version }}
+
+    - name: Install nginx
+      run: |
+        sudo apt install nginx
+        sudo systemctl stop nginx
+        sudo systemctl disable nginx
+        sudo mkdir -p /mydata/nginx/
+
+    - name: Install dependencies
+      run: |
+        sudo go mod init minik8s
+        sudo go mod tidy
+        sudo chmod 777 ./tools/setup_scripts/setup.sh 
+        sudo ./tools/setup_scripts/setup.sh
+
+    - name: TestDNS
+      run: |
+        sudo go build ./pkg/dns/dns_test/dns-test.go
+        sudo mkdir -p /ZTH/Minik8s/pkg/dns/dns_op/
+        sudo cp ./pkg/dns/dns_op/nginx.tmpl /ZTH/Minik8s/pkg/dns/dns_op/
+        sudo ./dns-test
+        sudo rm ./dns-test
+
+    - name: TestEtcd
+      run: |
+        cd ./pkg/etcd/
+        sudo go test
+        cd ../..
+
+    - name: TestKubeProxy
+      run: |
+        sudo go build ./pkg/kube_proxy/Main/test_proxy.go
+        sudo ./test_proxy 10.1.0.23 127.0.0.1
+        sudo rm ./test_proxy
+        sudo go build ./pkg/kube_proxy/Main/test_ip.go
+        sudo ./test_ip
+        sudo rm ./test_ip
+
+    - name: TestKubelet
+      run: |
+        sudo go build ./pkg/kubelet/main.go
+        sudo ./main
+        sudo rm main
+#        cd ./pkg/kubelet/container_manager
+#        sudo go test
+#        cd ../image_manager
+#        sudo go test
+#        cd ../../..
+
+    - name: TestMonitor
+      run: |
+        cd ./pkg/monitor
+        sudo go test
+        cd ../..
 ```
+![alt text](assets/image.png)
+![alt text](assets/image-1.png)
 
 **软件测试方法**：所有功能均在服务器上进行多机测试完毕之后方可提交。在项目中有test文件夹，其中有若干go的test文件。在命令行中输入```go test ...```即可对某一个功能点进行测试。
+其中一些功能需要手动输入，此时会编译出可执行文件进行测试。
 
 **项目开发流程**：在需要添加新功能的时候，从现有的分支中fork出一个新的分支进行编写。将每一个分支都需要用到的重要元数据（如apiObject）作为单独的分支存放，在需要进行修改的时候及时更新到所有分支上。在一个独立的功能编写完毕之后，将其合并到原来的分支上。
 
@@ -92,7 +212,7 @@ Minik8s使用的主要开源组件如下：
 
 **具体分工**：
 竺天灏：apiserver主要功能，scheduler，endpoint controller，kubectl主要功能，消息队列，workflow，replicaset controller和HPA controller完善，PV个人作业，演示视频剪辑，结题文档编写。
-高健翔：***TODO***
+高健翔：Kubelet（pod管理，CNI使用，pod指标探测功能修复），KubeProxy，Dns，serverless（镜像和function管理，scale功能修复，复杂函数设计），monitor个人作业，cicd，视频演示，文档编写，环境搭建与调试脚本编写，hpa完善，kubectl小部分功能。
 陈超：***TODO***
 
 ### 组件详解
@@ -133,6 +253,16 @@ Endpoint是将Service和Pod建立起沟通的桥梁，具体的实现架构在Se
 #### DNS
 dns组件负责dns与转发的实现，在dns被创建时，pod与node可以通过访问域名+不同的path，其流量被转发到不同的service clusterIP。
 
+实现
+1. 在内存中维护nginx config结构，用于记录nginx的配置修改
+2. nginx 操作
+   1. 提供write nginx接口，用于修改nginx配置文件，实现转发规则动态添加
+   2. 提供restart nginx接口，更新nginx之后进行reload
+3. Dns操作
+   1. 提供parseDns接口，将域名转换为etcd key的形式
+   2. 提供Add Dns接口，将域名映射到master node，并修改nginx配置文件，重启nginx
+   3. 提供Del Dns接口，删除etcd中的域名映射，删除nginx的相关内容，重启nginx
+
 #### Kubectl
 使用Cobra命令行工具，并基本参考了Kubernetes的命令。
 
@@ -150,10 +280,47 @@ dns组件负责dns与转发的实现，在dns被创建时，pod与node可以通�
 1. 镜像管理 image_manager
    1. 通过containerd client提供的接口从docker镜像仓库进行拉取
    2. 在完成serverless的过程中，需要搭建master节点的镜像仓库，对于这些镜像进行特殊处理，使用nerdctl工具完成镜像拉取
-2. 
+2. 容器管理 container_manager
+   1. 通过命令行工具nerdctl启动pause容器，简化代码书写，快速加入flannel子网
+   2. 通过containerd client提供的结构创建实际运行pod中的container，可以设置env，entryPoint，volume，resources，最后通过join linux namespaces的方式加入到pause容器的net，ipc，uts的namespace中
+   3. 通过筛选container label的方式实现批量删除容器，也提供单独删除容器的接口（Walker）
+   4. 通过containerd client提供的结构检测提供检测容器运行状态的接口
+   5. 参考nerdctl stats命令的实现，提供检测单个容器运行指标的接口
+3. pod管理 pod_manager
+   1. 提供添加pod接口，先创建pause容器，然后依次创建并运行用户指定的容器，成功后填充pod信息
+   2. 提供删除pod接口，调用容器管理层接口，遍历删除容器，对于网络插件flannel在iptable中的残留，编写专门的bash脚本进行调用以进行删除
+   3. 提供stopPod和restartPod接口，以供调试使用
+   4. 提供检测pod运行状态接口，通过walk机制遍历容器，检测pod运行状态，根据containerd client提供的状态和状态码对应到预定义的pod状态
+   5. 提供获取pod指标接口，通过walk机制遍历获取pod内容器指标
+4. server层
+   1. 提供node add http接口，开启时阻塞程序，当收到apiserver apply node时开始kubelet工作，开始时会立刻向apiserver同步一次当前机器上的pod
+   2. 提供pod增删的http接口，apiserver调用pod add/delete进行pod的管理
+   3. 提供pod指标检测的http接口，apiserver需要知道pod运行状态时定时进行调用
+   4. 每个若干秒向apiserver请求apiserver保存running状态的pod，检测这些pod的运行状态并于apiserver进行同步，如果发现pod状态异常，会尝试重启，如果多次重启失败则会放弃该pod并告知apiserver
+
+运行配置：通过定制的yaml区别不同的节点
+```yaml
+ApiServer: http://10.119.13.178:50000
+Ip: 192.168.1.13
+Port: 20000
+TotalCpu: 4
+TotalMem: 8Gi
+Label:
+  name: testLabel
+``` 
 
 #### Kubeproxy
 部署在各个node上，接收Apiserver对于service的操作请求，使得集群内pod与node可以通过cluster ip以负载均衡的方式与pod进行通信，在minik8s外部，可以通过访问校园网ip+port来进行访问(node也可以通过node+port访问)
+
+实现：
+1. 以Map的形式记录用户创建的Service，在用户创建的整个Service中按照cluster ip + port区分service子项
+2. 提供Add Service接口，当Service创建时，创建ipvs规则，创建cluster ip并加入flannel.1网卡（对应k8s dummy网卡），用于转发到不同的pod， 创建iptables规则，负责：
+   1. 对于到cluster ip的流量做SNAT
+   2. 如果存在node：port服务，将目标为node：port的流量做DNAT到cluster ip
+   3. 对于node：port本机发向node：port的流量，在output规则做DNAT到clustar ip
+3. 提供Del Service接口，删除service时，删除ipvs service，对于上述的iptables做反向操作
+4. 提供Add Endpoint接口，当srv加入新的ep时，增加ipvs规则中的条目
+5. 提供Del Endpoint接口，srv删除ep时，删除ipvs规则条目
 
 
 #### Serverless
@@ -179,6 +346,8 @@ Scheduler接收到消息之后，进行调度，将分配的Node计入Pod的```n
 
 Kubelet接收到HTTP请求之后，会根据配置创建Pod，为Pod分配一个IP地址。创建完毕之后，会将新的IP地址以消息的形式发回给Apiserver，后者再次更新Etcd中的Pod结构体，并将这个Pod标记为Running，即可用。
 
+需要注意的是，pod创建时，先创建pause容器，加入flannel在该node上的子网，然后创建用户指定的容器，加入到pause容器的Linux进程名字空间（主要是net）中，实现localhost通信。
+
 随后Apiserver会向Endpoint Controller发送消息，表明一个Pod被创建，后者将会执行相应的Endpoint创建任务。
 
 **监视Pod的状态**
@@ -203,6 +372,11 @@ spec:
       name: testContainer-1
       entryPoint:
         workingDir: /
+        command:
+          - "tail"
+        args:
+          - "-f"
+          - "/dev/null"
       ports:
         - containerPort: 80
           hostIP: 0.0.0.0
@@ -228,6 +402,25 @@ spec:
 ```
 
 #### CNI功能（Pod间通信）
+使用flannel作为网络插件，依靠etcd，首先etcd里写入网络配置的相关信息，再启动flannel（为了方便使用，将flanneld加入systemd进行管理），就会出现flannel.1网卡，表明所在的子网。向/etc/cni/net.d/flannel.conflist写入网络插件的相关配置，就可以操作nerdctl创建容器加入flannel子网，flannel的ip分配方式为依次分配，当分配到255时，会查看前面的ip是否存在空余(比如删掉了前面的pod)，然后分配至对应的ip，基于flannel插件的容器会在iptable中产生残留，需要手动删除。
+在不同机器上的flannel可以使用相同的etcd endpoint创建不同的子网，flannel也会知道有其他机器上的flannel子网加入。
+```bash
+etcdctl --endpoints "http://127.0.0.1:2379" put /coreos.com/network/config '{"NetWork":"10.2.0.0/16","SubnetMin":"10.2.1.0","SubnetMax": "10.2.254.0","Backend": {"Type": "vxlan"}}'
+
+# systemd service
+[Unit]
+Description=Flannel network fabric for containers
+After=network.target
+
+[Service]
+ExecStart=/opt/flannel/flanneld --etcd-endpoints="http://192.168.1.13:2379"
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+不同机器上的flannel同属于10.2.0.0/16子网，可以达到不同机器pod互相访问的效果。
 
 #### Service抽象
 Service充当了Pod的门面。在用户通过Kubectl创建一个Service之后，Apiserver会首先将其存入Etcd，并通知Endpoint Controller。后者通过```selector```字段筛选对应的Pod，创建对应的Endpoint，并以列表的形式发送给Kubeproxy。Endpoint不支持通过命令行创建，一个Endpoint结构体的基本形式如下(省略了部分Metadata)：
@@ -245,14 +438,53 @@ type Endpoint struct {
 ```
 
 Kubeproxy接收到Endpoint的创建请求之后，会依次创建相应的规则。
-
-***TODO:如何创建规则***
+Kubeproxy创建ipvs规则实现cluster ip到不同pod之间的转发，对于发向cluster ip的流量进行SNAT，如果是nodeport的话，额外增加iptable规则，将发向node：port的流量导向cluster ip
 
 #### Replicaset抽象
 
 #### 动态伸缩（HPA）
 
 #### DNS
+- 通过coredns与nginx结合，完成域名功能。
+- 在master节点上启动coredns服务，coredns服务检测etcd，当有匹配的字段写入时会创建dns规则，为方便，将coredns作为系统服务运行，将所有node节点的/etc/resolv.conf文件中添加dns服务器为master节点，创建pod的时候也将master节点作为首选域名服务器写入该文件。
+- 当kube dns被创建时，dns组件会将域名匹配到master节点ip写入etcd，此时，发向域名的流量将被导入到master节点；同时再启动nginx的proxy功能，将匹配到域名子路径的流量转发到cluster ip，等效于间接访问cluster ip，也能达到到基于ipvs的负载均衡效果，在此处，nginx由我们手动管理，可以灵活指定nginx的配置文件。
+```bash
+# systemd
+[Unit]
+Description=CoreDNS DNS server
+Documentation=https://coredns.io/manual/toc/
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/coredns -conf /mydata/coredns/corefile
+Restart=on-failure
+LimitNOFILE=8192
+
+[Install]
+WantedBy=multi-user.target
+
+# 配置文件
+.:53 {
+    etcd {
+        endpoint http://192.168.1.13:2379
+        path /savedns
+        upstream /etc/resolv.conf
+        fallthrough
+    }
+    forward . 114.114.114.114
+    reload 6s
+    errors
+    loop
+    prometheus  # 监控插件
+    loadbalance
+}
+
+# nginx 
+location /path1/ {
+    access_log /var/log/nginx/access.log;
+    proxy_pass http://10.1.0.4:10000/;
+}
+```
 
 #### 容错
 依赖于Etcd这个可持续化存储，我们可以很好地应对Master节点或是Node节点突然重新启动的情况。在一个pod或是service被加入之后，会将相应的结构体存入Etcd之中。由于Pod的运行不依赖Kubelet，Kubelet只是充当了管理Pod的角色，所以Apiserver的重新启动不会影响到Pod的运行。同时，由于所有的规则存储于Kubeproxy中，所以Node节点的重启也不会影响到Service的再次访问。
@@ -280,7 +512,7 @@ filePath: /ZTH/Minik8s/test/serverless_func/verify
 ```
 其中的```filePath```字段，表明用户希望上传的Function相关文件（包括python文件、Dockerfile、requirement.txt、server.py，其中除了第一项其他均为非必要，可以通过```useTemplate```字段进行设置）。这些文件均需存在于用户本地，由Kubectl打包为压缩文件上传到Apiserver，后者将其解压并存放到主机的指定位置。在这之后对Function的所有操作，除了update，全部按照主机上保存的文件为准。
 
-在Minik8s中，Function会在Pod中运行。一个Pod中有一个Function独有的容器，需要执行函数时直接访问Pod的指定端口即可。Pod内运行的容器，其镜像是被专门组装过的。***TODO。*** Minik8s还提供了现成的组件保证function实例的增减，即replicaset。在一个函数被创建时，会自动创建一个独属于该函数的replicaset，由AutoScale Controller管理其replica的数量。
+在Minik8s中，Function会在Pod中运行。一个Pod中有一个Function独有的容器，需要执行函数时直接访问Pod的指定端口即可。Pod内运行的容器，其镜像是被专门组装过的。master节点运行着一个my-registry容器，作为镜像仓库。创建函数时，serverless组件调用nerdctl build服务将用户上传的函数打包为函数镜像，存放进my-registry中,当函数调用时进行冷启动，节点上的kubelet从my-registry拉取镜像，运行容器，此时组件就能够调用到函数了，当一段时间内还有函数调用，组件可以直接以负载均衡的方式选择正在运行的function容器，即热启动。***TODO？？*** Minik8s还提供了现成的组件保证function实例的增减，即replicaset。在一个函数被创建时，会自动创建一个独属于该函数的replicaset，由AutoScale Controller管理其replica的数量。
 
 **Workflow**
 Workflow，即函数链，是将多个函数串在一起构成的执行流。前一个函数的输出作为下一个函数的输入执行。在Minik8s中，将函数链抽象成DAG的形式，每一个函数、分支、调用操作都抽象为一个节点。最基本的节点是函数节点，即func节点，在yaml文件中的定义如下：
@@ -367,5 +599,8 @@ serverless组件支持函数调用请求的数十并发。得益于消息队列�
 #### 支持GPU应用
 
 #### 日志与监控
-
+节点使用node_exporter进行监控；使用consul作为注册中心，修改Prometheus配置文件，使得Prometheus能够通过consul注册中心动态获取要检测的内容。
+kubelet启动时，会自动向monitor组件发送注册请求，monitor组件将该node注册到consul服务中去，同样地，当带有特定label(暴露监控接口)的pod创建时，kubelet也会向monitor组件注册该pod，monitor组件转发到consul注册中心，Prometheus就可以检测到pod的指标了，consul会定时检测node/pod暴露的指标，相应地，也会反映到Prometheus中。
+当pod删除时，kubelet会发送给monitor组件解除注册pod的请求，monitor从consul中取消注册该pod，Prometheus也就不再监控这个pod了，当Ctrl-C停止Kubelet时，Kubelet会捕获该信号，向monitor发送删除node的请求，monitor组件从consul中取消node的注册。
+这里还应用到grafana应用，通过开放的模板以图形化的方式展现出不同node的运行状态。
 ### 其他，补充和备注
