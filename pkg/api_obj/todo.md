@@ -1,0 +1,9 @@
+replicasetcontroller向apiserver发请求，请求返回所有的pod和所有的replicaset监控；
+
+如果没有问题，就继续等间隔时间继续监视；
+
+如果有问题就向apiserver发请求，根据replicaset，创建或删除对应的pod，来满足replicaset的要求。
+
+接下来主要的问题是：
+
+addpod的时候要不要修改container，addpod的时候创建pod需要什么属性。

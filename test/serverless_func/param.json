@@ -1,0 +1,17 @@
+{
+  "username": "username",
+  "image": "ata:image/png;base64,......",
+  "mark": "water_mark",
+  "x": 20,
+  "y": 20,
+  "r": 255,
+  "g": 255,
+  "b": 255,
+  "mysqlIp": "10.2.1.25",
+  "rate": 0.8,
+  "threshold1": 50,
+  "threshold2": 150,
+  "kernel_x": 3,
+  "kernel_y": 3,
+  "status": "start"
+}
