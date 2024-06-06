@@ -57,6 +57,9 @@ jobs:
         sudo go build ./pkg/kube_proxy/Main/test_proxy.go
         sudo ./test_proxy 10.1.0.23 127.0.0.1
         sudo rm ./test_proxy
+        sudo go build ./pkg/kube_proxy/Main/test_ip.go
+        sudo ./test_ip
+        sudo rm ./test_ip
 
     - name: TestKubelet
       run: |
