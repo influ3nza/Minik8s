@@ -75,6 +75,8 @@ Minik8s使用的主要开源组件如下：
   - 容器运行时：github.com/containerd/containerd 等
   - 文件监控：github.com/fsnotify/fsnotify
   - UUID生成：github.com/google/uuid
+  - 定义模板： text/template
+  - ipvs服务： github.com/moby/ipvs
   - ***TODO：待补充***
 
 ### 小组成员
@@ -126,9 +128,7 @@ Endpoint是将Service和Pod建立起沟通的桥梁，具体的实现架构在Se
 **HPA Controller**
 
 #### DNS
-实现方式
-1. coredns
-2. nginx
+dns组件负责dns与转发的实现，在dns被创建时，pod与node可以通过访问域名+不同的path，其流量被转发到不同的service clusterIP。
 
 #### Kubectl
 使用Cobra命令行工具，并基本参考了Kubernetes的命令。
@@ -141,10 +141,17 @@ Endpoint是将Service和Pod建立起沟通的桥梁，具体的实现架构在Se
   - ```kubectl exec workflow/function <name> [-f] <params in json/filename>``` **仅用于Serverless。** 执行一个已经存在的函数或者函数链，可以通过```-f```指定是否将文件中的内容作为参数传入。
 
 #### Kubelet
-实现方式
-1. containerd
+部署在各个node上的组件，负责接收Apiserver对于pod的操作请求，管理pod的生命周期，定期向Apiserver同步pod的相关信息，同时作为心跳，表示node仍在运行；为Apiserver提供pod的监控指标；对于function类型的pod，则以容器为单位进行管理，但是对外部仍然提供pod的抽象。
+
+实现：
+1. 镜像管理 image_manager
+   1. 通过containerd client提供的接口从docker镜像仓库进行拉取
+   2. 在完成serverless的过程中，需要搭建master节点的镜像仓库，对于这些镜像进行特殊处理，使用nerdctl工具完成镜像拉取
+2. 
 
 #### Kubeproxy
+部署在各个node上，接收Apiserver对于service的操作请求，使得集群内pod与node可以通过cluster ip以负载均衡的方式与pod进行通信，在minik8s外部，可以通过访问校园网ip+port来进行访问(node也可以通过node+port访问)
+
 
 #### Serverless
 是独立于Apiserver的一个组件。由Function Controller，Workflow Controller和AutoScale Controller组成。具体对于函数和函数链的实现细节见后文Serverless一节。
