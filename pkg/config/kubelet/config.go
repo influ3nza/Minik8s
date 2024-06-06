@@ -7,6 +7,8 @@ const DelPod string = "/pod/DelPod/:namespace/:name/:pause"
 const GetMetrics_prefix = "/pod/GetMetrics/"
 const GetMetrics string = "/pod/GetMetrics/:namespace/:name"
 const GetCpuAndMem string = "/pod/GetCpuAndMem"
+const ApplyNode string = "/kubelet/NodeAdd"
+const DelNode string = "/kubelet/NodeDelete"
 
 const (
 	MountNfs          string = "/pv/MountNfs"

@@ -121,7 +121,7 @@ func (hc *HPAController) watch() {
 		// 根据策略扩容
 		// 先直接扩容到expectreplica
 		if hpa.Status.CurReplicas < expectedReplicas {
-			err := hc.AddHpaPod(hpa, correspondPods, expectedReplicas-hpa.Status.CurReplicas)
+			err := hc.AddHpaPod(hpa, correspondPods, 1)
 			if err != nil {
 				fmt.Printf("[ERR/HPAController/watch] Failed to addhpapod, %s.\n", err)
 				hc.PrintHandlerWarning()
