@@ -132,7 +132,7 @@ func (hc *HPAController) watch() {
 		// 根据策略缩容
 		// 先直接扩容到expectreplica
 		if hpa.Status.CurReplicas > expectedReplicas {
-			err := hc.ReduceHpaPod(hpa, correspondPods, hpa.Status.CurReplicas-expectedReplicas)
+			err := hc.ReduceHpaPod(hpa, correspondPods, 1)
 			if err != nil {
 				fmt.Printf("[ERR/HPAController/watch] Failed to reducehpapod, %s.\n", err)
 				hc.PrintHandlerWarning()
@@ -147,7 +147,7 @@ func (hc *HPAController) watch() {
 		// 如果是policy是Pods就扩容到最小，如果policy是Percent就扩容到(min+max)/2
 		if hpa.Status.CurReplicas < hpa.Spec.MinReplicas {
 			if *hpa.Spec.Policy == api_obj.PodsPolicy || hpa.Spec.Policy == nil {
-				err := hc.AddHpaPod(hpa, correspondPods, hpa.Spec.MinReplicas-hpa.Status.CurReplicas)
+				err := hc.AddHpaPod(hpa, correspondPods, 1)
 				if err != nil {
 					fmt.Printf("[ERR/HPAController/watch] Failed to addhpapod in pods, %s.\n", err)
 					hc.PrintHandlerWarning()
