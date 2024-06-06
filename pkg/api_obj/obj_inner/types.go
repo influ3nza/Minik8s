@@ -12,8 +12,7 @@ type ObjectMeta struct {
 	NameSpace   string            `json:"nameSpace" yaml:"nameSpace"`
 	Labels      map[string]string `json:"labels" yaml:"labels"`
 	Annotations map[string]string `json:"annotations" yaml:"annotations"`
-	UUID        string            //todo 是否需要UUID，Name唯一吗，唯一的话需要检测冲突，不唯一则记录UUID作为标识
-	// answer is yes, 4 ppt give it @k8s-2.pptx 18. But how to generate?
+	UUID        string            `json:"uuid" yaml:"uuid"`
 }
 
 type Image struct {
