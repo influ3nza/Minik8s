@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/moby/ipvs"
 	"minik8s/pkg/api_obj"
 	"minik8s/pkg/api_obj/obj_inner"
 	"minik8s/pkg/kube_proxy"
@@ -23,6 +25,26 @@ func InitEnv1() error {
 		return err
 	}
 	return nil
+}
+
+func InitManager1() *kube_proxy.ProxyManager {
+	handler, err := ipvs.New("")
+	if err != nil {
+		fmt.Println("Error At Proxy line 31 ", err.Error())
+		return nil
+	}
+
+	// producer := message.NewProducer()
+
+	services := map[string]*kube_proxy.MainService{}
+
+	manager := &kube_proxy.ProxyManager{
+		Router:      gin.Default(),
+		IpvsHandler: handler,
+		Services:    services,
+		// Producer:    producer,
+	}
+	return manager
 }
 
 func main() {
@@ -62,7 +84,7 @@ func main2(ip string, cluIp string) {
 		Status: api_obj.ServiceStatus{},
 	}
 
-	manager := kube_proxy.InitManager()
+	manager := InitManager1()
 	if manager == nil {
 		fmt.Println("Manager is Nil")
 		return
