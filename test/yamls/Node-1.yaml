@@ -3,5 +3,8 @@ kind: Node
 metadata:
   labels:
     app: test
-  name: node-1
+  name: minik100s
   nameSpace: q
+status:
+  addresses:
+    internalIp: "10.119.13.178"

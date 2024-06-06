@@ -48,6 +48,8 @@ func DelHandler(cmd *cobra.Command, args []string) {
 			DeletePVHandler(key)
 		case "pvc":
 			DeletePVCHandler(key)
+		case "node":
+			DeleteNodeHandler(key)
 		}
 		return
 	} else {
@@ -143,6 +145,14 @@ func DeletePVHandler(name string) {
 
 func DeletePVCHandler(name string) {
 	uri := apiserver.API_server_prefix + apiserver.API_delete_pvc_prefix + name
+	_, err := network.DelRequest(uri)
+	if err != nil {
+		fmt.Printf("[ERR/DeletePVC] Failed to send DEL request, %v\n", err)
+	}
+}
+
+func DeleteNodeHandler(name string) {
+	uri := apiserver.API_server_prefix + apiserver.API_delete_node_and_ip
 	_, err := network.DelRequest(uri)
 	if err != nil {
 		fmt.Printf("[ERR/DeletePVC] Failed to send DEL request, %v\n", err)

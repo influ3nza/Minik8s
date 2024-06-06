@@ -87,6 +87,8 @@ func (s *ApiServer) Bind() {
 	s.router.GET(apiserver.API_get_nodes, s.GetNodes)
 	s.router.GET(apiserver.API_get_node, s.GetNode)
 	s.router.POST(apiserver.API_add_node, s.AddNode)
+	s.router.POST(apiserver.API_add_node_by_command, s.AddNodeFromCommand)
+	s.router.DELETE(apiserver.API_delete_node_and_ip, s.DeleteNodeAndIp)
 
 	s.router.GET(apiserver.API_get_pods, s.GetPods)
 	s.router.POST(apiserver.API_update_pod, s.UpdatePodScheduled)
@@ -166,6 +168,7 @@ func (s *ApiServer) Run() error {
 		fmt.Printf("[ERR/apiserver] Failed tp refresh ip map.\n")
 		return err
 	}
+	// s.DeleteNodeEntry()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT)

@@ -377,3 +377,7 @@ func (s *ApiServer) DeleteRegistry(c *gin.Context) {
 		"data": "Delete all success",
 	})
 }
+
+func (s *ApiServer) DeleteNodeEntry() {
+	s.EtcdWrap.DeleteByPrefix(apiserver.ETCD_node_prefix)
+}

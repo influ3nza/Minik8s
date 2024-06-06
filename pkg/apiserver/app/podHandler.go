@@ -217,27 +217,29 @@ func (s *ApiServer) UpdatePodScheduled(c *gin.Context) {
 	}
 
 	//返回node的ip地址
-	e_key = apiserver.ETCD_node_ip_prefix + new_pod.Spec.NodeName
-	res, err = s.EtcdWrap.Get(e_key)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[ERR/handler/UpdatePod] Failed to get from etcd, " + err.Error(),
-		})
-		return
-	} else if len(res) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[ERR/handler/UpdatePod] Specified node not available.",
-		})
-		return
-	} else if len(res) > 1 {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "[ERR/handler/UpdatePod] Found more than one node.",
-		})
-		return
-	}
+	// e_key = apiserver.ETCD_node_ip_prefix + new_pod.Spec.NodeName
+	// res, err = s.EtcdWrap.Get(e_key)
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{
+	// 		"error": "[ERR/handler/UpdatePod] Failed to get from etcd, " + err.Error(),
+	// 	})
+	// 	return
+	// } else if len(res) == 0 {
+	// 	c.JSON(http.StatusBadRequest, gin.H{
+	// 		"error": "[ERR/handler/UpdatePod] Specified node not available.",
+	// 	})
+	// 	return
+	// } else if len(res) > 1 {
+	// 	c.JSON(http.StatusBadRequest, gin.H{
+	// 		"error": "[ERR/handler/UpdatePod] Found more than one node.",
+	// 	})
+	// 	return
+	// }
+
+	addr := tools.NodesIpMap[new_pod.Spec.NodeName]
 
 	c.JSON(http.StatusCreated, gin.H{
-		"data": res[0].Value + strconv.Itoa(int(kubelet.Port)),
+		"data": addr + strconv.Itoa(int(kubelet.Port)),
 	})
 
 	fmt.Printf("[handler/UpdatePod] Update pod success.\n")
