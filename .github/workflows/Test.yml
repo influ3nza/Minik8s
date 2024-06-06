@@ -41,8 +41,8 @@ jobs:
     - name: TestDNS
       run: |
         sudo go build ./pkg/dns/dns_test/dns-test.go
-        sudo mkdir -p /ZTH/minik8s/pkg/dns/dns_op/
-        sudo cp ./pkg/dns/dns_op/nginx.tmpl /ZTH/minik8s/pkg/dns/dns_op/
+        sudo mkdir -p /ZTH/Minik8s/pkg/dns/dns_op/
+        sudo cp ./pkg/dns/dns_op/nginx.tmpl /ZTH/Minik8s/pkg/dns/dns_op/
         sudo ./dns-test
         sudo rm ./dns-test
 
