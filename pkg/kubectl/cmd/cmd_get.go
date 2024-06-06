@@ -180,7 +180,7 @@ func GetDnsHandler() {
 func GetHpaHandler() {
 	uri := apiserver.API_server_prefix + apiserver.API_get_hpas
 	hpas := []api_obj.HPA{}
-	err := network.GetRequestAndParse(uri, hpas)
+	err := network.GetRequestAndParse(uri, &hpas)
 	if err != nil {
 		fmt.Printf("[ERR/GetHpaHandler] %v\n", err)
 		return
