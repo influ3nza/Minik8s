@@ -258,6 +258,19 @@ Kubeproxy接收到Endpoint的创建请求之后，会依次创建相应的规则
 
 #### Serverless
 **Function**
+Function是Serverless执行的最小单位。用户可以通过```kubectl apply```添加函数，yaml文件示例如下：
+```yaml
+apiVersion: v1
+kind: function
+metaData:
+  labels:
+    app: test
+  name: verify
+filePath: /ZTH/Minik8s/test/serverless_func/verify
+```
+其中的```filePath```字段，表明用户希望上传的Function相关文件（包括python文件、Dockerfile、requirement.txt、server.py，其中除了第一项其他均为非必要，可以通过```useTemplate```字段进行设置）。这些文件均需存在于用户本地，由Kubectl打包为压缩文件上传到Apiserver，后者将其解压并存放到主机的指定位置。在这之后对Function的所有操作，除了update，全部按照主机上保存的文件为准。
+
+在Minik8s中，Function会在Pod中运行。一个Pod中有一个Function独有的容器，需要执行函数时直接访问Pod的指定端口即可。Pod内运行的容器，其镜像是被专门组装过的。***TODO。*** Minik8s还提供了现成的组件保证function实例的增减，即replicaset。在一个函数被创建时，会自动创建一个独属于该函数的replicaset，由AutoScale Controller管理其replica的数量。
 
 **Workflow**
 Workflow，即函数链，是将多个函数串在一起构成的执行流。前一个函数的输出作为下一个函数的输入执行。在Minik8s中，将函数链抽象成DAG的形式，每一个函数、分支、调用操作都抽象为一个节点。最基本的节点是函数节点，即func节点，在yaml文件中的定义如下：
@@ -319,7 +332,18 @@ Workflow，即函数链，是将多个函数串在一起构成的执行流。前
 ```
 其中```inheritCoeff```表明需要从本函数链提交到新函数链作为参数的列表，```newCoeff```表明需要新添加的参数列表。Minik8s在执行时会将这两组参数融合为一组，暂不支持参数名的查重。
 
-**应对高并发与
+**自动扩容与scale-to-0**
+为了应对高并发，Minik8s的serverless组件支持动态扩容。同时为了保证资源不被浪费，支持缩容到0的机制，具体实现如下：
+
+在serverless组件中，为每一个已注册的函数保存一个数字，以下称之为**水位**。函数被第一次调用时，水位为某一指定的正整数。自第一次调用起，该水位就会随着时间不断减少。当水位减少到0的时候，serverless组件中的AutoScale Controller便会将该Function的Pod实例减少一个。与此同时，每当这个函数被调用一次时，水位便会增长一个指定的数值，该数值与该函数现存实例个数成反比。当水位超过一定的数值，AutoScale Controller便会为该函数增加一个Pod实例。这个水位的阈值与现存实例个数成正比。也就是说，一个Function的实例数线性增长，意味着在短时间内的大量请求需要以平方级别的速度增长。
+
+**Event Trigger**
+Minik8s支持通过注册事件驱动（在这里是监听文件修改）来触发函数。在Function的yaml文件中有一个```needWatch```字段，用来表明是否需要加入文件监听。若如此做，则serverless会监视位于主机上存放该Function的python文件以及Dockerfile等文件的文件夹。在文件夹中，有任何文件被写入，则额外触发一次函数。注意由于通过vim修改文件会产生较多的swap文件写入，所以文件监视默认屏蔽swap文件。
+
+另一个问题是即使更新Function的```func.py```文件，额外触发的函数调用依然会使用原镜像，该功能基本已被```kubectl update```完全替代，因此不再做额外实现，请注意。
+
+**并发性能**
+serverless组件支持函数调用请求的数十并发。得益于消息队列本身的多进单出的队列特性，以及上文提到的水位设计，在其余的部分并没有做出太大的调整。
 
 #### 持久化存储
 使用PV和PVC这两个Api对象来进行持久化存储，PV代表系统分配的可持久化卷，PVC则是对持久化卷使用的声明。Minik8s支持静态创建PV，即通过```kubectl apply```创建一个PV；以及动态创建PV，即在创建PVC时，如果发现没有匹配的PV，则会主动创建一个符合条件的。
