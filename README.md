@@ -222,9 +222,9 @@ Minik8s使用的主要开源组件如下：
 | 陈超   | 521021910136 | 25%    |
 
 **具体分工**：
-竺天灏：apiserver主要功能，scheduler，endpoint controller，kubectl主要功能，消息队列，workflow，replicaset controller和HPA controller完善，PV个人作业，演示视频剪辑，结题文档编写。<br/>
-高健翔：Kubelet（pod管理，CNI使用，pod指标探测功能修复），KubeProxy，Dns，serverless（镜像和function管理，scale功能修复，复杂函数设计），monitor个人作业，cicd，视频演示，文档编写，环境搭建与调试脚本编写，hpa完善，kubectl小部分功能。<br/>
-陈超：hpa的主要功能以及apiserver创建hpa，replicaset的主要功能以及apiserver创建replicaset，scale-to-0的主要功能实现。<br/>
+  - 竺天灏：apiserver主要功能，scheduler，endpoint controller，kubectl主要功能，消息队列，workflow，replicaset controller和HPA controller完善，PV个人作业，演示视频剪辑，结题文档编写。
+  - 高健翔：Kubelet（pod管理，CNI使用，pod指标探测功能修复），KubeProxy，Dns，serverless（镜像和function管理，scale功能修复，复杂函数设计），monitor个人作业，cicd，视频演示，文档编写，环境搭建与调试脚本编写，hpa完善，kubectl小部分功能。
+  - 陈超：hpa的主要功能以及apiserver创建hpa，replicaset的主要功能以及apiserver创建replicaset，scale-to-0的主要功能实现。
 
 ### 组件详解
 
