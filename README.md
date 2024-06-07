@@ -172,13 +172,13 @@ jobs:
 - Apiserver：负责处理各种HTTP请求，是整个Minik8s的中心。同时也会发送HTTP请求和消息去联系起其他组件。可以与可持续化存储ETCD进行交互。
 - Scheduler：负责pod的调度。在Apiserver发送创建Pod的请求时，会根据一定的策略为这个Pod选择合适的Node。
 - Controller：包括Endpoint Controller，Replicaset Controller和HPA Controller。由一个Controller Manager统一管理，具体的细节见后文。
-- DNS：***TODO***
+- DNS：操作etcd与nginx实现域名服务与转发。
 - Serverless：自选项目。在Master节点上的一个独立组件，与Apiserver进行交互之后，负责创建Function的镜像与指挥执行Function和Workflow。
 
 **Worker**：
 
 - Kubelet：管理Pod的生命周期，在Pod意外终止时，会主动将其重启。
-- Kubeproxy：***TODO***
+- Kubeproxy：管理ipvs与iptables规则，负责service与endpoint的创建与删除。
 
 **其他组件**：
 
@@ -734,7 +734,9 @@ serverless组件支持函数调用请求的数十并发。得益于消息队列�
 #### 日志与监控
 
 节点使用node_exporter进行监控；使用consul作为注册中心，修改Prometheus配置文件，使得Prometheus能够通过consul注册中心动态获取要检测的内容。
+
 kubelet启动时，会自动向monitor组件发送注册请求，monitor组件将该node注册到consul服务中去，同样地，当带有特定label(暴露监控接口)的pod创建时，kubelet也会向monitor组件注册该pod，monitor组件转发到consul注册中心，Prometheus就可以检测到pod的指标了，consul会定时检测node/pod暴露的指标，相应地，也会反映到Prometheus中。
+
 当pod删除时，kubelet会发送给monitor组件解除注册pod的请求，monitor从consul中取消注册该pod，Prometheus也就不再监控这个pod了，当Ctrl-C停止Kubelet时，Kubelet会捕获该信号，向monitor发送删除node的请求，monitor组件从consul中取消node的注册。
 这里还应用到grafana应用，通过开放的模板以图形化的方式展现出不同node的运行状态。
 
