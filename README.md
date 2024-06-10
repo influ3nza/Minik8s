@@ -486,8 +486,6 @@ Kubeproxy创建ipvs规则实现cluster ip到不同pod之间的转发，对于发
 
 #### Replicaset抽象
 
-#### DNS
-
 ReplicaSet 的目的是维护一组在任何时候都处于运行状态的 Pod 副本的稳定集合。replicaset通过构建期望的replica数量，以及当前的replica数量，还有selector来指定监控特定的pod。
 
 ```go
