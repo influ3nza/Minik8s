@@ -183,9 +183,9 @@ jobs:
 **其他组件**：
 
 - Kafka消息队列：是Minik8s中除了HTTP请求之外的另外一种组件之间通信的方式，保证了异步请求的执行。
-- ***TODO***
 
-![Minik8s架构示意图](./assets/structure.png) `<center>`Minik8s架构示意图 `</center>`
+![Minik8s架构示意图](./assets/structure.png) 
+`<center>`Minik8s架构示意图 `</center>`
 
 <br/>
 
@@ -197,7 +197,6 @@ Minik8s使用的主要软件栈如下：
 - Go HTTP框架：github.com/gin-gonic/gin
 - 可持续存储Etcd：go.etcd.io/etcd/client/v3
 - 命令行工具：github.com/spf13/cobra
-- ***TODO：待补充***
 
 Minik8s使用的主要开源组件如下：
 
@@ -209,7 +208,6 @@ Minik8s使用的主要开源组件如下：
 - UUID生成：github.com/google/uuid
 - 定义模板： text/template
 - ipvs服务： github.com/moby/ipvs
-- ***TODO：待补充***
 
 ### 小组成员
 
@@ -486,8 +484,6 @@ Kubeproxy创建ipvs规则实现cluster ip到不同pod之间的转发，对于发
 
 #### Replicaset抽象
 
-#### DNS
-
 ReplicaSet 的目的是维护一组在任何时候都处于运行状态的 Pod 副本的稳定集合。replicaset通过构建期望的replica数量，以及当前的replica数量，还有selector来指定监控特定的pod。
 
 ```go
@@ -637,7 +633,7 @@ filePath: /ZTH/Minik8s/test/serverless_func/verify
 
 其中的 ``filePath``字段，表明用户希望上传的Function相关文件（包括python文件、Dockerfile、requirement.txt、server.py，其中除了第一项其他均为非必要，可以通过 ``useTemplate``字段进行设置）。这些文件均需存在于用户本地，由Kubectl打包为压缩文件上传到Apiserver，后者将其解压并存放到主机的指定位置。在这之后对Function的所有操作，除了update，全部按照主机上保存的文件为准。
 
-在Minik8s中，Function会在Pod中运行。一个Pod中有一个Function独有的容器，需要执行函数时直接访问Pod的指定端口即可。Pod内运行的容器，其镜像是被专门组装过的。master节点运行着一个my-registry容器，作为镜像仓库。创建函数时，serverless组件调用nerdctl build服务将用户上传的函数打包为函数镜像，存放进my-registry中,当函数调用时进行冷启动，节点上的kubelet从my-registry拉取镜像，运行容器，此时组件就能够调用到函数了，当一段时间内还有函数调用，组件可以直接以负载均衡的方式选择正在运行的function容器，即热启动。***TODO？？*** Minik8s还提供了现成的组件保证function实例的增减，即replicaset。在一个函数被创建时，会自动创建一个独属于该函数的replicaset，由AutoScale Controller管理其replica的数量。
+在Minik8s中，Function会在Pod中运行。一个Pod中有一个Function独有的容器，需要执行函数时直接访问Pod的指定端口即可。Pod内运行的容器，其镜像是被专门组装过的。master节点运行着一个my-registry容器，作为镜像仓库。创建函数时，serverless组件调用nerdctl build服务将用户上传的函数打包为函数镜像，存放进my-registry中,当函数调用时进行冷启动，节点上的kubelet从my-registry拉取镜像，运行容器，此时组件就能够调用到函数了，当一段时间内还有函数调用，组件可以直接以负载均衡的方式选择正在运行的function容器，即热启动。Minik8s还提供了现成的组件保证function实例的增减，即replicaset。在一个函数被创建时，会自动创建一个独属于该函数的replicaset，由AutoScale Controller管理其replica的数量。
 
 **Workflow**
 Workflow，即函数链，是将多个函数串在一起构成的执行流。前一个函数的输出作为下一个函数的输入执行。在Minik8s中，将函数链抽象成DAG的形式，每一个函数、分支、调用操作都抽象为一个节点。最基本的节点是函数节点，即func节点，在yaml文件中的定义如下：
@@ -730,6 +726,7 @@ serverless组件支持函数调用请求的数十并发。得益于消息队列�
 持久化卷的实现极大程度依赖于Kubelet对于Pod生命周期的管理，在Pod被删除或者意外终止时，会自动断开挂载但是保留本地文件，这也使得后续新建在这个PV上的Pod仍然能够访问原来的文件，保证了持久化存储。
 
 #### 支持GPU应用
+暂无实现
 
 #### 日志与监控
 
@@ -738,6 +735,8 @@ serverless组件支持函数调用请求的数十并发。得益于消息队列�
 kubelet启动时，会自动向monitor组件发送注册请求，monitor组件将该node注册到consul服务中去，同样地，当带有特定label(暴露监控接口)的pod创建时，kubelet也会向monitor组件注册该pod，monitor组件转发到consul注册中心，Prometheus就可以检测到pod的指标了，consul会定时检测node/pod暴露的指标，相应地，也会反映到Prometheus中。
 
 当pod删除时，kubelet会发送给monitor组件解除注册pod的请求，monitor从consul中取消注册该pod，Prometheus也就不再监控这个pod了，当Ctrl-C停止Kubelet时，Kubelet会捕获该信号，向monitor发送删除node的请求，monitor组件从consul中取消node的注册。
-这里还应用到grafana应用，通过开放的模板以图形化的方式展现出不同node的运行状态。
+这里还使用了grafana应用，通过开放的模板以图形化的方式展现出不同node的运行状态。
 
 ### 其他，补充和备注
+**有关Apiserver重新启动后需要重新添加工作节点的问题**
+这个是在答辩演示的时候助教提出的问题。Minik8s在开发及测试的绝大多数时候，都是让kubelet自己启动，并主动注册到Apiserver上的。但是在答辩验收文档中，提出需要将Node通过命令行的形式添加到工作集群，于是我们便修改了Node添加的方式，从kubelet主动添加改为Apiserver主动添加。具体的策略在上文**Node加入**一节中有更详细的说明。
