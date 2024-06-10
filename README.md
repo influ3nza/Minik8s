@@ -183,9 +183,9 @@ jobs:
 **其他组件**：
 
 - Kafka消息队列：是Minik8s中除了HTTP请求之外的另外一种组件之间通信的方式，保证了异步请求的执行。
-- ***TODO***
 
-![Minik8s架构示意图](./assets/structure.png) `<center>`Minik8s架构示意图 `</center>`
+![Minik8s架构示意图](./assets/structure.png) 
+`<center>`Minik8s架构示意图 `</center>`
 
 <br/>
 
@@ -197,7 +197,6 @@ Minik8s使用的主要软件栈如下：
 - Go HTTP框架：github.com/gin-gonic/gin
 - 可持续存储Etcd：go.etcd.io/etcd/client/v3
 - 命令行工具：github.com/spf13/cobra
-- ***TODO：待补充***
 
 Minik8s使用的主要开源组件如下：
 
@@ -209,7 +208,6 @@ Minik8s使用的主要开源组件如下：
 - UUID生成：github.com/google/uuid
 - 定义模板： text/template
 - ipvs服务： github.com/moby/ipvs
-- ***TODO：待补充***
 
 ### 小组成员
 
@@ -728,6 +726,7 @@ serverless组件支持函数调用请求的数十并发。得益于消息队列�
 持久化卷的实现极大程度依赖于Kubelet对于Pod生命周期的管理，在Pod被删除或者意外终止时，会自动断开挂载但是保留本地文件，这也使得后续新建在这个PV上的Pod仍然能够访问原来的文件，保证了持久化存储。
 
 #### 支持GPU应用
+暂无实现
 
 #### 日志与监控
 
@@ -739,3 +738,5 @@ kubelet启动时，会自动向monitor组件发送注册请求，monitor组件�
 这里还应用到grafana应用，通过开放的模板以图形化的方式展现出不同node的运行状态。
 
 ### 其他，补充和备注
+**有关Apiserver重新启动后需要重新添加工作节点的问题**
+这个是在答辩演示的时候助教提出的问题。Minik8s在开发及测试的绝大多数时候，都是让kubelet自己启动，并主动注册到Apiserver上的。但是在答辩验收文档中，提出需要将Node通过命令行的形式添加到工作集群，于是我们便修改了Node添加的方式，从kubelet主动添加改为Apiserver主动添加。具体的策略在上文**Node加入**一节中有更详细的说明。
